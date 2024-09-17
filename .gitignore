@@ -316,6 +316,7 @@ logs/*
 **/*.mdl
 rover_envs/assets/**/*.png
 rover_envs/assets/**/*.jpg
+!rover_envs/assets/textures/*.png
 
 # TODO remove this
 best_agent*
