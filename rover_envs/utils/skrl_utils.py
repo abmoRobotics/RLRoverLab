@@ -5,7 +5,7 @@ import torch
 import tqdm
 from omni.isaac.lab.envs import ManagerBasedRLEnv
 from skrl.agents.torch import Agent
-from skrl.envs.wrappers.torch import IsaacOrbitWrapper, Wrapper, wrap_env
+from skrl.envs.wrappers.torch import IsaacLabWrapper, Wrapper, wrap_env
 from skrl.trainers.torch import Trainer
 from skrl.trainers.torch.sequential import SEQUENTIAL_TRAINER_DEFAULT_CONFIG
 
@@ -42,7 +42,7 @@ def SkrlVecEnvWrapper(env: ManagerBasedRLEnv):
     return wrap_env(env, wrapper="isaac-orbit")
 
 
-class SkrlOrbitVecWrapper(IsaacOrbitWrapper):
+class SkrlOrbitVecWrapper(IsaacLabWrapper):
     """ Wrapper for the Isaac Orbit environment.
     Note: The wrapper from SKRL breaks with nan values of in the observation space.
     This can sometimes happen within a ORBIT environment. This wrapper is used to handle the nan values.

@@ -31,7 +31,7 @@ class RoverEnv(ManagerBasedRLEnv):
         """Reset the environment at the given indices.
 
         Note:
-            This function inherits from :meth:`omni.isaac.orbit.envs.rl_task_env.ManagerBasedRLEnv._reset_idx`.
+            This function inherits from :meth:`omni.isaac.lab.envs.rl_task_env.ManagerBasedRLEnv._reset_idx`.
             This is done because SKRL requires the "episode" key in the extras dict to be present in order to log.
         Args:
             idx (torch.Tensor): Indices of the environments to reset.

@@ -17,7 +17,7 @@ args_cli = parser.parse_args()
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
-import omni.isaac.orbit.sim as sim_utils  # noqa: F401, E402
+import omni.isaac.lab.sim as sim_utils  # noqa: F401, E402
 from omni.isaac.lab.assets import Articulation, ArticulationCfg, AssetBaseCfg  # noqa: F401, E402
 from omni.isaac.lab.scene import InteractiveScene, InteractiveSceneCfg  # noqa: F401, E402
 from omni.isaac.lab.sim import SimulationContext  # noqa: F401, E402

@@ -24,7 +24,7 @@ from omni.isaac.core.utils.extensions import enable_extension  # noqa: F401, E40
 
 enable_extension("omni.isaac.ros2_bridge")
 
-import omni.isaac.orbit.sim as sim_utils  # noqa: F401, E402
+import omni.isaac.lab.sim as sim_utils  # noqa: F401, E402
 from omni.isaac.core.utils import prims  # noqa: F401, E402
 from omni.isaac.lab.assets import Articulation, ArticulationCfg, AssetBaseCfg  # noqa: F401, E402
 from omni.isaac.lab.scene import InteractiveScene, InteractiveSceneCfg  # noqa: F401, E402
