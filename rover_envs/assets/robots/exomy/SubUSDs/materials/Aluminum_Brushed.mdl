@@ -1,0 +1,301 @@
+/******************************************************************************
+ *	 Copyright 2023 NVIDIA Corporation. All rights reserved.
+ ******************************************************************************
+ 
+Permission is hereby granted by NVIDIA Corporation ("NVIDIA"), free of charge,
+to any person obtaining a copy of the sample definition code that uses our 
+Material Definition Language (the "MDL Materials"), to reproduce and distribute
+the MDL Materials, including without limitation the rights to use, copy, merge,
+publish, distribute, and sell modified and unmodified copies of the MDL 
+Materials, and to permit persons to whom the MDL Materials is furnished to do
+so, in all cases solely for use with NVIDIA's Material Definition Language,
+subject to the following further conditions:
+
+1. The above copyright notices, this list of conditions, and the disclaimer
+that follows shall be retained in all copies of one or more of the MDL
+Materials, including in any software with which the MDL Materials are bundled,
+redistributed, and/or sold, and included either as stand-alone text files,
+human-readable headers or in the appropriate machine-readable metadata fields
+within text or binary files as long as those fields can be easily viewed by the
+user, as applicable.
+2. The name of NVIDIA shall not be used to promote, endorse or advertise any 
+Modified Version without specific prior written permission, except a) to comply
+ with the notice requirements otherwise contained herein; or b) to acknowledge
+the contribution(s) of NVIDIA.
+
+THE MDL MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF COPYRIGHT, PATENT,
+TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL NVIDIA CORPORATION BE LIABLE FOR 
+ANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING ANY GENERAL, SPECIAL, 
+INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, WHETHER IN AN ACTION OF 
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF THE USE OR INABILITY TO USE
+THE MDL MATERIALS OR FROM OTHER DEALINGS IN THE MDL MATERIALS.
+*/
+
+mdl 1.5;
+import ::anno::*;
+import ::base::*;
+import ::math::*;
+import ::state::*;
+import ::std::*;
+import ::tex::*;
+import ::df::*;
+import ::nvidia::core_definitions::*;
+
+
+const string COPYRIGHT = 
+" Copyright 2023 NVIDIA Corporation. All rights reserved.\n"
+" MDL MATERIALS ARE PROVIDED PURSUANT TO AN END USER LICENSE  AGREEMENT,\n"
+" WHICH WAS ACCEPTED IN ORDER TO GAIN ACCESS TO THIS FILE.  IN PARTICULAR,\n" 
+" THE MDL MATERIALS ARE PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n"
+" EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF\n"
+" MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF\n" 
+" COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL NVIDIA\n"
+" CORPORATION BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING ANY\n"
+" GENERAL, SPECIAL,  INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, WHETHER IN\n"
+" AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF THE USE OR\n"
+" INABILITY TO USE THE MDL MATERIALS OR FROM OTHER DEALINGS IN THE MDL MATERIALS.\n";
+
+const string DESCRIPTION = "Brushed metal material with adjustable settings for the brushing";
+
+
+float histogram_range(float input, float range, float position)
+{	
+	float low = ::math::clamp(1.0 - ::math::min(((1.0 - position) + range * 0.5), (1.0 - position) * 2), 0.0, 1.0);
+	float high = ::math::clamp(::math::min((position + range * 0.5 ), position * 2.0), 0.0, 1.0);
+	return ::math::lerp(low, high, input);
+}
+
+::base::texture_coordinate_info vmat_transform(
+								uniform float2 translation = float2(0.0, 0.0),
+								uniform float rotation	 = 0.0,
+								uniform float2 scaling	 = float2(1.0, 1.0),
+								uniform ::base::texture_coordinate_system system = ::base::texture_coordinate_uvw,
+								uniform int uv_space	   = 0
+)
+{
+	float rotation_rad = (rotation * 3.1415926535897932384626433832f) / 180.f;
+	float4x4 scale =
+	float4x4(1.0 /scaling.x, 0.			 ,  0. ,	 0.,
+			 0.			, 1.0 /scaling.y ,  0. ,	 0.,
+			 0.			, 0.			 ,  1.0,	 0.,
+			 translation.x , translation.y  ,  0.0,	 1.);
+
+	float s = ::math::sin(rotation_rad);
+	float c = ::math::cos(rotation_rad);
+	float4x4 rotate =
+	float4x4(  c  ,  -s   , 0.0 , 0.0,
+			   s  ,   c   , 0.0 , 0.0,
+			   0.0,   0.0 , 1.0 , 0.0,
+			   0. ,   0.0 , 0.0 , 1.);
+	
+	return ::base::transform_coordinate(scale*rotate, ::base::coordinate_source(system, uv_space));
+}
+
+
+export material Aluminum_Brushed(
+	float brush_width = 1.0f [[
+		::anno::display_name("Roughness Width"),
+		::anno::description("Widens the anisotropic metal reflections which leads to a stronger effect of "
+		"the metal brushing"),
+		::anno::hard_range(0.0f, 1.0f),
+		::anno::in_group("Appearance")
+	]],
+	float brush_height_blur = 0.75f [[
+		::anno::display_name("Roughness Height"),
+		::anno::description("Increases the anisotropy of the brushed metal, blurring the reflections"),
+		::anno::hard_range(0.0f, 1.0f),
+		::anno::in_group("Appearance")
+	]],
+	float scratch_variation_amount = 1.f [[
+		::anno::description("Adds a bit variation to the roughness of the brushing pattern in the form of occasional scratches that sprea dout in a wider range"),
+		::anno::display_name("Scratch Variation Amount"),
+		::anno::hard_range(0.0f, 1.0f),
+		::anno::in_group("Appearance")
+	]],
+	float scratch_reflection_variation = 0.4f [[
+		::anno::description("Attenuates the reflection of the brushed metal which will also make the material appear darker"),
+		::anno::display_name("Scratch Reflection Variation"),
+		::anno::hard_range(0.0f, 1.0f),
+		::anno::in_group("Appearance")
+	]],
+	float scratches_bump = 0.65f [[
+		::anno::description("Introduces normal-mapped scratches which further add to the realistic appearance of the surface. However, this might become for the renderer more difficult to resolve."),
+		::anno::display_name("Scratches Bump Amount"),
+		::anno::hard_range(0.0f, 1.0f),
+		::anno::in_group("Appearance")
+	]],
+	uniform bool enable_round_corners = false [[
+		::anno::display_name("Enable Round Corners"),
+		::anno::in_group("Round Corners")
+	]],
+	uniform float roundcorner_radius = 0.01f [[
+		::anno::display_name("Round Corner Radius"),
+		::anno::description("Adjusts the radius of the round corner effect"),
+		::anno::soft_range(0.0f, 0.1f),
+		::anno::in_group("Round Corners")
+	]],
+	uniform bool across_materials = false [[
+		::anno::display_name("Across Materials"),
+		::anno::description("Applies the rounded corner effect also between other materials"),
+		::anno::in_group("Round Corners")
+	]],
+	uniform float2 texture_translate = float2(0.f) [[
+		::anno::display_name("Translate"),
+		::anno::description("Controls the position of the texture."),
+		::anno::in_group("Transform")
+	]],
+	uniform float texture_rotate = 0.f [[
+		::anno::display_name("Rotate"),
+		::anno::description("Rotates angle of the texture in degrees."),
+		::anno::in_group("Transform")
+	]],
+	uniform float2 texture_scale = float2(1.f) [[
+		::anno::display_name("Scale"),
+		::anno::description("Larger numbers increase the size."),
+		::nvidia::core_definitions::dimension(float2(0.75f, 0.75f)),
+		::anno::in_group("Transform")
+	]],
+	uniform int uv_space_index = 0 [[
+		::anno::display_name("UV Space Index"),
+		::anno::description("Use selected UV space for material"),
+		::anno::in_group("Advanced")
+	]]
+)
+[[
+	::anno::author("NVIDIA vMaterials"),
+	::anno::display_name("Brushed Aluminum - Strong Brushing"),
+	::anno::description(DESCRIPTION),
+	::anno::copyright_notice(COPYRIGHT),
+	::anno::thumbnail("./.thumbs/Aluminum_Brushed.Aluminum_Brushed.png"),
+	::anno::key_words(string[]("aec", "metal", "aluminum", "brushed", "kitchen", "design", "modern", "reflective", "shiny", "architecture", "sanitary", "new", "gray", "neutral"))
+]]
+ = 
+	let {
+		color normal_reflectivity = color(0.911810895428f,0.914089043421f,0.920152876196f);
+		color grazing_reflectivity = color(0.99942f, 1.f, 1.f);
+		
+		bool tmp0 = false;
+		material_surface tmp1(
+			::df::color_custom_curve_layer(::nvidia::core_definitions::blend_colors(normal_reflectivity, color(float3(::base::file_texture(texture_2d("../textures/brushed_metal_linear_R_rough_G_scratchvar_B_impurities.jpg", ::tex::gamma_linear), color(0.f, 0.f, 0.f), color(1.f, 1.f, 1.f), ::base::mono_alpha, vmat_transform(texture_translate, texture_rotate, texture_scale * 0.25f, ::base::texture_coordinate_uvw, uv_space_index), float2(0.f, 1.f), float2(0.f, 1.f), ::tex::wrap_repeat, ::tex::wrap_repeat, false).tint)[0]), ::base::color_layer_multiply, scratch_reflection_variation).tint, ::nvidia::core_definitions::blend_colors(grazing_reflectivity, color(float3(::base::file_texture(texture_2d("../textures/brushed_metal_linear_R_rough_G_scratchvar_B_impurities.jpg", ::tex::gamma_linear), color(0.f, 0.f, 0.f), color(1.f, 1.f, 1.f), ::base::mono_alpha, vmat_transform(texture_translate, texture_rotate, texture_scale * 0.25f, ::base::texture_coordinate_uvw, uv_space_index), float2(0.f, 1.f), float2(0.f, 1.f), ::tex::wrap_repeat, ::tex::wrap_repeat, false).tint)[0]), ::base::color_layer_multiply, scratch_reflection_variation).tint, 5.f, color(1.f, 1.f, 1.f), ::df::weighted_layer(0.0900000036f, ::df::microfacet_ggx_smith_bsdf(0.399000019f, 0.399000019f, color(1.f, 1.f, 1.f), ::state::texture_tangent_u(0), ::df::scatter_reflect), ::df::microfacet_ggx_smith_bsdf(::math::lerp(histogram_range(float3(::base::file_texture(texture_2d("../textures/brushed_metal_linear_R_rough_G_scratchvar_B_impurities.jpg", ::tex::gamma_linear), color(0.f, 0.f, 0.f), color(1.f, 1.f, 1.f), ::base::mono_alpha, vmat_transform(texture_translate, texture_rotate, texture_scale * 0.25f, ::base::texture_coordinate_uvw, uv_space_index), float2(0.f, 1.f), float2(0.f, 1.f), ::tex::wrap_repeat, ::tex::wrap_repeat, false).tint)[0], 0.183000013f, ::math::lerp(0.100000001f, 0.400000006f, brush_width)), 0.376000017f, scratch_variation_amount * float3(::base::file_texture(texture_2d("../textures/brushed_metal_linear_R_rough_G_scratchvar_B_impurities.jpg", ::tex::gamma_linear), color(0.f, 0.f, 0.f), color(1.f, 1.f, 1.f), ::base::mono_alpha, vmat_transform(texture_translate, texture_rotate, texture_scale * 0.25f, ::base::texture_coordinate_uvw, uv_space_index), float2(0.f, 1.f), float2(0.f, 1.f), ::tex::wrap_repeat, ::tex::wrap_repeat, false).tint)[1]) * ::math::lerp(histogram_range(float3(::base::file_texture(texture_2d("../textures/brushed_metal_linear_R_rough_G_scratchvar_B_impurities.jpg", ::tex::gamma_linear), color(0.f, 0.f, 0.f), color(1.f, 1.f, 1.f), ::base::mono_alpha, vmat_transform(texture_translate, texture_rotate, texture_scale * 0.25f, ::base::texture_coordinate_uvw, uv_space_index), float2(0.f, 1.f), float2(0.f, 1.f), ::tex::wrap_repeat, ::tex::wrap_repeat, false).tint)[0], 0.183000013f, ::math::lerp(0.100000001f, 0.400000006f, brush_width)), 0.376000017f, scratch_variation_amount * float3(::base::file_texture(texture_2d("../textures/brushed_metal_linear_R_rough_G_scratchvar_B_impurities.jpg", ::tex::gamma_linear), color(0.f, 0.f, 0.f), color(1.f, 1.f, 1.f), ::base::mono_alpha, vmat_transform(texture_translate, texture_rotate, texture_scale * 0.25f, ::base::texture_coordinate_uvw, uv_space_index), float2(0.f, 1.f), float2(0.f, 1.f), ::tex::wrap_repeat, ::tex::wrap_repeat, false).tint)[1]), ::math::lerp(histogram_range(float3(::base::file_texture(texture_2d("../textures/brushed_metal_linear_R_rough_G_scratchvar_B_impurities.jpg", ::tex::gamma_linear), color(0.f, 0.f, 0.f), color(1.f, 1.f, 1.f), ::base::mono_alpha, vmat_transform(texture_translate, texture_rotate, texture_scale * 0.25f, ::base::texture_coordinate_uvw, uv_space_index), float2(0.f, 1.f), float2(0.f, 1.f), ::tex::wrap_repeat, ::tex::wrap_repeat, false).tint)[0], 0.100000001f, ::math::lerp(0.0500000007f, 0.25f, brush_height_blur)), 0.376000017f, scratch_variation_amount * float3(::base::file_texture(texture_2d("../textures/brushed_metal_linear_R_rough_G_scratchvar_B_impurities.jpg", ::tex::gamma_linear), color(0.f, 0.f, 0.f), color(1.f, 1.f, 1.f), ::base::mono_alpha, vmat_transform(texture_translate, texture_rotate, texture_scale * 0.25f, ::base::texture_coordinate_uvw, uv_space_index), float2(0.f, 1.f), float2(0.f, 1.f), ::tex::wrap_repeat, ::tex::wrap_repeat, false).tint)[1]) * ::math::lerp(histogram_range(float3(::base::file_texture(texture_2d("../textures/brushed_metal_linear_R_rough_G_scratchvar_B_impurities.jpg", ::tex::gamma_linear), color(0.f, 0.f, 0.f), color(1.f, 1.f, 1.f), ::base::mono_alpha, vmat_transform(texture_translate, texture_rotate, texture_scale * 0.25f, ::base::texture_coordinate_uvw, uv_space_index), float2(0.f, 1.f), float2(0.f, 1.f), ::tex::wrap_repeat, ::tex::wrap_repeat, false).tint)[0], 0.100000001f, ::math::lerp(0.0500000007f, 0.25f, brush_height_blur)), 0.376000017f, scratch_variation_amount * float3(::base::file_texture(texture_2d("../textures/brushed_metal_linear_R_rough_G_scratchvar_B_impurities.jpg", ::tex::gamma_linear), color(0.f, 0.f, 0.f), color(1.f, 1.f, 1.f), ::base::mono_alpha, vmat_transform(texture_translate, texture_rotate, texture_scale * 0.25f, ::base::texture_coordinate_uvw, uv_space_index), float2(0.f, 1.f), float2(0.f, 1.f), ::tex::wrap_repeat, ::tex::wrap_repeat, false).tint)[1]), color(1.f, 1.f, 1.f), ::state::texture_tangent_u(0), ::df::scatter_reflect), ::math::lerp(::state::normal(), ::base::tangent_space_normal_texture(texture_2d("../textures/brushed_metal_linear_norm.jpg", ::tex::gamma_linear), 1.f, false, false, vmat_transform(texture_translate, texture_rotate, texture_scale * 0.25f, ::base::texture_coordinate_uvw, uv_space_index), float2(0.f, 1.f), float2(0.f, 1.f), ::tex::wrap_repeat, ::tex::wrap_repeat, false, 1.f, 0.f), scratches_bump)), bsdf(), ::math::lerp(::state::normal(), ::base::tangent_space_normal_texture(texture_2d("../textures/brushed_metal_linear_norm.jpg", ::tex::gamma_linear), 1.f, false, false, vmat_transform(texture_translate, texture_rotate, texture_scale * 0.25f, ::base::texture_coordinate_uvw, uv_space_index), float2(0.f, 1.f), float2(0.f, 1.f), ::tex::wrap_repeat, ::tex::wrap_repeat, false, 1.f, 0.f), scratches_bump)),
+			material_emission(emission: edf(), intensity: color(0.f, 0.f, 0.f), mode: intensity_radiant_exitance));
+		material_surface tmp2 = material_surface(scattering: bsdf(), emission: material_emission(emission: edf(), intensity: color(0.f, 0.f, 0.f), mode: intensity_radiant_exitance));
+		color tmp3 = color(1.f, 1.f, 1.f);
+		material_volume tmp4 = material_volume(scattering: vdf(), absorption_coefficient: color(0.f, 0.f, 0.f), scattering_coefficient: color(0.f, 0.f, 0.f));
+		material_geometry tmp5 = enable_round_corners ? material_geometry(float3(0.f), 1.f, ::state::rounded_corner_normal(roundcorner_radius, across_materials, 1.f)) : material_geometry(float3(0.f), 1.f, ::state::normal());
+	} in
+		material(
+			thin_walled: tmp0,
+			surface: tmp1,
+			backface: tmp2,
+			ior: tmp3,
+			volume: tmp4,
+			geometry: tmp5);
+
+
+
+export material Aluminum_Brushed_Light_Brushing(*)
+[[
+	::anno::author("NVIDIA vMaterials"),
+	::anno::display_name("Brushed Aluminum - Light Brushing"),
+	::anno::description(DESCRIPTION),
+	::anno::copyright_notice(COPYRIGHT),
+	::anno::thumbnail("./.thumbs/Aluminum_Brushed.Aluminum_Brushed_Light_Brushing.png"),
+	::anno::key_words(string[]("aec", "metal", "aluminum", "brushed", "kitchen", "design", "modern", "reflective", "shiny", "architecture", "sanitary", "new", "gray", "neutral"))
+]]
+ = Aluminum_Brushed(
+	brush_width:				0.225f,
+	brush_height_blur:			0.035f,
+	scratch_variation_amount:	1.0f,
+	scratch_reflection_variation: 0.4f,
+	scratches_bump:				0.2f,
+	enable_round_corners:		false,
+	roundcorner_radius:			0.01f,
+	across_materials:			false,
+	texture_translate:			float2(0.0f),
+	texture_rotate:				0.0f,
+	texture_scale:				float2(1.0f),
+	uv_space_index:				0
+);
+
+
+
+export material Aluminum_Brushed_Medium_Light_Brushing(*)
+[[
+	::anno::author("NVIDIA vMaterials"),
+	::anno::display_name("Brushed Aluminum - Medium Light Brushing"),
+	::anno::description(DESCRIPTION),
+	::anno::copyright_notice(COPYRIGHT),
+	::anno::thumbnail("./.thumbs/Aluminum_Brushed.Aluminum_Brushed_Medium_Light_Brushing.png"),
+	::anno::key_words(string[]("aec", "metal", "aluminum", "brushed", "kitchen", "design", "modern", "reflective", "shiny", "architecture", "sanitary", "new", "gray", "neutral"))
+]]
+= Aluminum_Brushed(
+	brush_width:				0.361f,
+	brush_height_blur:			0.204f,
+	scratch_variation_amount:	1.0f,
+	scratch_reflection_variation: 0.559f,
+	scratches_bump:				0.35f,
+	enable_round_corners:		false,
+	roundcorner_radius:			0.01f,
+	across_materials:			false,
+	texture_translate:			float2(0.0f),
+	texture_rotate:				0.0f,
+	texture_scale:				float2(1.0f),
+	uv_space_index:				0
+);
+
+
+
+export material Aluminum_Brushed_Medium_Brushing(*)
+[[
+	::anno::author("NVIDIA vMaterials"),
+	::anno::display_name("Brushed Aluminum - Medium Brushing"),
+	::anno::description(DESCRIPTION),
+	::anno::copyright_notice(COPYRIGHT),
+	::anno::thumbnail("./.thumbs/Aluminum_Brushed.Aluminum_Brushed_Medium_Brushing.png"),
+	::anno::key_words(string[]("aec", "metal", "aluminum", "brushed", "kitchen", "design", "modern", "reflective", "shiny", "architecture", "sanitary", "new", "gray", "neutral"))
+]]
+= Aluminum_Brushed(
+	brush_width:				0.665f,
+	brush_height_blur:			0.471f,
+	scratch_variation_amount:	1.0f,
+	scratch_reflection_variation: 0.621f,
+	scratches_bump:				0.5f,
+	enable_round_corners:		false,
+	roundcorner_radius:			0.01f,
+	across_materials:			false,
+	texture_translate:			float2(0.0f),
+	texture_rotate:				0.0f,
+	texture_scale:				float2(1.0f),
+	uv_space_index:				0
+);
+
+
+export material Aluminum_Brushed_Very_Strong_Brushing(*)
+[[
+	::anno::author("NVIDIA vMaterials"),
+	::anno::display_name("Brushed Aluminum - Very Strong Brushing"),
+	::anno::description(DESCRIPTION),
+	::anno::copyright_notice(COPYRIGHT),
+	::anno::thumbnail("./.thumbs/Aluminum_Brushed.Aluminum_Brushed_Very_Strong_Brushing.png"),
+	::anno::key_words(string[]("aec", "metal", "aluminum", "brushed", "kitchen", "design", "modern", "reflective", "shiny", "architecture", "sanitary", "new", "gray", "neutral"))
+]] 
+= Aluminum_Brushed(
+	brush_width:				1.0f,
+	brush_height_blur:			1.0f,
+	scratch_variation_amount:	1.0f,
+	scratch_reflection_variation: 0.824f,
+	scratches_bump:				1.0f,
+	enable_round_corners:		false,
+	roundcorner_radius:			0.01f,
+	across_materials:			false,
+	texture_translate:			float2(0.0f),
+	texture_rotate:				0.0f,
+	texture_scale:				float2(1.0f),
+	uv_space_index:				0
+);
+
+
+
+

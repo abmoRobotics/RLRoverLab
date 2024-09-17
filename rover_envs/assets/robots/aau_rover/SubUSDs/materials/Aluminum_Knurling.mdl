@@ -1,0 +1,359 @@
+/******************************************************************************
+ *	 Copyright 2023 NVIDIA Corporation. All rights reserved.	 *
+ ******************************************************************************
+
+Permission is hereby granted by NVIDIA Corporation ("NVIDIA"), free of charge,
+to any person obtaining a copy of the sample definition code that uses our
+Material Definition Language (the "MDL Materials"), to reproduce and distribute
+the MDL Materials, including without limitation the rights to use, copy, merge,
+publish, distribute, and sell modified and unmodified copies of the MDL
+Materials, and to permit persons to whom the MDL Materials is furnished to do
+so, in all cases solely for use with NVIDIA's Material Definition Language,
+subject to the following further conditions:
+
+1. The above copyright notices, this list of conditions, and the disclaimer
+that follows shall be retained in all copies of one or more of the MDL
+Materials, including in any software with which the MDL Materials are bundled,
+redistributed, and/or sold, and included either as stand-alone text files,
+human-readable headers or in the appropriate machine-readable metadata fields
+within text or binary files as long as those fields can be easily viewed by the
+user, as applicable.
+2. The name of NVIDIA shall not be used to promote, endorse or advertise any
+Modified Version without specific prior written permission, except a) to comply
+ with the notice requirements otherwise contained herein; or b) to acknowledge
+the contribution(s) of NVIDIA.
+
+THE MDL MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF COPYRIGHT, PATENT,
+TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL NVIDIA CORPORATION BE LIABLE FOR
+ANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING ANY GENERAL, SPECIAL,
+INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, WHETHER IN AN ACTION OF
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF THE USE OR INABILITY TO USE
+THE MDL MATERIALS OR FROM OTHER DEALINGS IN THE MDL MATERIALS.
+*/
+
+
+mdl 1.5;
+
+import ::df::*;
+import ::tex::*;
+import ::math::*;
+import ::base::*;
+import ::state::*;
+import ::anno::*;
+import ::nvidia::core_definitions::*;
+
+const string COPYRIGHT =
+" Copyright 2023 NVIDIA Corporation. All rights reserved.\n"
+" MDL MATERIALS ARE PROVIDED PURSUANT TO AN END USER LICENSE  AGREEMENT,\n"
+" WHICH WAS ACCEPTED IN ORDER TO GAIN ACCESS TO THIS FILE.  IN PARTICULAR,\n"
+" THE MDL MATERIALS ARE PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n"
+" EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF\n"
+" MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF\n"
+" COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL NVIDIA\n"
+" CORPORATION BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING ANY\n"
+" GENERAL, SPECIAL,  INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, WHETHER IN\n"
+" AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF THE USE OR\n"
+" INABILITY TO USE THE MDL MATERIALS OR FROM OTHER DEALINGS IN THE MDL MATERIALS.\n";
+
+const string DESCRIPTION = "Metal with a diamond knurling finish";
+
+float histogram_range(float input, float range = 1.0f, float position = 0.5f)
+{	
+	float low = ::math::clamp(1.0 - ::math::min(((1.0 - position) + range * 0.5), (1.0 - position) * 2), 0.0, 1.0);
+	float high = ::math::clamp(::math::min((position + range * 0.5 ), position * 2.0), 0.0, 1.0);
+	return ::math::lerp(low, high, input);
+}
+
+::base::texture_coordinate_info transform_coordinate_2(
+	float4x4 transform										 
+		[[ ::anno::description("A transformation to be applied to the source coordinates. rotation_translation_scale() is a suggested means to compute the transformation matrix") ]],
+	::base::texture_coordinate_info coordinate = ::base::texture_coordinate_info()
+		[[ ::anno::description("Coordinate, typically sourced from coordinate_source or coordinate_projection") ]]
+) [[ 
+	::anno::description("Transform a texture coordinate by a matrix") ,
+	::anno::noinline()
+  ]]
+{
+	// Version 2
+	float4 r_position = transform * float4(coordinate.position.x,coordinate.position.y,coordinate.position.z,1);
+	//Try aproximating it for the case that the rotation is only aroud z and assuming the texture layout is nice and z is ~constant.
+	//just pretend there is no other rotation happening
+	//get rid of scaling and translation. Then extract fields where sin and cos would be in a simple 2d transform around z.
+	float4 u = transform[0];
+	float3 ru = ::math::normalize(float3(u.x,u.y,u.z));
+	float cos =  ru.x; 
+	float sin =  -ru.y;
+	//TODO: at least also handle sign of z?
+	//TODO: handle tangent becoming 0 
+	
+	
+	return ::base::texture_coordinate_info(
+		float3(r_position.x,r_position.y,r_position.z),
+		::math::normalize(cos * coordinate.tangent_u - sin * coordinate.tangent_v),
+		::math::normalize(cos * coordinate.tangent_v + sin * coordinate.tangent_u));
+}
+
+::base::texture_coordinate_info vmat_transform(
+								float2 translation = float2(0.0, 0.0),
+								float rotation	 = 0.0,				// rotation in degrees
+								float2 scaling	 = float2(1.0, 1.0),
+								uniform ::base::texture_coordinate_system system = ::base::texture_coordinate_uvw,
+								uniform int uv_space	   = 0
+)
+{
+	float rotation_rad = (rotation * 3.1415926535897932384626433832f) / 180.f;
+	float4x4 scale =
+	float4x4(1.0 /scaling.x, 0.			 ,  0. ,	 0.,
+			 0.			, 1.0 /scaling.y ,  0. ,	 0.,
+			 0.			, 0.			 ,  1.0,	 0.,
+			 translation.x , translation.y  ,  0.0,	 1.);
+
+	float s = ::math::sin(rotation_rad);
+	float c = ::math::cos(rotation_rad);
+	float4x4 rotate =
+	float4x4(  c  ,  -s   , 0.0 , 0.0,
+			   s  ,   c   , 0.0 , 0.0,
+			   0.0,   0.0 , 1.0 , 0.0,
+			   0. ,   0.0 , 0.0 , 1.);
+	
+	return transform_coordinate_2(scale*rotate, ::base::coordinate_source(system, uv_space));
+}
+
+export material Aluminum_Knurling(
+	//Appearance
+	float brightness = float(0.7f) [[
+		::anno::description("Adjusts the brightness of the material"),
+		::anno::display_name("Brightness"),
+		::anno::in_group("Appearance"),
+		::anno::hard_range(0.0f, 1.0f)
+	]],
+	float roughness = float(0.5f) [[
+		::anno::description("Higher values lead to a rougher appearance of the material"),
+		::anno::display_name("Roughness"),
+		::anno::in_group("Appearance"),
+		::anno::hard_range(0.0f, 1.0f)
+	]],
+	float grooves_dirt = float(0.4f) [[
+		::anno::description("Adds dirt in the grooves of the knurling pattern"),
+		::anno::display_name("Grooves Dirt"),
+		::anno::in_group("Appearance"),
+		::anno::hard_range(0.0f, 1.0f)
+	]],
+	uniform float bump_strength = float(0.8f) [[
+		::anno::description("Adds dirt in the grooves of the knurling pattern"),
+		::anno::display_name("Bump Strength"),
+		::anno::in_group("Appearance"),
+		::anno::soft_range(0.0f, 1.0f)
+	]],
+	
+	// Round Corners
+	uniform bool enable_round_corners = false [[
+		::anno::display_name("Enable Round Corners"),
+		::anno::in_group("Round Corners")
+	]],
+	uniform float roundcorner_radius = 0.01f [[
+		::anno::display_name("Round Corner Radius"),
+		::anno::description("Sets the radius of the round corners in millimeters"),
+		::anno::soft_range(0.0f, 0.1f),
+		::anno::in_group("Round Corners")
+	]],
+	uniform bool across_materials = false [[
+		::anno::display_name("Across Materials"),
+		::anno::description("Applies the rounded corner effect also between other materials"),
+		::anno::in_group("Round Corners")
+	]],
+	//Transform
+	float2 texture_translate = float2(0.f) [[
+		::anno::description("Controls the position of the texture."),
+		::anno::display_name("Texture Translate"),
+		::anno::in_group("Transform")
+	]],
+	float texture_rotate = 0.f [[
+		::anno::description("Rotates angle of the texture in degrees."),
+		::anno::display_name("Texture Rotate"),
+		::anno::in_group("Transform"),
+		::anno::soft_range(0.f, 360.f)
+	]],
+	float2 texture_scale = float2(1.f) [[
+		::anno::description("Larger numbers increase the size."),
+		::anno::display_name("Texture Scale"),
+		::anno::soft_range(float2(0.f), float2(2.f)),
+		::nvidia::core_definitions::dimension(float2(1.0f, 1.0f)),
+		::anno::in_group("Transform")
+	]],
+	
+	// Advanced
+	uniform int uv_space_index = 0 [[
+		::anno::description("uses the selected UV space index."),
+		::anno::display_name("UV Space Index"),
+		::anno::in_group("Advanced"),
+		::anno::soft_range(0, 4)
+	]]
+)
+[[
+	::anno::display_name("Aluminum Knurling"),
+	::anno::description(DESCRIPTION),
+	::anno::copyright_notice(COPYRIGHT),
+	::anno::thumbnail("./.thumbs/Aluminum_Knurling.Aluminum_Knurling.png"),
+	::anno::key_words(string[]("metal", "aluminum", "aluminium", "knurled", "knurling", "pattern", "design", "bumped")),
+	::anno::contributor("Ruediger Raab"),
+	::anno::author("NVIDIA vMaterials")
+]]
+= let
+{
+	color metal_tint = color(0.911810895428,0.914089043421,0.920152876196); // Aluminum
+	
+	// Texture setup
+	texture_2d normal_tex = texture_2d("../textures/metal_knurling_norm.jpg", ::tex::gamma_linear);
+	texture_2d multi_heights_tex = texture_2d("../textures/metal_knurling_multi_heights.jpg", ::tex::gamma_linear);
+	texture_2d diff_rough_grunge_tex = texture_2d("../textures/metal_knurling_multi_R_diff_G_rough_B_grunge.jpg", ::tex::gamma_linear);
+	
+	// Coordinate setup 
+	::base::texture_coordinate_info uvw = vmat_transform(
+		translation: texture_translate,
+		rotation:	texture_rotate,
+		scaling:	texture_scale,
+		system: 	::base::texture_coordinate_uvw,
+		uv_space: 	uv_space_index
+	);
+	
+	// ---------- Diff Rough Grunge Lookup ----------
+	
+	float3 diff_rough_grunge_lookup = float3(
+		::base::file_texture(
+			texture: 	diff_rough_grunge_tex,
+			uvw: 		uvw,
+			mono_source: ::base::mono_average
+	).tint );
+	
+	float3 multi_height_lookup = float3(
+		::base::file_texture(
+			texture: 	multi_heights_tex,
+			uvw: 		uvw,
+			mono_source: ::base::mono_average
+	).tint );
+	
+	float3 norm = ::base::tangent_space_normal_texture(
+		texture:	normal_tex,
+		factor:		bump_strength,
+		uvw:		uvw
+	);
+	
+	
+	float remap_rough = histogram_range(
+		input:	diff_rough_grunge_lookup.y,
+		range:	1.0f,
+		position:	0.234f
+	);
+	
+	
+	float roughness_mapped = remap_rough + (roughness * multi_height_lookup.y);
+	
+	float remapped_diff = histogram_range(
+		input:		diff_rough_grunge_lookup.x,
+		range:		1.0f,
+		position:	(brightness * 0.4f) + 0.4f
+	);
+	
+	float diff_contribution = ::math::pow(remapped_diff - ((grooves_dirt * 0.5) * multi_height_lookup.x * diff_rough_grunge_lookup.z), 2.67f);
+	
+	bsdf ggx_smith_bumped = ::df::weighted_layer(
+		layer: ::df::microfacet_ggx_smith_bsdf(
+				roughness_u:	roughness_mapped * roughness_mapped,
+				roughness_v:	roughness_mapped * roughness_mapped,
+				tint: 			color(diff_contribution),
+				mode:			::df::scatter_reflect
+			),
+		base: bsdf(),
+		weight: 1.0f,
+		normal: norm
+	);
+	
+	bsdf diff_bsdf = ::df::diffuse_reflection_bsdf(
+		tint: color(diff_contribution)
+	);
+
+	
+	bsdf final_bsdf = ::df::weighted_layer(
+		weight: 1.0f - (diff_rough_grunge_lookup.z * multi_height_lookup.x * grooves_dirt),
+		layer:	::df::directional_factor(
+			normal_tint:	metal_tint,
+			grazing_tint:	color(1.0f),
+			base:	ggx_smith_bumped
+			),
+		base: diff_bsdf
+	);
+	
+	
+	// Round Corners
+	float3 round_normal = enable_round_corners ? 
+		::state::rounded_corner_normal(
+			radius:	roundcorner_radius * 0.001,
+			across_materials: across_materials
+		) : ::state::normal();
+}
+in material (
+	
+	surface: material_surface(
+	scattering: final_bsdf
+	),
+	geometry: material_geometry(
+		normal: round_normal
+	)
+);
+
+
+export material Aluminum_Knurling_Worn(*)
+[[
+	::anno::display_name("Aluminum Knurling - Worn"),
+	::anno::description(DESCRIPTION),
+	::anno::copyright_notice(COPYRIGHT),
+	::anno::thumbnail("./.thumbs/Aluminum_Knurling.Aluminum_Knurling_Worn.png"),
+	::anno::key_words(string[]("metal", "aluminum", "aluminium", "knurled", "pattern", "knurling", "design", "bumped", "worn")),
+	::anno::contributor("Ruediger Raab"),
+	::anno::author("NVIDIA vMaterials")
+]] = Aluminum_Knurling(
+	brightness:				0.4f,
+	roughness:				1.0f,
+	grooves_dirt:			1.0f,
+	bump_strength:			0.8f,
+	
+	enable_round_corners:	false,
+	roundcorner_radius:		1.2f,
+	across_materials:		false,
+	
+	texture_translate:		float2(0.0f),
+	texture_rotate:			0.f,
+	texture_scale:			float2(1.0f),
+	
+	uv_space_index:			0
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
