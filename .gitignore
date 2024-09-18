@@ -3,7 +3,6 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,c,c++,visualstudiocode,cmake
 
 ### Other files ###
-*.xml
 *.mp4
 *.zip
 *_old.*
