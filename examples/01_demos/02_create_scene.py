@@ -53,7 +53,6 @@ def setup_scene():
     """ Setup the scene """
     sim_cfg = sim_utils.SimulationCfg(
         device="cpu",
-        use_gpu_pipeline=False,
         dt=1.0 / 60.0,
         gravity=(0.0, 0.0, -9.81),
     )
