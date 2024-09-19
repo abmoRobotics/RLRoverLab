@@ -1,1 +1,1 @@
-docker compose --file docker-compose.yaml up orbit-ros2 --detach --build --remove-orphans
+docker compose --file docker-compose.yaml up rover-lab-ros2 --detach --build --remove-orphans

@@ -1,5 +1,5 @@
 # from omni.isaac.lab.markers.visualization_markers import VisualizationMarkersCfg, VisualizationMarkers
-# import omni.isaac.orbit.sim as sim_utils
+# import omni.isaac.lab.sim as sim_utils
 import os
 from typing import Tuple
 

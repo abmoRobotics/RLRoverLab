@@ -1,6 +1,6 @@
 from typing import Sequence
 
-import omni.isaac.orbit.sim as sim_utils
+import omni.isaac.lab.sim as sim_utils
 import torch
 from omni.isaac.lab.assets import Articulation
 from omni.isaac.lab.envs import ManagerBasedEnv

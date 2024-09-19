@@ -119,7 +119,7 @@ from rover_envs.utils.skrl_utils import SkrlSequentialLogTrainer  # noqa: E402
 
 def main():
     args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
-    env_cfg = parse_env_cfg(args_cli.task, use_gpu=not args_cli.cpu, num_envs=args_cli.num_envs)
+    env_cfg = parse_env_cfg(args_cli.task, device="cuda:0" if not args_cli.cpu else "cpu", num_envs=args_cli.num_envs)
     experiment_cfg = parse_skrl_cfg(args_cli.task + f"_{args_cli.agent}")
 
     log_dir = log_setup(experiment_cfg, env_cfg, args_cli.agent)

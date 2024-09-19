@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import MISSING
 
-import omni.isaac.orbit.sim as sim_utils
+import omni.isaac.lab.sim as sim_utils
 from omni.isaac.lab.assets import ArticulationCfg, AssetBaseCfg, RigidObjectCfg
 from omni.isaac.lab.envs import ManagerBasedRLEnvCfg
 from omni.isaac.lab.managers import ActionTermCfg as ActionTerm  # noqa: F401

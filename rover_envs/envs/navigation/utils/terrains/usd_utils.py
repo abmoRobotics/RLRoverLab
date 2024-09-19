@@ -1,6 +1,6 @@
 import numpy as np
 import omni.isaac.core.utils.prims as prim_utils
-# import omni.isaac.orbit.utils.kit as kit_utils
+# import omni.isaac.lab.utils.kit as kit_utils
 from omni.isaac.core.materials import PhysicsMaterial
 from omni.isaac.core.prims import XFormPrim
 from omni.isaac.core.utils.stage import get_current_stage

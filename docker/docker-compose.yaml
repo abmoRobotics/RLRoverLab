@@ -43,7 +43,7 @@ x-default-isaac-lab-volumes:
       # be reflected within the container immediately
     - type: bind
       source: ../
-      target: /workspace/isaac_rover
+      target: ${RLROVERLAB_PATH}
       # The effect of these volumes is twofold:
       # 1. Prevent root-owned files from flooding the _build and logs dir
       #    on the host machine
@@ -88,20 +88,21 @@ services:
         - ISAAC_SIM_VERSION=${ISAAC_SIM_VERSION}
         - ISAAC_SIM_PATH=${ISAAC_SIM_PATH}
         - USER_HOME=${USER_HOME}
-    image: isaac-lab-base
-    container_name: isaac-lab-base
+    image: rover-lab-base
+    container_name: rover-lab-base
     env_file:
       - .env
     environment: *default-isaac-lab-environment
     volumes: *default-isaac-lab-volumes
+    # command: bash -c "${ISAAC_SIM_PATH}/python.sh -m pip install -e ${RLROVERLAB_PATH} && bash"
     network_mode: host
     deploy: *default-isaac-lab-deploy
     # This is the entrypoint for the container
-    entrypoint: bash
+    entrypoint: bash -c "${ISAAC_SIM_PATH}/python.sh -m pip install -e ${RLROVERLAB_PATH} && bash"
     stdin_open: true
     tty: true
 
-  isaac-lab-ros2:
+  rover-lab-ros2:
     #profiles: ["ros2"]
     env_file:
       - .env
@@ -114,8 +115,8 @@ services:
           # with the .env.base file
         - ROS2_APT_PACKAGE=${ROS2_APT_PACKAGE:-NONE}
         - USER_HOME=${USER_HOME}
-    image: isaac-lab-ros2
-    container_name: isaac-lab-ros2
+    image: rover-lab-ros2
+    container_name: rover-lab-ros2
     environment: *default-isaac-lab-environment
     volumes: *default-isaac-lab-volumes
     network_mode: host

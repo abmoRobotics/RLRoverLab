@@ -1,6 +1,6 @@
 import os
 
-from omni.isaac.orbit import sim as sim_utils
+from omni.isaac.lab import sim as sim_utils
 from omni.isaac.lab.assets import AssetBaseCfg
 from omni.isaac.lab.scene import InteractiveSceneCfg
 from omni.isaac.lab.terrains import TerrainImporterCfg
