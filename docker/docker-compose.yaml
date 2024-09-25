@@ -122,7 +122,7 @@ services:
     network_mode: host
     deploy: *default-isaac-lab-deploy
     # This is the entrypoint for the container
-    entrypoint: bash
+    entrypoint: bash -c "${ISAAC_SIM_PATH}/python.sh -m pip install -e ${RLROVERLAB_PATH} && bash"
     stdin_open: true
     tty: true
 
