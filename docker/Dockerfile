@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Clone Isaac Lab
 RUN git clone https://github.com/isaac-sim/IsaacLab ${ISAAC_LAB_PATH}
-RUN /bin/bash -c "cd ${ISAAC_LAB_PATH} && git checkout b4c9050"
+RUN /bin/bash -c "cd ${ISAAC_LAB_PATH} && git checkout d282255" 
 # Create symlink to Isaac Sim
 RUN ln -sf ${ISAAC_SIM_PATH} ${ISAAC_LAB_PATH}/_isaac_sim
 
