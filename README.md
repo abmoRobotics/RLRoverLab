@@ -30,11 +30,10 @@ To get started with RLRoverLab, please refer to our [Installation Guide](https:/
 We welcome contributions to RLRoverLab! Whether it's adding new tasks, or fixing bugs. Check out our [Contribution Guidelines](https://github.com/abmoRobotics/isaac_rover_orbit/CONTRIBUTING.md) for more information on how to get involved. -->
 ## Train agents in parralel
 
-https://github.com/abmoRobotics/isaac_rover_orbit/assets/56405924/71b69616-0a69-46c6-b3ce-009554bfa3c4
 
+https://github.com/user-attachments/assets/aa8e9215-1483-486b-854b-9e6c3af9e4f2
 
-https://github.com/abmoRobotics/isaac_rover_orbit/assets/56405924/c9daf864-bf26-410b-a515-86b122d7a01d
-
+https://github.com/user-attachments/assets/98032f5c-1cdc-42c2-8a94-57d52740d026
 
 
 
