@@ -30,7 +30,7 @@ else:
     app_experience = f"{os.environ['EXP_PATH']}/omni.isaac.sim.python.kit"
 
 app_launcher = AppLauncher(launcher_args=args_cli, experience=app_experience)
-from omni.isaac.lab_tasks.utils.wrappers.skrl import SkrlVecEnvWrapper, process_skrl_cfg
+from omni.isaac.lab_tasks.utils.wrappers.skrl import SkrlVecEnvWrapper
 simulation_app = app_launcher.app
 
 carb_settings = carb.settings.get_settings()
