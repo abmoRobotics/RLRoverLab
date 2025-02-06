@@ -7,7 +7,7 @@ from datetime import datetime
 
 import carb
 import gymnasium as gym
-from omni.isaac.lab.app import AppLauncher
+from isaaclab.app import AppLauncher
 
 # add argparse arguments
 parser = argparse.ArgumentParser("Welcome to Orbit: Omniverse Robotics Environments!")
@@ -42,7 +42,7 @@ sys.argv = [sys.argv[0]] + hydra_args
 
 app_launcher = AppLauncher(args_cli)
 
-from omni.isaac.lab_tasks.utils.wrappers.skrl import SkrlVecEnvWrapper  # noqa: E402
+from isaaclab_rl.skrl import SkrlVecEnvWrapper  # noqa: E402
 
 simulation_app = app_launcher.app
 
@@ -55,9 +55,9 @@ carb_settings.set_int(
     "rtx/descriptorSets",
     8192,
 )
-from omni.isaac.lab.envs import ManagerBasedRLEnv  # noqa: E402
-from omni.isaac.lab.utils.dict import print_dict  # noqa: E402
-from omni.isaac.lab.utils.io import dump_pickle, dump_yaml  # noqa: E402
+from isaaclab.envs import ManagerBasedRLEnv  # noqa: E402
+from isaaclab.utils.dict import print_dict  # noqa: E402
+from isaaclab.utils.io import dump_pickle, dump_yaml  # noqa: E402
 
 
 def log_setup(experiment_cfg, env_cfg, agent):
@@ -127,7 +127,7 @@ def video_record(
     return env
 
 
-from omni.isaac.lab_tasks.utils import parse_env_cfg  # noqa: E402
+from isaaclab_tasks.utils import parse_env_cfg  # noqa: E402
 #     env.close()
 #     simulation_app.close()
 from skrl.trainers.torch import SequentialTrainer  # noqa: E402

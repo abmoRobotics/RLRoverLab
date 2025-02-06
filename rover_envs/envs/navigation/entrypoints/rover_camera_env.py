@@ -5,7 +5,7 @@ import carb
 import numpy as np
 import torch
 import warp as wp
-from omni.isaac.core.utils import prims
+from isaacsim.core.utils import prims
 
 # ENV
 from ..rover_env_cfg import RoverEnvCfg

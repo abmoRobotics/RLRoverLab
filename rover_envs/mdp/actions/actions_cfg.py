@@ -1,7 +1,7 @@
 from dataclasses import MISSING
 
-from omni.isaac.lab.managers.action_manager import ActionTerm, ActionTermCfg
-from omni.isaac.lab.utils import configclass
+from isaaclab.managers.action_manager import ActionTerm, ActionTermCfg
+from isaaclab.utils import configclass
 
 from . import ackermann_actions
 

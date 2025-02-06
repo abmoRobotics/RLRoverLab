@@ -1,18 +1,18 @@
 from typing import Sequence
 
-import omni.isaac.lab.sim as sim_utils
+import isaaclab.sim as sim_utils
 import torch
-from omni.isaac.lab.assets import Articulation
-from omni.isaac.lab.envs import ManagerBasedEnv
-from omni.isaac.lab.managers import CommandTerm
-from omni.isaac.lab.markers import VisualizationMarkers
+from isaaclab.assets import Articulation
+from isaaclab.envs import ManagerBasedEnv
+from isaaclab.managers import CommandTerm
+from isaaclab.markers import VisualizationMarkers
 # TODO (anton): Remove the following import since they were changed in the Orbit API
-# from omni.isaac.lab.envs.mdp.commands.commands_cfg import TerrainBasedPositionCommandCfg
-# from omni.isaac.lab.envs.mdp.commands.position_command import TerrainBasedPositionCommand
-from omni.isaac.lab.markers.config import GREEN_ARROW_X_MARKER_CFG
-from omni.isaac.lab.markers.visualization_markers import VisualizationMarkersCfg
-from omni.isaac.lab.terrains import TerrainImporter, TerrainImporterCfg
-from omni.isaac.lab.utils.math import quat_from_euler_xyz, quat_rotate_inverse, wrap_to_pi, yaw_quat
+# from isaaclab.envs.mdp.commands.commands_cfg import TerrainBasedPositionCommandCfg
+# from isaaclab.envs.mdp.commands.position_command import TerrainBasedPositionCommand
+from isaaclab.markers.config import GREEN_ARROW_X_MARKER_CFG
+from isaaclab.markers.visualization_markers import VisualizationMarkersCfg
+from isaaclab.terrains import TerrainImporter, TerrainImporterCfg
+from isaaclab.utils.math import quat_from_euler_xyz, quat_rotate_inverse, wrap_to_pi, yaw_quat
 
 from .terrain_utils import TerrainManager
 

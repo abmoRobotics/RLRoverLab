@@ -10,7 +10,7 @@ import carb
 import numpy as np
 import rclpy
 import torch
-from omni.isaac.lab.app import AppLauncher
+from isaaclab.app import AppLauncher
 from rclpy.executors import MultiThreadedExecutor
 
 parser = argparse.ArgumentParser(description="Empty Scene")
@@ -28,14 +28,13 @@ from omni.isaac.core.utils.extensions import enable_extension  # noqa: F401, E40
 
 enable_extension("omni.isaac.ros2_bridge")
 
-import omni.isaac.core.utils.numpy.rotations as rot_utils  # noqa: F401, E402
-import omni.isaac.lab.sim as sim_utils  # noqa: F401, E402
-from omni.isaac.core.utils import prims  # noqa: F401, E402
-from omni.isaac.lab.assets import Articulation, ArticulationCfg, AssetBaseCfg  # noqa: F401, E402
-from omni.isaac.lab.scene import InteractiveScene, InteractiveSceneCfg  # noqa: F401, E402
-from omni.isaac.lab.sim import SimulationContext  # noqa: F401, E402
-from omni.isaac.lab.utils import configclass  # noqa: F401, E402
-from omni.isaac.sensor import Camera  # noqa: F401, E402
+import isaaclab.sim as sim_utils  # noqa: F401, E402
+import isaacsim.core.utils.numpy.rotations as rot_utils  # noqa: F401, E402
+from isaaclab.assets import Articulation, ArticulationCfg, AssetBaseCfg  # noqa: F401, E402
+from isaaclab.scene import InteractiveScene, InteractiveSceneCfg  # noqa: F401, E402
+from isaaclab.sim import SimulationContext  # noqa: F401, E402
+from isaaclab.utils import configclass  # noqa: F401, E402# noqa: F401, E402
+from isaacsim.sensors.camera import Camera  # noqa: F401, E402
 from pxr import Gf, UsdGeom  # noqa: F401, E402
 
 import rover_envs.mdp as mdp  # noqa: F401, E402
@@ -54,7 +53,7 @@ if TYPE_CHECKING:
 DEVICE = "cpu"
 
 # from rover_envs.envs.navigation.utils.terrains.terrain_importer import RoverTerrainImporter  # noqa: F401
-from omni.isaac.lab.terrains import TerrainImporter, TerrainImporterCfg  # noqa: F401, E402
+from isaaclab.terrains import TerrainImporter, TerrainImporterCfg  # noqa: F401, E402
 
 from rover_envs.assets.terrains.mars import MarsTerrainSceneCfg  # noqa: F401, E402
 

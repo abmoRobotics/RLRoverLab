@@ -3,7 +3,7 @@ from typing import Any, Tuple
 
 import torch
 import tqdm
-from omni.isaac.lab.envs import ManagerBasedRLEnv
+from isaaclab.envs import ManagerBasedRLEnv
 from skrl.agents.torch import Agent
 from skrl.envs.wrappers.torch import IsaacLabWrapper, Wrapper, wrap_env
 from skrl.trainers.torch import Trainer

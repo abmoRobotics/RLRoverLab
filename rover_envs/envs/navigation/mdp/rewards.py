@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import torch
-# Importing necessary modules from the omni.isaac.lab package
-from omni.isaac.lab.managers import SceneEntityCfg
-from omni.isaac.lab.sensors import ContactSensor
+# Importing necessary modules from the isaaclab package
+from isaaclab.managers import SceneEntityCfg
+from isaaclab.sensors import ContactSensor
 
 if TYPE_CHECKING:
-    from omni.isaac.lab.envs import ManagerBasedRLEnv
+    from isaaclab.envs import ManagerBasedRLEnv
 
 
 def distance_to_target_reward(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
@@ -72,8 +72,10 @@ def oscillation_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
     angular_diff = action[:, 0] - prev_action[:, 0]
 
     # TODO combine these 5 lines into two lines
-    angular_penalty = torch.where(angular_diff*3 > 0.05, torch.square(angular_diff*3), 0.0)
-    linear_penalty = torch.where(linear_diff*3 > 0.05, torch.square(linear_diff*3), 0.0)
+    angular_penalty = torch.where(
+        angular_diff*3 > 0.05, torch.square(angular_diff*3), 0.0)
+    linear_penalty = torch.where(
+        linear_diff*3 > 0.05, torch.square(linear_diff*3), 0.0)
 
     angular_penalty = torch.pow(angular_penalty, 2)
     linear_penalty = torch.pow(linear_penalty, 2)

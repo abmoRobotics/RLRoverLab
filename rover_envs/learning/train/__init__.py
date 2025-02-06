@@ -1,5 +1,5 @@
 from gym.spaces import Box
-from omni.isaac.lab.envs import ManagerBasedRLEnv
+from isaaclab.envs import ManagerBasedRLEnv
 
 from rover_envs.learning.train.ppo import PPO_agent
 from rover_envs.learning.train.rpo import RPO_agent

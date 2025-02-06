@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from omni.isaac.lab.utils import configclass
+from isaaclab.utils import configclass
 
 import rover_envs.mdp as mdp
 from rover_envs.assets.robots.aau_rover_simple import AAU_ROVER_SIMPLE_CFG

@@ -1,9 +1,9 @@
+import isaacsim.core.utils.prims as prim_utils
 import numpy as np
-import omni.isaac.core.utils.prims as prim_utils
-# import omni.isaac.lab.utils.kit as kit_utils
-from omni.isaac.core.materials import PhysicsMaterial
-from omni.isaac.core.prims import XFormPrim
-from omni.isaac.core.utils.stage import get_current_stage
+# import isaaclab.utils.kit as kit_utils
+from isaacsim.core.api.materials import PhysicsMaterial
+from isaacsim.core.prims import XFormPrim
+from isaacsim.core.utils.stage import get_current_stage
 from pxr import PhysxSchema, Usd, UsdPhysics
 
 

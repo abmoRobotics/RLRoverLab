@@ -3,24 +3,24 @@ from __future__ import annotations
 import math
 from dataclasses import MISSING
 
-import omni.isaac.lab.sim as sim_utils
-from omni.isaac.lab.assets import ArticulationCfg, AssetBaseCfg
-from omni.isaac.lab.envs import ManagerBasedRLEnvCfg
-from omni.isaac.lab.managers import ActionTermCfg as ActionTerm
-from omni.isaac.lab.managers import CurriculumTermCfg as CurrTerm  # noqa: F401
-from omni.isaac.lab.managers import ObservationGroupCfg as ObsGroup
-from omni.isaac.lab.managers import ObservationTermCfg as ObsTerm
-from omni.isaac.lab.managers import RandomizationTermCfg as RandTerm
-from omni.isaac.lab.managers import RewardTermCfg as RewTerm
-from omni.isaac.lab.managers import SceneEntityCfg
-from omni.isaac.lab.managers import TerminationTermCfg as DoneTerm
-from omni.isaac.lab.scene import InteractiveSceneCfg
-from omni.isaac.lab.sensors import RayCasterCfg, patterns
-from omni.isaac.lab.sim import PhysxCfg
-from omni.isaac.lab.sim import SimulationCfg as SimCfg
-from omni.isaac.lab.terrains import TerrainImporter, TerrainImporterCfg  # noqa: F401
-from omni.isaac.lab.utils import configclass
-from omni.isaac.lab.utils.noise import AdditiveUniformNoiseCfg as Unoise  # noqa: F401
+import isaaclab.sim as sim_utils
+from isaaclab.assets import ArticulationCfg, AssetBaseCfg
+from isaaclab.envs import ManagerBasedRLEnvCfg
+from isaaclab.managers import ActionTermCfg as ActionTerm
+from isaaclab.managers import CurriculumTermCfg as CurrTerm  # noqa: F401
+from isaaclab.managers import ObservationGroupCfg as ObsGroup
+from isaaclab.managers import ObservationTermCfg as ObsTerm
+from isaaclab.managers import RandomizationTermCfg as RandTerm
+from isaaclab.managers import RewardTermCfg as RewTerm
+from isaaclab.managers import SceneEntityCfg
+from isaaclab.managers import TerminationTermCfg as DoneTerm
+from isaaclab.scene import InteractiveSceneCfg
+from isaaclab.sensors import RayCasterCfg, patterns
+from isaaclab.sim import PhysxCfg
+from isaaclab.sim import SimulationCfg as SimCfg
+from isaaclab.terrains import TerrainImporter, TerrainImporterCfg  # noqa: F401
+from isaaclab.utils import configclass
+from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise  # noqa: F401
 
 import rover_envs.envs.navigation.mdp as mdp
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import RoverTerrainImporter

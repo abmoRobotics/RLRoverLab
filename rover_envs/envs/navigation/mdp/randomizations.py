@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING  # noqa: F401
 
 import torch
-from omni.isaac.lab.assets import RigidObject
-from omni.isaac.lab.envs import ManagerBasedEnv
-from omni.isaac.lab.managers import SceneEntityCfg
+from isaaclab.assets import RigidObject
+from isaaclab.envs import ManagerBasedEnv
+from isaaclab.managers import SceneEntityCfg
 
 from ..utils.terrains.terrain_importer import RoverTerrainImporter
 

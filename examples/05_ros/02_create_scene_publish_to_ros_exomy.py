@@ -9,7 +9,7 @@ import carb
 import numpy as np
 import rclpy
 import torch
-from omni.isaac.lab.app import AppLauncher
+from isaaclab.app import AppLauncher
 
 parser = argparse.ArgumentParser(description="Empty Scene")
 
@@ -20,17 +20,16 @@ args_cli = parser.parse_args()
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 carb.settings.get_settings().set("persistent/app/omniverse/gamepadCameraControl", False)
-from omni.isaac.core.utils.extensions import enable_extension  # noqa: F401, E402
+from isaacsim.core.utils.extensions import enable_extension  # noqa: F401, E402
 
 enable_extension("omni.isaac.ros2_bridge")
 
-import omni.isaac.lab.sim as sim_utils  # noqa: F401, E402
-from omni.isaac.core.utils import prims  # noqa: F401, E402
-from omni.isaac.lab.assets import Articulation, ArticulationCfg, AssetBaseCfg  # noqa: F401, E402
-from omni.isaac.lab.scene import InteractiveScene, InteractiveSceneCfg  # noqa: F401, E402
-from omni.isaac.lab.sim import SimulationContext  # noqa: F401, E402
-from omni.isaac.lab.utils import configclass  # noqa: F401, E402
-from omni.isaac.sensor import Camera  # noqa: F401, E402
+import isaaclab.sim as sim_utils  # noqa: F401, E402
+from isaaclab.assets import Articulation, ArticulationCfg, AssetBaseCfg  # noqa: F401, E402
+from isaaclab.scene import InteractiveScene, InteractiveSceneCfg  # noqa: F401, E402
+from isaaclab.sim import SimulationContext  # noqa: F401, E402
+from isaaclab.utils import configclass  # noqa: F401, E402# noqa: F401, E402
+from isaacsim.sensors.camera import Camera  # noqa: F401, E402
 
 import rover_envs.mdp as mdp  # noqa: F401, E402
 # Avoid Circular Import

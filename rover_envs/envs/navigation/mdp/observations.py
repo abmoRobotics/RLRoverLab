@@ -3,13 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import torch
-from omni.isaac.lab.managers import SceneEntityCfg
-from omni.isaac.lab.sensors import RayCaster
+from isaaclab.managers import SceneEntityCfg
+from isaaclab.sensors import RayCaster
 
-# from omni.isaac.lab.command_generators import UniformPoseCommandGenerator
+# from isaaclab.command_generators import UniformPoseCommandGenerator
 
 if TYPE_CHECKING:
-    from omni.isaac.lab.envs import ManagerBasedRLEnv
+    from isaaclab.envs import ManagerBasedRLEnv
 
 
 def angle_to_target_observation(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:

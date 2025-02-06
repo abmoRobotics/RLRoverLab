@@ -1,6 +1,6 @@
 import torch
-from omni.isaac.lab.envs.manager_based_rl_env import ManagerBasedRLEnv
-from omni.isaac.lab.envs.manager_based_rl_env_cfg import ManagerBasedRLEnvCfg
+from isaaclab.envs.manager_based_rl_env import ManagerBasedRLEnv
+from isaaclab.envs.manager_based_rl_env_cfg import ManagerBasedRLEnvCfg
 
 
 class ManagerBasedRLEnvLab(ManagerBasedRLEnv):
@@ -14,7 +14,7 @@ class ManagerBasedRLEnvLab(ManagerBasedRLEnv):
         """Reset the environment at the given indices.
 
         Note:
-            This function inherits from :meth:`omni.isaac.lab.envs.manager_based_rl_env.ManagerBasedRLEnv._reset_idx`.
+            This function inherits from :meth:`isaaclab.envs.manager_based_rl_env.ManagerBasedRLEnv._reset_idx`.
             This is done because SKRL requires the "episode" key in the extras dict to be present in order to log.
         Args:
             idx (torch.Tensor): Indices of the environments to reset.

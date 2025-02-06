@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 
 import carb
 import torch
-from omni.isaac.lab.assets.articulation import Articulation
-from omni.isaac.lab.envs import ManagerBasedEnv
-from omni.isaac.lab.managers.action_manager import ActionTerm
+from isaaclab.assets.articulation import Articulation
+from isaaclab.envs import ManagerBasedEnv
+from isaaclab.managers.action_manager import ActionTerm
 
 if TYPE_CHECKING:
-    from omni.isaac.lab.envs import ManagerBasedEnv  # noqa: F811
+    from isaaclab.envs import ManagerBasedEnv  # noqa: F811
 
     from . import actions_cfg
 

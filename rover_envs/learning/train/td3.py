@@ -1,5 +1,5 @@
 from gymnasium.spaces.box import Box
-from omni.isaac.lab.envs import ManagerBasedRLEnv
+from isaaclab.envs import ManagerBasedRLEnv
 from skrl.agents.torch.td3 import TD3, TD3_DEFAULT_CONFIG
 from skrl.memories.torch import RandomMemory
 

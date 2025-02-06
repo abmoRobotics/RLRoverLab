@@ -6,7 +6,7 @@ import traceback
 import carb
 import gymnasium as gym
 import torch
-from omni.isaac.lab.app import AppLauncher
+from isaaclab.app import AppLauncher
 
 parser = argparse.ArgumentParser(description="Empty Scene")
 
@@ -21,7 +21,7 @@ args_cli = parser.parse_args()
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
-from omni.isaac.lab_tasks.utils import parse_env_cfg  # noqa: F401, E402
+from isaaclab_tasks.utils import parse_env_cfg  # noqa: F401, E402
 
 import rover_envs.envs.navigation.robots  # noqa: F401, E402
 

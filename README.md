@@ -1,8 +1,8 @@
 
 # RLRoverLab
 
-[![Isaac Sim](https://img.shields.io/badge/IsaacSim-4.2-silver.svg)](https://docs.omniverse.nvidia.com/isaacsim/latest/overview.html)
-[![Isaac Lab](https://img.shields.io/badge/IsaacLab-1.4.0-silver)](https://isaac-sim.github.io/IsaacLab)
+[![Isaac Sim](https://img.shields.io/badge/IsaacSim-4.5-silver.svg)](https://docs.omniverse.nvidia.com/isaacsim/latest/overview.html)
+[![Isaac Lab](https://img.shields.io/badge/IsaacLab-2.0.0-silver)](https://isaac-sim.github.io/IsaacLab)
 [![Python](https://img.shields.io/badge/python-3.10-blue.svg)](https://docs.python.org/3/whatsnew/3.10.html)
 [![Linux platform](https://img.shields.io/badge/platform-linux--64-orange.svg)](https://releases.ubuntu.com/22.04/)
 
@@ -12,7 +12,7 @@ Welcome to RLRoverLab! This project implements a suite of Reinforcement Learning
 ## Features
 
 - **Navigation and Manipulation Tasks**: Implementations of RL agents designed for navigation and manipulation tasks, we are working on integrating more tasks.
-- **Isaac Sim and ORBIT Integration**: Utilizes the advanced simulation environments of Isaac Sim and the ORBIT framework for realistic task scenarios.
+- **Isaac Sim and Isaac Lab Integration**: Utilizes the advanced simulation environments of Isaac Sim and the Isaac Lab framework for realistic task scenarios.
 - **Expandable Framework**: Architecture designed for easy extension with new tasks and functionalities.
 
 ## Getting Started
@@ -27,7 +27,7 @@ To get started with RLRoverLab, please refer to our [Installation Guide](https:/
 
 <!--## Contribution
 
-We welcome contributions to RLRoverLab! Whether it's adding new tasks, or fixing bugs. Check out our [Contribution Guidelines](https://github.com/abmoRobotics/isaac_rover_orbit/CONTRIBUTING.md) for more information on how to get involved. -->
+We welcome contributions to RLRoverLab! Whether it's adding new tasks, or fixing bugs. Check out our [Contribution Guidelines](https://github.com/abmoRobotics/rlroverlab/CONTRIBUTING.md) for more information on how to get involved. -->
 ## Train agents in parallel
 
 

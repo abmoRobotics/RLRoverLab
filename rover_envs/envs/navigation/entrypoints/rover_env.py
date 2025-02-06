@@ -1,8 +1,8 @@
 
 import torch
-from omni.isaac.lab.envs.common import VecEnvObs
-from omni.isaac.lab.envs.manager_based_rl_env import ManagerBasedRLEnv
-from omni.isaac.lab.terrains import TerrainImporter
+from isaaclab.envs.common import VecEnvObs
+from isaaclab.envs.manager_based_rl_env import ManagerBasedRLEnv
+from isaaclab.terrains import TerrainImporter
 
 from rover_envs.envs.navigation.rover_env_cfg import RoverEnvCfg
 
@@ -31,7 +31,7 @@ class RoverEnv(ManagerBasedRLEnv):
         """Reset the environment at the given indices.
 
         Note:
-            This function inherits from :meth:`omni.isaac.lab.envs.manager_based_rl_env.ManagerBasedRLEnv._reset_idx`.
+            This function inherits from :meth:`isaaclab.envs.manager_based_rl_env.ManagerBasedRLEnv._reset_idx`.
             This is done because SKRL requires the "episode" key in the extras dict to be present in order to log.
         Args:
             idx (torch.Tensor): Indices of the environments to reset.

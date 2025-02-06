@@ -5,7 +5,7 @@ import random
 from datetime import datetime
 
 import gymnasium as gym
-from omni.isaac.lab.app import AppLauncher
+from isaaclab.app import AppLauncher
 
 # add argparse arguments
 parser = argparse.ArgumentParser(
@@ -41,9 +41,9 @@ else:
 app_launcher = AppLauncher(launcher_args=args_cli, experience=app_experience)
 simulation_app = app_launcher.app
 
-from omni.isaac.lab.envs import ManagerBasedRLEnv  # noqa: E402
-from omni.isaac.lab.utils.dict import print_dict  # noqa: E402
-from omni.isaac.lab.utils.io import dump_pickle, dump_yaml  # noqa: E402
+from isaaclab.envs import ManagerBasedRLEnv  # noqa: E402
+from isaaclab.utils.dict import print_dict  # noqa: E402
+from isaaclab.utils.io import dump_pickle, dump_yaml  # noqa: E402
 
 # import omni.isaac.contrib_envs  # noqa: F401
 # import omni.isaac.orbit_envs  # noqa: F401
@@ -117,7 +117,7 @@ def log_setup(experiment_cfg, env_cfg, agent):
     return log_dir
 
 
-from omni.isaac.lab_tasks.utils import parse_env_cfg  # noqa: E402
+from isaaclab_tasks.utils import parse_env_cfg  # noqa: E402
 from skrl.utils import set_seed  # noqa: E402
 
 import rover_envs.envs.navigation.robots  # noqa: E402, F401
@@ -127,7 +127,7 @@ from rover_envs.utils.config import parse_skrl_cfg  # noqa: E402
 from rover_envs.utils.skrl_utils import SkrlOrbitVecWrapper  # noqa: E402
 from rover_envs.utils.skrl_utils import SkrlSequentialLogTrainer  # noqa: E402
 
-# from omni.isaac.lab_tasks.utils.wrappers.skrl import SkrlSequentialLogTrainer  # noqa: E402
+# from isaaclab_tasks.utils.wrappers.skrl import SkrlSequentialLogTrainer  # noqa: E402
 
 
 def main():

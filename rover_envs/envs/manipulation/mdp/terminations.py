@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import torch
-from omni.isaac.lab.managers import SceneEntityCfg  # noqa: F401
-from omni.isaac.lab.sensors import ContactSensor
+from isaaclab.managers import SceneEntityCfg  # noqa: F401
+from isaaclab.sensors import ContactSensor
 
 if TYPE_CHECKING:
-    from omni.isaac.lab.envs import ManagerBasedRLEnv
+    from isaaclab.envs import ManagerBasedRLEnv
 
 
 def collision_with_table(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, threshold: float) -> torch.Tensor:

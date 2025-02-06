@@ -1,5 +1,5 @@
 from gymnasium.spaces.box import Box
-from omni.isaac.lab.envs import ManagerBasedRLEnv
+from isaaclab.envs import ManagerBasedRLEnv
 
 from rover_envs.envs.navigation.learning.skrl.models import (Critic, DeterministicActor, DeterministicNeuralNetwork,
                                                              GaussianNeuralNetwork)

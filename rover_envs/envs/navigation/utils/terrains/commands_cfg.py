@@ -1,7 +1,7 @@
 from dataclasses import MISSING
 
-from omni.isaac.lab.envs.mdp.commands.commands_cfg import CommandTermCfg
-from omni.isaac.lab.utils import configclass
+from isaaclab.envs.mdp.commands.commands_cfg import CommandTermCfg
+from isaaclab.utils import configclass
 
 from .terrain_importer import TerrainBasedPositionCommand
 

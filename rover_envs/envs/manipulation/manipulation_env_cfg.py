@@ -3,28 +3,28 @@ from __future__ import annotations
 import os
 from dataclasses import MISSING
 
-import omni.isaac.lab.sim as sim_utils
-from omni.isaac.lab.assets import ArticulationCfg, AssetBaseCfg, RigidObjectCfg
-from omni.isaac.lab.envs import ManagerBasedRLEnvCfg
-from omni.isaac.lab.managers import ActionTermCfg as ActionTerm  # noqa: F401
-from omni.isaac.lab.managers import CurriculumTermCfg as CurrTerm  # noqa: F401
-from omni.isaac.lab.managers import EventTermCfg as EventTerm
-from omni.isaac.lab.managers import ObservationGroupCfg as ObsGroup
-from omni.isaac.lab.managers import ObservationTermCfg as ObsTerm  # noqa: F401
-from omni.isaac.lab.managers import RandomizationTermCfg as RandTerm  # noqa: F401
-from omni.isaac.lab.managers import RewardTermCfg as RewTerm  # noqa: F401
-from omni.isaac.lab.managers import SceneEntityCfg  # noqa: F401
-from omni.isaac.lab.managers import TerminationTermCfg as DoneTerm  # noqa: F401
-from omni.isaac.lab.scene import InteractiveSceneCfg  # noqa: F401
-from omni.isaac.lab.sensors import ContactSensorCfg, RayCasterCfg, patterns  # noqa: F401
-from omni.isaac.lab.sensors.frame_transformer.frame_transformer_cfg import FrameTransformerCfg
-from omni.isaac.lab.sim import PhysxCfg
-from omni.isaac.lab.sim import SimulationCfg as SimCfg
-from omni.isaac.lab.sim.spawners.from_files.from_files_cfg import GroundPlaneCfg
-from omni.isaac.lab.terrains import TerrainImporter, TerrainImporterCfg  # noqa: F401
-from omni.isaac.lab.utils import configclass
-from omni.isaac.lab.utils.assets import ISAAC_NUCLEUS_DIR  # noqa: F401
-from omni.isaac.lab.utils.noise import AdditiveUniformNoiseCfg as Unoise  # noqa: F401
+import isaaclab.sim as sim_utils
+from isaaclab.assets import ArticulationCfg, AssetBaseCfg, RigidObjectCfg
+from isaaclab.envs import ManagerBasedRLEnvCfg
+from isaaclab.managers import ActionTermCfg as ActionTerm  # noqa: F401
+from isaaclab.managers import CurriculumTermCfg as CurrTerm  # noqa: F401
+from isaaclab.managers import EventTermCfg as EventTerm
+from isaaclab.managers import ObservationGroupCfg as ObsGroup
+from isaaclab.managers import ObservationTermCfg as ObsTerm  # noqa: F401
+from isaaclab.managers import RandomizationTermCfg as RandTerm  # noqa: F401
+from isaaclab.managers import RewardTermCfg as RewTerm  # noqa: F401
+from isaaclab.managers import SceneEntityCfg  # noqa: F401
+from isaaclab.managers import TerminationTermCfg as DoneTerm  # noqa: F401
+from isaaclab.scene import InteractiveSceneCfg  # noqa: F401
+from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, patterns  # noqa: F401
+from isaaclab.sensors.frame_transformer.frame_transformer_cfg import FrameTransformerCfg
+from isaaclab.sim import PhysxCfg
+from isaaclab.sim import SimulationCfg as SimCfg
+from isaaclab.sim.spawners.from_files.from_files_cfg import GroundPlaneCfg
+from isaaclab.terrains import TerrainImporter, TerrainImporterCfg  # noqa: F401
+from isaaclab.utils import configclass
+from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR  # noqa: F401
+from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise  # noqa: F401
 
 import rover_envs
 import rover_envs.envs.manipulation.mdp as mdp  # noqa: F401

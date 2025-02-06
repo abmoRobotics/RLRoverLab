@@ -1,10 +1,10 @@
 import os
 
-from omni.isaac.lab import sim as sim_utils
-from omni.isaac.lab.assets import AssetBaseCfg
-from omni.isaac.lab.scene import InteractiveSceneCfg
-from omni.isaac.lab.terrains import TerrainImporterCfg
-from omni.isaac.lab.utils.configclass import configclass
+from isaaclab import sim as sim_utils
+from isaaclab.assets import AssetBaseCfg
+from isaaclab.scene import InteractiveSceneCfg
+from isaaclab.terrains import TerrainImporterCfg
+from isaaclab.utils.configclass import configclass
 
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import RoverTerrainImporter
 
