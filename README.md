@@ -17,13 +17,13 @@ Welcome to RLRoverLab! This project implements a suite of Reinforcement Learning
 
 ## Getting Started
 
-To get started with RLRoverLab, please refer to our [Installation Guide](https://github.com/abmoRobotics/RLRoverLab/wiki) available in the project's wiki. The guide provides comprehensive steps for setting up the suite using Docker as well as instructions for native installation.
+To get started with RLRoverLab, please refer to our [Installation Guide](https://abmorobotics.github.io/RLRoverLab/installation/installation.html). The guide provides comprehensive steps for setting up the suite using Docker as well as instructions for native installation.
 
 ### Quick Links
 
-- [Installation Guide](https://github.com/abmoRobotics/RLRoverLab/wiki/Installing-the-suite)
-- [Examples and Tutorials](https://github.com/abmoRobotics/RLRoverLab/wiki/Examples)
-- [Adding Custom Robots and Tasks](https://github.com/abmoRobotics/RLRoverLab/wiki/Development)
+- [Installation Guide](https://abmorobotics.github.io/RLRoverLab/installation/installation.html)
+- [Examples and Tutorials](https://abmorobotics.github.io/RLRoverLab/examples/examples.html)
+- [Adding Custom Robots and Tasks](https://abmorobotics.github.io/RLRoverLab/development/adding_new_robots_or_assets.html)
 
 <!--## Contribution
 
