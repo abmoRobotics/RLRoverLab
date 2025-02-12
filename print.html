@@ -1,0 +1,540 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RLRoverLab Documentation</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">RLRoverLab Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <!-- This is the initial pre-release of this RL-suite. Please let me know if there is information missing by contacting me at abmoRobotics@gmail.com. -->
+<h1 id="rl-suite-overview"><a class="header" href="#rl-suite-overview">RL-suite Overview</a></h1>
+<p>Welcome to the RL-suite documentation! This suite is designed to provide comprehensive resources for developing and testing reinforcement learning algorithms with a focus on space robotics. Below you will find links to various sections of our documentation, including installation instructions, examples, task details, development guides, and benchmarks.</p>
+<h2 id="table-of-contents"><a class="header" href="#table-of-contents">Table of Contents</a></h2>
+<ul>
+<li><a href="./installation/installation.html"><strong>Installing the suite</strong></a>: Step-by-step guide on how to get the RL-suite up and running on your system.</li>
+<li><a href="./examples/examples.html"><strong>Examples of using the suite</strong></a>: A collection of examples showcasing the capabilities of the RL-suite and how to use it for your projects.</li>
+<li><a href="./tasks/tasks.html"><strong>Task Details</strong></a>: Detailed descriptions of the tasks available within the suite, including their objectives, input/output specifications, and evaluation metrics.</li>
+<li><a href="./development/adding_new_robots_or_assets.html"><strong>Developing new tasks and adding assets</strong></a>: Guidelines on how to extend the RL-suite by developing new tasks or adding new assets.</li>
+<li><a href="./benchmarks/benchmarks.html"><strong>Benchmarks</strong></a>: Benchmark results for different reinforcement learning algorithms using the tasks provided in the suite.</li>
+</ul>
+<h2 id="getting-help"><a class="header" href="#getting-help">Getting Help</a></h2>
+<p>If you encounter any issues or have questions regarding the RL-suite, please don't hesitate to reach out by emailing me at <a href="mailto:abmoRobotics@gmail.com">abmoRobotics@gmail.com</a>.</p>
+<p>Thank you for exploring the RL-suite.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="installation-guide"><a class="header" href="#installation-guide">Installation Guide</a></h1>
+<p>This guide provides detailed instructions for setting up the RL-suite using Docker, which simplifies the installation process of Isaac Sim, Isaac Lab, and our suite. Additionally, we provide steps for native installation.</p>
+<h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
+<p>Before you begin, ensure your system meets the following requirements:</p>
+<h3 id="hardware-requirements"><a class="header" href="#hardware-requirements">Hardware Requirements</a></h3>
+<ul>
+<li><strong>GPU</strong>: RTX GPU with at least 8 GB VRAM (Tested on NVIDIA RTX 3090 and NVIDIA RTX A6000)</li>
+<li><strong>CPU</strong>: Intel i5/i7 or equivalent</li>
+<li><strong>RAM</strong>: 32GB or more</li>
+</ul>
+<h3 id="software-requirements"><a class="header" href="#software-requirements">Software Requirements</a></h3>
+<ul>
+<li><strong>Operating System</strong>: Ubuntu 20.04 or 22.04</li>
+<li><strong>Packages</strong>: Docker and Nvidia Container Toolkit</li>
+</ul>
+<h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
+<p>There are two ways to install the RL-suite: using Docker or natively.</p>
+<p>The steps for each method are outlined in the following pages:</p>
+<ul>
+<li><a href="installation/./docker.html">Installation Using Docker</a></li>
+<li><a href="installation/./native.html">Native Installation</a></li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="installation-using-docker"><a class="header" href="#installation-using-docker">Installation Using Docker</a></h2>
+<h3 id="prerequisites-1"><a class="header" href="#prerequisites-1">Prerequisites</a></h3>
+<ul>
+<li>
+<p><strong>.Xauthority for graphical access:</strong> Run the following command to verify or create .Xauthority.</p>
+<pre><code class="language-bash">[ ! -f ~/.Xauthority ] &amp;&amp; touch ~/.Xauthority &amp;&amp; echo ".Xauthority created" || echo ".Xauthority already exists"
+</code></pre>
+</li>
+<li>
+<p><strong>Nvidia Container Toolkit:</strong> see <a href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html">nvidia-container-toolkit</a></p>
+<p><em>After installing the toolkit remember to configure the container runtime for docker using</em></p>
+<pre><code class="language-bash">sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
+</code></pre>
+<p><em>You may need to allow docker to access X server if you want to use the GUI:</em></p>
+<pre><code class="language-bash">xhost +local:docker
+</code></pre>
+</li>
+<li>
+<p><strong>Login to NGC</strong></p>
+<ol>
+<li><a href="https://docs.nvidia.com/ai-enterprise/deployment-guide-spark-rapids-accelerator/0.1.0/appendix-ngc.html">Generate NGC API Key </a></li>
+<li>Login with the NGC API as password</li>
+</ol>
+<pre><code class="language-docker login nvcr.io">Username: $oauthtoken
+Password:
+</code></pre>
+</li>
+<li>
+<p><strong>Docker Compose:</strong></p>
+<ol>
+<li>Install Docker Compose</li>
+<li>Verify using</li>
+</ol>
+<pre><code>docker compose version
+</code></pre>
+</li>
+</ul>
+<h3 id="building-the-docker-image"><a class="header" href="#building-the-docker-image">Building the Docker Image</a></h3>
+<ol>
+<li><strong>Clone the repository and navigate to the docker directory</strong>:
+<pre><code class="language-bash">git clone https://github.com/abmoRobotics/RLRoverLab
+cd RLRoverLab/docker
+</code></pre>
+</li>
+<li>Download terrains from Google Drive:
+<ol>
+<li>Download from Google Drive: https://drive.google.com/file/d/1VXFTD2OgHcsQL_ifO81AzD2HDkA98h93/view?usp=sharing</li>
+<li>Unzip files in root folder of the git repository</li>
+</ol>
+</li>
+<li><strong>Build and start the Docker container</strong>:
+<pre><code class="language-bash">./run.sh
+docker exec -it rover-lab-base bash
+</code></pre>
+</li>
+<li><strong>Training an Agent Inside the Docker Container</strong>
+To train an agent, use the following command inside the Docker container:
+<pre><code class="language-bash">cd examples/02_train
+/workspace/isaac_lab/isaaclab.sh -p train.py --task="AAURoverEnv-v0" --num_envs=256
+</code></pre>
+</li>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="native-installation"><a class="header" href="#native-installation">Native Installation</a></h2>
+<p>If you prefer to install the suite natively without using Docker, follow these steps:</p>
+<ol>
+<li>
+<p><strong>Install Isaac Sim 4.5</strong> According to the <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html">Official Documentation</a>.</p>
+<p>First <a href="https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone%404.5.0-rc.36%2Brelease.19112.f59b3005.gl.linux-x86_64.release.zip">Download the Isaac Sim 4.5</a> to the <code>~/Downloads</code> directory.</p>
+<p>Then run the following commands:</p>
+<pre><code class="language-bash">mkdir ~/isaacsim
+cd ~/Downloads
+unzip "isaac-sim-standalone@4.5.0-rc.36+release.19112.f59b3005.gl.linux-x86_64.release.zip" -d ~/isaacsim
+cd ~/isaacsim
+./post_install.sh
+./isaac-sim.selector.sh
+</code></pre>
+</li>
+<li>
+<p><strong>Install Isaac Lab</strong></p>
+<pre><code class="language-bash">git clone https://github.com/isaac-sim/IsaacLab
+cd isaac_lab
+
+# create aliases
+export ISAACSIM_PATH="${HOME}/isaacsim"
+export ISAACSIM_PYTHON_EXE="${ISAACSIM_PATH}/python.sh"
+
+# Create symbolic link
+ln -s ${ISAACSIM_PATH} _isaac_sim
+
+# Create Conda Env
+./isaaclab.sh --conda isaaclab_env
+
+# Activate Env
+conda activate isaaclab_env
+
+# Install dependencies
+conda --install
+
+</code></pre>
+</li>
+<li>
+<p><strong>Set up the RL-suite:</strong></p>
+<pre><code class="language-bash"># Clone Repo
+git clone https://github.com/abmoRobotics/RLRoverLab
+cd RLRoverLab
+
+# Install Repo (make sure conda is activated)
+python -m pip install -e .[all]
+</code></pre>
+</li>
+<li>
+<p><strong>Running The Suite</strong></p>
+<p><strong>To train a model</strong>, navigate to the training script and run:</p>
+<pre><code class="language-bash">cd examples/02_train/train.py
+python train.py
+</code></pre>
+<p><strong>To evaluate a pre-trained policy</strong>, navigate to the inference script and run:</p>
+<pre><code class="language-bash">cd examples/03_inference_pretrained/eval.py
+python eval.py
+</code></pre>
+</li>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div><p>We provide a number of examples on how to use the suite, these can be found in the examples directory. Below we show how to run the files.</p>
+<h2 id="training-a-new-agent"><a class="header" href="#training-a-new-agent">Training a new agent</a></h2>
+<p>In the example we show how to train a new agent using the suite:</p>
+<pre><code class="language-bash"># Run training script or evaluate pre-trained policy
+cd examples/02_train/train.py
+python train.py --task="AAURoverEnv-v0" --num_envs=128
+</code></pre>
+<h2 id="using-pre-trained-agent"><a class="header" href="#using-pre-trained-agent">Using pre-trained agent</a></h2>
+<pre><code class="language-bash"># Run training script or evaluate pre-trained policy
+cd examples/03_inference_pretrained
+python eval.py --task="AAURoverEnv-v0" --num_envs=128
+</code></pre>
+<h2 id="recording-data"><a class="header" href="#recording-data">Recording data</a></h2>
+<pre><code class="language-bash"># Run training script or evaluate pre-trained policy
+cd examples/03_inference_pretrained
+python record.py --task="AAURoverEnv-v0" --num_envs=16
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="adding-new-assets"><a class="header" href="#adding-new-assets">Adding new assets</a></h2>
+<p>To integrate a new robot asset into your project, please follow the steps outlined below. These steps ensure that the asset is correctly added and configured for use in ORBIT.</p>
+<h3 id="step-1-collect-the-asset"><a class="header" href="#step-1-collect-the-asset">Step 1: Collect the Asset</a></h3>
+<p>Begin by collecting the necessary asset within Isaac Sim. You do this by right clicking your robot USD file, and click collect as illustratred in the figure below.</p>
+<p><img src="https://github.com/abmoRobotics/isaac_rover_orbit/assets/56405924/a129e884-1db9-47a0-9325-0cfa70482429" alt="Collect" /></p>
+<p>You then type in the following options, select an output folder and click collect.</p>
+<p><img src="https://github.com/abmoRobotics/isaac_rover_orbit/assets/56405924/067f6078-c31b-4da5-b451-eddd789682d8" alt="Collect2" /></p>
+<h3 id="step-2-add-the-asset-files"><a class="header" href="#step-2-add-the-asset-files">Step 2: Add the Asset Files</a></h3>
+<p>Once you have the asset, you need to add it to your project's file structure. Specifically:</p>
+<ul>
+<li>
+<p>Navigate to <code>rover_envs/assets/robots/YOUR_ROBOT_NAME</code>.</p>
+</li>
+<li>
+<p>Add the Universal Scene Description (USD) file along with any related content (textures, metadata, etc.) to this directory.</p>
+<p>Make sure to replace <code>YOUR_ROBOT_NAME</code> with the actual name of your robot to maintain a clear and organized file structure.</p>
+</li>
+</ul>
+<h3 id="step-3-create-the-configuration-file"><a class="header" href="#step-3-create-the-configuration-file">Step 3: Create the Configuration File</a></h3>
+<p>For each robot asset, a configuration (cfg) file is required. This file specifies various parameters and settings for the robot:</p>
+<ul>
+<li>Create a new cfg file named <code>YOUR_ROBOT_NAME.cfg</code> in the same directory as your asset files (<code>rover_envs/assets/robots/YOUR_ROBOT_NAME</code>).</li>
+</ul>
+<h3 id="step-4-configure-the-robot"><a class="header" href="#step-4-configure-the-robot">Step 4: Configure the Robot</a></h3>
+<p>The final step involves configuring your robot asset using the newly created cfg file:</p>
+<ul>
+<li>Open <code>YOUR_ROBOT_NAME.cfg</code> and configure it as needed. You can refer to previous configuration files for examples of how to structure your settings. An example configuration file can be found here: <a href="https://github.com/abmoRobotics/isaac_rover_orbit/blob/main/rover_envs/assets/exomy.py">Exomy Example Configuration</a>.</li>
+</ul>
+<p>By following these steps, you can successfully add and configure a new robot asset and use the suite to train an agent or perform experiments.</p>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="adding-a-new-task"><a class="header" href="#adding-a-new-task">Adding a New Task</a></h2>
+<p>To incorporate a new task into your project, follow the steps outlined below. This guide ensures that your new task is properly set up and integrated within the existing project structure.</p>
+<h3 id="step-1-create-a-new-environment-folder"><a class="header" href="#step-1-create-a-new-environment-folder">Step 1: Create a New Environment Folder</a></h3>
+<ul>
+<li>Within the <code>rover_envs/envs</code> directory, create a new folder named after your task (<code>TASK_FOLDER</code>). This folder will house all the necessary configuration files for your new task.</li>
+</ul>
+<h3 id="step-2-create-the-task-configuration-file"><a class="header" href="#step-2-create-the-task-configuration-file">Step 2: Create the Task Configuration File</a></h3>
+<ul>
+<li>Inside <code>TASK_FOLDER</code>, create a configuration file named <code>TASK_env_cfg.py</code>, substituting <code>TASK</code> with the name of your task. This file will define the task's configuration.</li>
+</ul>
+<h3 id="step-3-define-the-mdps"><a class="header" href="#step-3-define-the-mdps">Step 3: Define the MDPs</a></h3>
+<ul>
+<li>
+<p>In <code>TASK_env_cfg.py</code>, you'll define the configurations for actions, observations, terminations, commands, and, optionally, randomizations that make up your task's Markov Decision Process (MDP).</p>
+<p>You can refer to the <a href="https://github.com/abmoRobotics/isaac_rover_orbit/blob/main/rover_envs/envs/navigation/rover_env_cfg.py">Navigation Task example</a> for guidance on how to structure this file.</p>
+</li>
+</ul>
+<h3 id="step-4-set-up-the-robot-folder"><a class="header" href="#step-4-set-up-the-robot-folder">Step 4: Set Up the Robot Folder</a></h3>
+<ul>
+<li>
+<p>Within <code>rover_envs/envs/TASK_FOLDER</code>, create a new folder named <code>robots/ROBOT_NAME</code>, replacing <code>ROBOT_NAME</code> with the name of the robot used in the task.</p>
+<p>In this folder, create two files: <code>__init__.py</code> and <code>env_cfg.py</code>.</p>
+</li>
+</ul>
+<h3 id="step-5-configure-env_cfgpy"><a class="header" href="#step-5-configure-env_cfgpy">Step 5: Configure <code>env_cfg.py</code></a></h3>
+<ul>
+<li>The <code>env_cfg.py</code> file customizes <code>TASK_env_cfg.py</code> for a specific robot. At a minimum, it should contain the following Python code:</li>
+</ul>
+<pre><code class="language-python">from rover_envs.assets.robots.YOUR_ROBOT import YOUR_ROBOT_CFG
+from rover_envs.envs.YOUR_TASK.TASK_env_cfg.py import TaskEnvCfg
+
+@configclass
+class TaskEnvCfg(TaskEnvCfg):
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        # Define robot
+        self.scene.robot = YOUR_ROBOT_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+</code></pre>
+<p>Make sure to replace YOUR_ROBOT and YOUR_TASK with the appropriate robot and task names</p>
+<h3 id="step-6-configure-__init__py"><a class="header" href="#step-6-configure-__init__py">Step 6: Configure <code>__init__.py</code></a></h3>
+<p>This file registers the environment with the OPENAI gym library. Include at least the following code.</p>
+<pre><code class="language-python">import os
+import gymnasium as gym
+from . import env_cfg
+
+gym.register(
+    id="TASK_NAME-v0",
+    entry_point='omni.isaac.orbit.envs:RLTaskEnv',
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": env_cfg.TaskEnvCfg,
+        "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent.pt", # This is optional
+    }
+)
+
+</code></pre>
+<h3 id="step-7-running-the-task"><a class="header" href="#step-7-running-the-task">Step 7: Running the Task</a></h3>
+<p>With everything set up, you can now run the task as follows:</p>
+<pre><code class="language-python"># Run training policy
+cd examples/02_train
+python train.py --task="TASK_NAME-v0" --num_envs=128
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="mapless-navigation"><a class="header" href="#mapless-navigation">Mapless Navigation</a></h1>
+<p>In this task we teach an agent to autonomously navigate to target locations using local terrain information. Below we present the rewards, neural network, and terrain environment used for this task.</p>
+<h2 id="rewards"><a class="header" href="#rewards">Rewards</a></h2>
+<p>For the rover to actually learn to move, it needs some kind of indication of whether an executed action helps to accomplish the goal or not. Therefore, a set of reward functions has been implemented, evaluating if the rover moved in the right direction or if the action was beneficial in another way, e.g., to avoid a collision. For each reward function, there is a weight that defines how much influence the individual reward function has on the total reward. The weights are defined in the table below.</p>
+<div align="center">
+<div class="table-wrapper"><table><thead><tr><th>Reward Function</th><th>Weight</th></tr></thead><tbody>
+<tr><td>Relative distance</td><td>$ \omega_d $</td></tr>
+<tr><td>Heading constraint</td><td>$\omega_h$</td></tr>
+<tr><td>Collision penalty</td><td>$\omega_c$</td></tr>
+<tr><td>Velocity constraint</td><td>$\omega_v$</td></tr>
+<tr><td>Oscillation constraint</td><td>$\omega_a$</td></tr>
+</tbody></table>
+</div></div>
+<h4 id="relative-distance-reward"><a class="header" href="#relative-distance-reward">Relative distance reward</a></h4>
+<p>To motivate the agent to move towards the goal, the following reward function is created:
+$$r_d = \frac{\omega_d}{1+d(x,y)^2},$$
+where, $r_d$ is a non-negative number that will increase from a number close to zero towards 1, when the rover gets closer to the goal.</p>
+<h4 id="heading-constraint"><a class="header" href="#heading-constraint">Heading constraint</a></h4>
+<p>This reward describes the difference between the direction the rover is heading and the goal. If the heading difference is more than 90 degrees, the agent receives a penalty to prevent it from driving away from the goal. Through empirical testing the angle is set to ±115 degrees, because the rover may sometimes need to move around objects and therefore go backwards. The mentioned penalty is defined as:</p>
+<p>$$
+r_h =
+\begin{cases}
+\vert \theta_{goal}\vert &gt; 115^{\circ}, &amp; -\omega_h \cdot \vert \theta_{goal} \vert \
+\vert \theta_{goal}\vert \leq 115^{\circ}, &amp; 0
+\end{cases}
+$$</p>
+<p>where $\theta_{goal}$ is the angle between the goal location and rover heading.</p>
+<h4 id="collision-penalty"><a class="header" href="#collision-penalty">Collision penalty</a></h4>
+<p>If the rover collides with a rock it will receive a penalty for colliding as seen in the equation:
+$$r_c = -\omega_c$$</p>
+<h4 id="velocity-constraint"><a class="header" href="#velocity-constraint">Velocity constraint</a></h4>
+<p>To ensure that the rover is not driving backwards to the goal, a penalty for non-positive velocities is given, implemented as follows:</p>
+<p>$$
+r_v =
+\begin{cases}
+v_{lin}(x,y) &lt; 0    &amp; -\omega_v \cdot \vert v_{lin} \vert\
+v_{lin}(x,y) \geq 0 &amp; 0
+\end{cases}
+$$</p>
+<p>where $v_{lin}$ is the linear velocity of the rover.</p>
+<h4 id="oscillation-constraint"><a class="header" href="#oscillation-constraint">Oscillation constraint</a></h4>
+<p>To smooth the output of the neural network, a penalty is implemented to discourage sudden changes by comparing the current action to the previous action:</p>
+<p>$$r_a = -\omega_a \sum^2_i (a_{i,t}-a_{i,t-1})^2$$</p>
+<p>where $a_{i,t}$ is the action $i$ at time $t$.</p>
+<h4 id="total-reward"><a class="header" href="#total-reward">Total reward</a></h4>
+<p>At each time step, the total reward is calculated as the sum of the outputs of all presented reward functions:</p>
+<p>$$r_{total} = r_d  + r_c + r_v + r_h + r_a$$</p>
+<h2 id="neural-network"><a class="header" href="#neural-network">Neural Network</a></h2>
+<p>As training is performed using an on-policy method, the policy $\pi_\theta$ is modeled using a Gaussian model. The network architecture is designed to generate a latent representations of the terrain in close proximity to the rover denoted $l_t$. This is defined as</p>
+<p>$$
+l_t = e(o_t^t),
+$$</p>
+<p>where $e$ are encoders for the terrain input. The encoder consist of two linear layers of size <code>[60, 20]</code> and utilize LeakyReLU as the activation function. A multilayer perceptron is then applied to the latent representation and the proprioceptive input as</p>
+<p>$$
+a = mlp(o_t^p, l_t),
+$$</p>
+<p>where $a$ refers to the actions and $mlp$ is a multilayer perceptron with three linear layers of size <code>[512, 256, 128]</code> and LeakyReLU as the activation function. The network architecture is visualized below.</p>
+<div align="center">
+    <img src="https://github.com/abmoRobotics/isaac_rover_orbit/assets/56405924/2ad437de-9453-4793-afd7-062cde05e8ff" width="70%" alt="Actor">
+</div>
+<h2 id="environment"><a class="header" href="#environment">Environment</a></h2>
+<p>Below the environment used in this task in shown, it features a 200m x 200m map with obstacles.</p>
+<div align="center">
+    <img src="https://github.com/abmoRobotics/isaac_rover_orbit/assets/56405924/bfdb1586-a507-4f6f-bbef-4a1dacc435ef" width="70%" alt="Env">
+</div>
+<h1 id="tube-grasping"><a class="header" href="#tube-grasping">Tube Grasping</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><p>Benchmarks will be available soon. Stay tuned!</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            MathJax.Hub.Register.StartupHook('End', function() {
+                window.setTimeout(window.print, 100);
+            });
+        });
+        </script>
+
+    </div>
+    </body>
+</html>
