@@ -11,29 +11,26 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     permissions:
-      contents: write
+      contents: write  # Grants write access to repository contents
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
 
       - name: Setup mdBook
         uses: peaceiris/actions-mdbook@v2
         with:
-          mdbook-version: 'latest'
-
-      # Install mdbook-katex for math rendering
-      - name: Install mdbook-katex
-        run: cargo install mdbook-katex
+          mdbook-version: '0.4.10'
+          #mdbook-version: 'latest'
 
       - name: Build the book
         run: mdbook build
-        working-directory: ./docs
+        working-directory: ./docs  # Run command inside the docs directory
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.ref == 'refs/heads/dev' }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
