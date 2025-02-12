@@ -11,6 +11,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-20.04
+    permissions:
+      contents: write  # Grants write access to repository contents
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
