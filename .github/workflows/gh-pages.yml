@@ -1,0 +1,2 @@
+- name: mdBook Action
+  uses: peaceiris/actions-mdbook@v2.0.0
