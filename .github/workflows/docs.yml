@@ -6,7 +6,7 @@ on:
       - dev
     paths:
       - 'docs/**'
-      - '.github/workflows/gh-pages.yml'
+      - '.github/workflows/docs.yml'
   pull_request:
 
 jobs:
