@@ -16,7 +16,6 @@
 .hljs-variable,
 .hljs-template-variable,
 .hljs-attribute,
-.hljs-attr,
 .hljs-tag,
 .hljs-name,
 .hljs-regexp,
@@ -62,6 +61,7 @@
   overflow-x: auto;
   background: #f6f7f6;
   color: #000;
+  padding: 0.5em;
 }
 
 .hljs-emphasis {
