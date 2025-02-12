@@ -1,49 +1,50 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js light">
+<html lang="en" class="light sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>Adding a new task - RLRoverLab Documentation</title>
-                
+
 
         <!-- Custom HTML head -->
-        
 
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#ffffff">
 
-                <link rel="icon" href="../favicon.svg">
-                        <link rel="shortcut icon" href="../favicon.png">
-                <link rel="stylesheet" href="../css/variables.css">
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
         <link rel="stylesheet" href="../css/general.css">
         <link rel="stylesheet" href="../css/chrome.css">
-                <link rel="stylesheet" href="../css/print.css" media="print">
-        
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
         <!-- Fonts -->
         <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
-                <link rel="stylesheet" href="../fonts/fonts.css">
-        
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="../highlight.css">
         <link rel="stylesheet" href="../tomorrow-night.css">
         <link rel="stylesheet" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        
-                <!-- MathJax -->
-        <script async type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-            </head>
-    <body>
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
+        <script>
             var path_to_root = "../";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
-
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script type="text/javascript">
+        <script>
             try {
                 var theme = localStorage.getItem('mdbook-theme');
                 var sidebar = localStorage.getItem('mdbook-sidebar');
@@ -59,71 +60,79 @@
         </script>
 
         <!-- Set the theme before any content is loaded, prevents flash -->
-        <script type="text/javascript">
+        <script>
             var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
-            var html = document.querySelector('html');
-            html.classList.remove('no-js')
+            const html = document.documentElement;
             html.classList.remove('light')
             html.classList.add(theme);
-            html.classList.add('js');
+            html.classList.add("js");
         </script>
 
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
         <!-- Hide / unhide sidebar before it is displayed -->
-        <script type="text/javascript">
-            var html = document.querySelector('html');
-            var sidebar = 'hidden';
+        <script>
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
+            sidebar_toggle.checked = sidebar === 'visible';
             html.classList.remove('sidebar-visible');
             html.classList.add("sidebar-" + sidebar);
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Overview</a></li><li class="chapter-item expanded affix "><li class="part-title">Getting Started</li><li class="chapter-item expanded "><a href="../installation/installation.html"><strong aria-hidden="true">2.</strong> Installation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../installation/docker.html"><strong aria-hidden="true">2.1.</strong> Docker</a></li><li class="chapter-item expanded "><a href="../installation/native.html"><strong aria-hidden="true">2.2.</strong> Native</a></li></ol></li><li class="chapter-item expanded "><a href="../examples/examples.html"><strong aria-hidden="true">3.</strong> Examples</a></li><li class="chapter-item expanded affix "><li class="part-title">Development</li><li class="chapter-item expanded "><a href="../development/adding_new_robots_or_assets.html"><strong aria-hidden="true">4.</strong> Addings new robots or assets</a></li><li class="chapter-item expanded "><a href="../development/adding_new_task.html" class="active"><strong aria-hidden="true">5.</strong> Adding a new task</a></li><li><ol class="section"><li class="chapter-item expanded "><div><strong aria-hidden="true">5.1.</strong> Manager Based Task</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">5.2.</strong> Direct Task</div></li></ol></li><li class="chapter-item expanded "><li class="part-title">Tasks</li><li class="chapter-item expanded "><div><strong aria-hidden="true">6.</strong> Navigation</div></li><li><ol class="section"><li class="chapter-item expanded "><a href="../tasks/mapless_navigation.html"><strong aria-hidden="true">6.1.</strong> Mapless Navigation</a></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">7.</strong> Manipulation</div></li><li class="chapter-item expanded affix "><li class="part-title">Benchmarks</li><li class="chapter-item expanded "><a href="../benchmarks/benchmarks.html"><strong aria-hidden="true">8.</strong> Benchmarks</a></li><li class="chapter-item expanded affix "><li class="part-title">Contributing</li><li class="chapter-item expanded "><div><strong aria-hidden="true">9.</strong> Contributing Guidelines</div></li><li class="chapter-item expanded "><div><strong aria-hidden="true">10.</strong> License</div></li></ol>            </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                
                 <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky bordered">
+                <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
-                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
                             <i class="fa fa-bars"></i>
-                        </button>
+                        </label>
                         <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
                         </ul>
-                                                <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
                             <i class="fa fa-search"></i>
                         </button>
-                                            </div>
+                    </div>
 
                     <h1 class="menu-title">RLRoverLab Documentation</h1>
 
                     <div class="right-buttons">
-                                                <a href="../print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
-                                                                        
+
                     </div>
                 </div>
 
-                                <div id="search-wrapper" class="hidden">
+                <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
                         <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
                     </form>
@@ -133,9 +142,9 @@
                         </ul>
                     </div>
                 </div>
-                
+
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script type="text/javascript">
+                <script>
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
                     document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
                     Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
@@ -183,7 +192,7 @@ class TaskEnvCfg(TaskEnvCfg):
         super().__post_init__()
 
         # Define robot
-        self.scene.robot = YOUR_ROBOT_CFG.replace(prim_path=&quot;{ENV_REGEX_NS}/Robot&quot;)
+        self.scene.robot = YOUR_ROBOT_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 </code></pre>
 <p>Make sure to replace YOUR_ROBOT and YOUR_TASK with the appropriate robot and task names</p>
 <h3 id="step-6-configure-__init__py"><a class="header" href="#step-6-configure-__init__py">Step 6: Configure <code>__init__.py</code></a></h3>
@@ -193,12 +202,12 @@ import gymnasium as gym
 from . import env_cfg
 
 gym.register(
-    id=&quot;TASK_NAME-v0&quot;,
+    id="TASK_NAME-v0",
     entry_point='omni.isaac.orbit.envs:RLTaskEnv',
     disable_env_checker=True,
     kwargs={
-        &quot;env_cfg_entry_point&quot;: env_cfg.TaskEnvCfg,
-        &quot;best_model_path&quot;: f&quot;{os.path.dirname(__file__)}/policies/best_agent.pt&quot;, # This is optional
+        "env_cfg_entry_point": env_cfg.TaskEnvCfg,
+        "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent.pt", # This is optional
     }
 )
 
@@ -207,56 +216,57 @@ gym.register(
 <p>With everything set up, you can now run the task as follows:</p>
 <pre><code class="language-python"># Run training policy
 cd examples/02_train
-python train.py --task=&quot;TASK_NAME-v0&quot; --num_envs=128
+python train.py --task="TASK_NAME-v0" --num_envs=128
 </code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                                                    <a rel="prev" href="../development/adding_new_robots_or_assets.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../development/adding_new_robots_or_assets.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
-                        
-                                                    <a rel="next" href="../tasks/mapless_navigation.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+
+                            <a rel="next prefetch" href="../tasks/mapless_navigation.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
-                        
+
                         <div style="clear: both"></div>
                     </nav>
                 </div>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                                    <a rel="prev" href="../development/adding_new_robots_or_assets.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../development/adding_new_robots_or_assets.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
-                
-                                    <a rel="next" href="../tasks/mapless_navigation.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+
+                    <a rel="next prefetch" href="../tasks/mapless_navigation.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
-                            </nav>
+            </nav>
 
         </div>
 
-        
-        
-        
-                <script type="text/javascript">
+
+
+
+        <script>
             window.playground_copyable = true;
         </script>
-        
-        
-                <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
-        
-        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
-        
-        
+
+
+    </div>
     </body>
 </html>
