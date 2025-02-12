@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - dev
-    # paths:
-    #   - 'docs/**'
+    paths:
+      - 'docs/**'
+      - '.github/workflows/gh-pages.yml'
   pull_request:
 
 jobs:
@@ -21,8 +22,8 @@ jobs:
       - name: Setup mdBook
         uses: peaceiris/actions-mdbook@v2
         with:
-          mdbook-version: '0.4.10'
-          # mdbook-version: 'latest'
+          # mdbook-version: '0.4.10'
+          mdbook-version: 'latest'
 
       - name: Build the book
         run: mdbook build
