@@ -3,7 +3,7 @@ name: github pages
 on:
   push:
     branches:
-      - main
+      - dev
   pull_request:
 
 jobs:
@@ -27,4 +27,4 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./book
+          publish_dir: ./docs
