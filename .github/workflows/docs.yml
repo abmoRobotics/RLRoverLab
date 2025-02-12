@@ -11,10 +11,9 @@ on:
 
 jobs:
   deploy:
-    #runs-on: ubuntu-20.04
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Grants write access to repository contents
+      contents: write
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
@@ -23,12 +22,11 @@ jobs:
       - name: Setup mdBook
         uses: peaceiris/actions-mdbook@v2
         with:
-          #mdbook-version: '0.4.10'
           mdbook-version: 'latest'
 
       - name: Build the book
         run: mdbook build
-        working-directory: ./docs  # Run command inside the docs directory
+        working-directory: ./docs
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
