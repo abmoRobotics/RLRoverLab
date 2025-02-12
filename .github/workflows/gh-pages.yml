@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - dev
-    paths:
-      - 'docs/**'
+    # paths:
+    #   - 'docs/**'
   pull_request:
 
 jobs:
