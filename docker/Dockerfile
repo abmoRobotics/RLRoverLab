@@ -41,5 +41,8 @@ RUN echo "alias isaaclab=${ISAAC_LAB_PATH}/isaaclab.sh" >> ${HOME}/.bashrc && \
     echo "export TZ=$(date +%Z)" >> ${HOME}/.bashrc \
     echo "export TZ=$(date +%Z)" >> ${HOME}/.bashrc
 
+# Configure /workspace/isaac_rover as a safe directory, so that Weights & Biases can be used.
+RUN git config --global --add safe.directory /workspace/isaac_rover
+
 # Set working directory
 WORKDIR ${ROVER_LAB_PATH}
