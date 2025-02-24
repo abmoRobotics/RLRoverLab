@@ -79,14 +79,14 @@ where $a$ refers to the actions and $mlp$ is a multilayer perceptron with three 
 
 
 <div align="center">
-    <img src="https://github.com/abmoRobotics/isaac_rover_orbit/assets/56405924/2ad437de-9453-4793-afd7-062cde05e8ff" width="70%" alt="Actor">
+    <img src="../_imgs/CNN.png" width="100%" alt="Actor">
 </div>
 
 ## Environment
 
 Below the environment used in this task in shown, it features a 200m x 200m map with obstacles.
 <div align="center">
-    <img src="https://github.com/abmoRobotics/isaac_rover_orbit/assets/56405924/bfdb1586-a507-4f6f-bbef-4a1dacc435ef" width="70%" alt="Env">
+    <img src="../_imgs/environment.png" width="100%" alt="Env">
 </div>
 
 # Tube Grasping
