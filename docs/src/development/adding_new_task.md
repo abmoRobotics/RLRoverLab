@@ -14,7 +14,7 @@ To incorporate a new task into your project, follow the steps outlined below. Th
 
 - In `TASK_env_cfg.py`, you'll define the configurations for actions, observations, terminations, commands, and, optionally, randomizations that make up your task's Markov Decision Process (MDP).
 
-  You can refer to the [Navigation Task example](https://github.com/abmoRobotics/isaac_rover_orbit/blob/main/rover_envs/envs/navigation/rover_env_cfg.py) for guidance on how to structure this file.
+  You can refer to the [Navigation Task example](https://github.com/abmoRobotics/RLRoverLab/blob/main/rover_envs/envs/navigation/rover_env_cfg.py) for guidance on how to structure this file.
 
 ### Step 4: Set Up the Robot Folder
 
@@ -51,7 +51,7 @@ from . import env_cfg
 
 gym.register(
     id="TASK_NAME-v0",
-    entry_point='omni.isaac.orbit.envs:RLTaskEnv',
+    entry_point='isaaclab.envs:ManagerBasedRLEnv',
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": env_cfg.TaskEnvCfg,
