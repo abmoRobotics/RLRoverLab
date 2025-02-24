@@ -168,7 +168,7 @@
 <ul>
 <li>
 <p>In <code>TASK_env_cfg.py</code>, you'll define the configurations for actions, observations, terminations, commands, and, optionally, randomizations that make up your task's Markov Decision Process (MDP).</p>
-<p>You can refer to the <a href="https://github.com/abmoRobotics/isaac_rover_orbit/blob/main/rover_envs/envs/navigation/rover_env_cfg.py">Navigation Task example</a> for guidance on how to structure this file.</p>
+<p>You can refer to the <a href="https://github.com/abmoRobotics/RLRoverLab/blob/main/rover_envs/envs/navigation/rover_env_cfg.py">Navigation Task example</a> for guidance on how to structure this file.</p>
 </li>
 </ul>
 <h3 id="step-4-set-up-the-robot-folder"><a class="header" href="#step-4-set-up-the-robot-folder">Step 4: Set Up the Robot Folder</a></h3>
@@ -203,7 +203,7 @@ from . import env_cfg
 
 gym.register(
     id="TASK_NAME-v0",
-    entry_point='omni.isaac.orbit.envs:RLTaskEnv',
+    entry_point='isaaclab.envs:ManagerBasedRLEnv',
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": env_cfg.TaskEnvCfg,
@@ -227,7 +227,7 @@ python train.py --task="TASK_NAME-v0" --num_envs=128
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../tasks/mapless_navigation.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../benchmarks/benchmarks.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -241,7 +241,7 @@ python train.py --task="TASK_NAME-v0" --num_envs=128
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../tasks/mapless_navigation.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../benchmarks/benchmarks.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

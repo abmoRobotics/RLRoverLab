@@ -331,99 +331,6 @@ python eval.py --task="AAURoverEnv-v0" --num_envs=128
 cd examples/03_inference_pretrained
 python record.py --task="AAURoverEnv-v0" --num_envs=16
 </code></pre>
-<div style="break-before: page; page-break-before: always;"></div><h2 id="adding-new-assets"><a class="header" href="#adding-new-assets">Adding new assets</a></h2>
-<p>To integrate a new robot asset into your project, please follow the steps outlined below. These steps ensure that the asset is correctly added and configured for use in ORBIT.</p>
-<h3 id="step-1-collect-the-asset"><a class="header" href="#step-1-collect-the-asset">Step 1: Collect the Asset</a></h3>
-<p>Begin by collecting the necessary asset within Isaac Sim. You do this by right clicking your robot USD file, and click collect as illustratred in the figure below.</p>
-<p><img src="https://github.com/abmoRobotics/isaac_rover_orbit/assets/56405924/a129e884-1db9-47a0-9325-0cfa70482429" alt="Collect" /></p>
-<p>You then type in the following options, select an output folder and click collect.</p>
-<p><img src="https://github.com/abmoRobotics/isaac_rover_orbit/assets/56405924/067f6078-c31b-4da5-b451-eddd789682d8" alt="Collect2" /></p>
-<h3 id="step-2-add-the-asset-files"><a class="header" href="#step-2-add-the-asset-files">Step 2: Add the Asset Files</a></h3>
-<p>Once you have the asset, you need to add it to your project's file structure. Specifically:</p>
-<ul>
-<li>
-<p>Navigate to <code>rover_envs/assets/robots/YOUR_ROBOT_NAME</code>.</p>
-</li>
-<li>
-<p>Add the Universal Scene Description (USD) file along with any related content (textures, metadata, etc.) to this directory.</p>
-<p>Make sure to replace <code>YOUR_ROBOT_NAME</code> with the actual name of your robot to maintain a clear and organized file structure.</p>
-</li>
-</ul>
-<h3 id="step-3-create-the-configuration-file"><a class="header" href="#step-3-create-the-configuration-file">Step 3: Create the Configuration File</a></h3>
-<p>For each robot asset, a configuration (cfg) file is required. This file specifies various parameters and settings for the robot:</p>
-<ul>
-<li>Create a new cfg file named <code>YOUR_ROBOT_NAME.cfg</code> in the same directory as your asset files (<code>rover_envs/assets/robots/YOUR_ROBOT_NAME</code>).</li>
-</ul>
-<h3 id="step-4-configure-the-robot"><a class="header" href="#step-4-configure-the-robot">Step 4: Configure the Robot</a></h3>
-<p>The final step involves configuring your robot asset using the newly created cfg file:</p>
-<ul>
-<li>Open <code>YOUR_ROBOT_NAME.cfg</code> and configure it as needed. You can refer to previous configuration files for examples of how to structure your settings. An example configuration file can be found here: <a href="https://github.com/abmoRobotics/isaac_rover_orbit/blob/main/rover_envs/assets/exomy.py">Exomy Example Configuration</a>.</li>
-</ul>
-<p>By following these steps, you can successfully add and configure a new robot asset and use the suite to train an agent or perform experiments.</p>
-<div style="break-before: page; page-break-before: always;"></div><h2 id="adding-a-new-task"><a class="header" href="#adding-a-new-task">Adding a New Task</a></h2>
-<p>To incorporate a new task into your project, follow the steps outlined below. This guide ensures that your new task is properly set up and integrated within the existing project structure.</p>
-<h3 id="step-1-create-a-new-environment-folder"><a class="header" href="#step-1-create-a-new-environment-folder">Step 1: Create a New Environment Folder</a></h3>
-<ul>
-<li>Within the <code>rover_envs/envs</code> directory, create a new folder named after your task (<code>TASK_FOLDER</code>). This folder will house all the necessary configuration files for your new task.</li>
-</ul>
-<h3 id="step-2-create-the-task-configuration-file"><a class="header" href="#step-2-create-the-task-configuration-file">Step 2: Create the Task Configuration File</a></h3>
-<ul>
-<li>Inside <code>TASK_FOLDER</code>, create a configuration file named <code>TASK_env_cfg.py</code>, substituting <code>TASK</code> with the name of your task. This file will define the task's configuration.</li>
-</ul>
-<h3 id="step-3-define-the-mdps"><a class="header" href="#step-3-define-the-mdps">Step 3: Define the MDPs</a></h3>
-<ul>
-<li>
-<p>In <code>TASK_env_cfg.py</code>, you'll define the configurations for actions, observations, terminations, commands, and, optionally, randomizations that make up your task's Markov Decision Process (MDP).</p>
-<p>You can refer to the <a href="https://github.com/abmoRobotics/isaac_rover_orbit/blob/main/rover_envs/envs/navigation/rover_env_cfg.py">Navigation Task example</a> for guidance on how to structure this file.</p>
-</li>
-</ul>
-<h3 id="step-4-set-up-the-robot-folder"><a class="header" href="#step-4-set-up-the-robot-folder">Step 4: Set Up the Robot Folder</a></h3>
-<ul>
-<li>
-<p>Within <code>rover_envs/envs/TASK_FOLDER</code>, create a new folder named <code>robots/ROBOT_NAME</code>, replacing <code>ROBOT_NAME</code> with the name of the robot used in the task.</p>
-<p>In this folder, create two files: <code>__init__.py</code> and <code>env_cfg.py</code>.</p>
-</li>
-</ul>
-<h3 id="step-5-configure-env_cfgpy"><a class="header" href="#step-5-configure-env_cfgpy">Step 5: Configure <code>env_cfg.py</code></a></h3>
-<ul>
-<li>The <code>env_cfg.py</code> file customizes <code>TASK_env_cfg.py</code> for a specific robot. At a minimum, it should contain the following Python code:</li>
-</ul>
-<pre><code class="language-python">from rover_envs.assets.robots.YOUR_ROBOT import YOUR_ROBOT_CFG
-from rover_envs.envs.YOUR_TASK.TASK_env_cfg.py import TaskEnvCfg
-
-@configclass
-class TaskEnvCfg(TaskEnvCfg):
-
-    def __post_init__(self):
-        super().__post_init__()
-
-        # Define robot
-        self.scene.robot = YOUR_ROBOT_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-</code></pre>
-<p>Make sure to replace YOUR_ROBOT and YOUR_TASK with the appropriate robot and task names</p>
-<h3 id="step-6-configure-__init__py"><a class="header" href="#step-6-configure-__init__py">Step 6: Configure <code>__init__.py</code></a></h3>
-<p>This file registers the environment with the OPENAI gym library. Include at least the following code.</p>
-<pre><code class="language-python">import os
-import gymnasium as gym
-from . import env_cfg
-
-gym.register(
-    id="TASK_NAME-v0",
-    entry_point='omni.isaac.orbit.envs:RLTaskEnv',
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": env_cfg.TaskEnvCfg,
-        "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent.pt", # This is optional
-    }
-)
-
-</code></pre>
-<h3 id="step-7-running-the-task"><a class="header" href="#step-7-running-the-task">Step 7: Running the Task</a></h3>
-<p>With everything set up, you can now run the task as follows:</p>
-<pre><code class="language-python"># Run training policy
-cd examples/02_train
-python train.py --task="TASK_NAME-v0" --num_envs=128
-</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="mapless-navigation"><a class="header" href="#mapless-navigation">Mapless Navigation</a></h1>
 <p>In this task we teach an agent to autonomously navigate to target locations using local terrain information. Below we present the rewards, neural network, and terrain environment used for this task.</p>
 <h2 id="rewards"><a class="header" href="#rewards">Rewards</a></h2>
@@ -482,14 +389,107 @@ a = mlp(o_t^p, l_t),
 $$</p>
 <p>where $a$ refers to the actions and $mlp$ is a multilayer perceptron with three linear layers of size <code>[512, 256, 128]</code> and LeakyReLU as the activation function. The network architecture is visualized below.</p>
 <div align="center">
-    <img src="https://github.com/abmoRobotics/isaac_rover_orbit/assets/56405924/2ad437de-9453-4793-afd7-062cde05e8ff" width="70%" alt="Actor">
+    <img src="tasks/../_imgs/CNN.png" width="100%" alt="Actor">
 </div>
 <h2 id="environment"><a class="header" href="#environment">Environment</a></h2>
 <p>Below the environment used in this task in shown, it features a 200m x 200m map with obstacles.</p>
 <div align="center">
-    <img src="https://github.com/abmoRobotics/isaac_rover_orbit/assets/56405924/bfdb1586-a507-4f6f-bbef-4a1dacc435ef" width="70%" alt="Env">
+    <img src="tasks/../_imgs/environment.png" width="100%" alt="Env">
 </div>
 <h1 id="tube-grasping"><a class="header" href="#tube-grasping">Tube Grasping</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="adding-new-assets"><a class="header" href="#adding-new-assets">Adding new assets</a></h2>
+<p>To integrate a new robot asset into your project, please follow the steps outlined below. These steps ensure that the asset is correctly added and configured for use in Isaac Lab.</p>
+<h3 id="step-1-collect-the-asset"><a class="header" href="#step-1-collect-the-asset">Step 1: Collect the Asset</a></h3>
+<p>Begin by collecting the necessary asset within Isaac Sim. You do this by right clicking your robot USD file, and click collect as illustratred in the figure below.</p>
+<p><img src="development/../_imgs/collect_asset.png" alt="Collect" /></p>
+<p>You then type in the following options, select an output folder and click collect.</p>
+<p><img src="development/../_imgs/collect_asset2.png" alt="Collect2" /></p>
+<h3 id="step-2-add-the-asset-files"><a class="header" href="#step-2-add-the-asset-files">Step 2: Add the Asset Files</a></h3>
+<p>Once you have the asset, you need to add it to your project's file structure. Specifically:</p>
+<ul>
+<li>
+<p>Navigate to <code>rover_envs/assets/robots/YOUR_ROBOT_NAME</code>.</p>
+</li>
+<li>
+<p>Add the Universal Scene Description (USD) file along with any related content (textures, metadata, etc.) to this directory.</p>
+<p>Make sure to replace <code>YOUR_ROBOT_NAME</code> with the actual name of your robot to maintain a clear and organized file structure.</p>
+</li>
+</ul>
+<h3 id="step-3-create-the-configuration-file"><a class="header" href="#step-3-create-the-configuration-file">Step 3: Create the Configuration File</a></h3>
+<p>For each robot asset, a configuration (cfg) file is required. This file specifies various parameters and settings for the robot:</p>
+<ul>
+<li>Create a new cfg file named <code>YOUR_ROBOT_NAME.cfg</code> in the same directory as your asset files (<code>rover_envs/assets/robots/YOUR_ROBOT_NAME</code>).</li>
+</ul>
+<h3 id="step-4-configure-the-robot"><a class="header" href="#step-4-configure-the-robot">Step 4: Configure the Robot</a></h3>
+<p>The final step involves configuring your robot asset using the newly created cfg file:</p>
+<ul>
+<li>Open <code>YOUR_ROBOT_NAME.cfg</code> and configure it as needed. You can refer to previous configuration files for examples of how to structure your settings. An example configuration file can be found here: <a href="https://github.com/abmoRobotics/RLRoverLab/blob/main/rover_envs/assets/robots/exomy.py">Exomy Example Configuration</a>.</li>
+</ul>
+<p>By following these steps, you can successfully add and configure a new robot asset and use the suite to train an agent or perform experiments.</p>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="adding-a-new-task"><a class="header" href="#adding-a-new-task">Adding a New Task</a></h2>
+<p>To incorporate a new task into your project, follow the steps outlined below. This guide ensures that your new task is properly set up and integrated within the existing project structure.</p>
+<h3 id="step-1-create-a-new-environment-folder"><a class="header" href="#step-1-create-a-new-environment-folder">Step 1: Create a New Environment Folder</a></h3>
+<ul>
+<li>Within the <code>rover_envs/envs</code> directory, create a new folder named after your task (<code>TASK_FOLDER</code>). This folder will house all the necessary configuration files for your new task.</li>
+</ul>
+<h3 id="step-2-create-the-task-configuration-file"><a class="header" href="#step-2-create-the-task-configuration-file">Step 2: Create the Task Configuration File</a></h3>
+<ul>
+<li>Inside <code>TASK_FOLDER</code>, create a configuration file named <code>TASK_env_cfg.py</code>, substituting <code>TASK</code> with the name of your task. This file will define the task's configuration.</li>
+</ul>
+<h3 id="step-3-define-the-mdps"><a class="header" href="#step-3-define-the-mdps">Step 3: Define the MDPs</a></h3>
+<ul>
+<li>
+<p>In <code>TASK_env_cfg.py</code>, you'll define the configurations for actions, observations, terminations, commands, and, optionally, randomizations that make up your task's Markov Decision Process (MDP).</p>
+<p>You can refer to the <a href="https://github.com/abmoRobotics/RLRoverLab/blob/main/rover_envs/envs/navigation/rover_env_cfg.py">Navigation Task example</a> for guidance on how to structure this file.</p>
+</li>
+</ul>
+<h3 id="step-4-set-up-the-robot-folder"><a class="header" href="#step-4-set-up-the-robot-folder">Step 4: Set Up the Robot Folder</a></h3>
+<ul>
+<li>
+<p>Within <code>rover_envs/envs/TASK_FOLDER</code>, create a new folder named <code>robots/ROBOT_NAME</code>, replacing <code>ROBOT_NAME</code> with the name of the robot used in the task.</p>
+<p>In this folder, create two files: <code>__init__.py</code> and <code>env_cfg.py</code>.</p>
+</li>
+</ul>
+<h3 id="step-5-configure-env_cfgpy"><a class="header" href="#step-5-configure-env_cfgpy">Step 5: Configure <code>env_cfg.py</code></a></h3>
+<ul>
+<li>The <code>env_cfg.py</code> file customizes <code>TASK_env_cfg.py</code> for a specific robot. At a minimum, it should contain the following Python code:</li>
+</ul>
+<pre><code class="language-python">from rover_envs.assets.robots.YOUR_ROBOT import YOUR_ROBOT_CFG
+from rover_envs.envs.YOUR_TASK.TASK_env_cfg.py import TaskEnvCfg
+
+@configclass
+class TaskEnvCfg(TaskEnvCfg):
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        # Define robot
+        self.scene.robot = YOUR_ROBOT_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+</code></pre>
+<p>Make sure to replace YOUR_ROBOT and YOUR_TASK with the appropriate robot and task names</p>
+<h3 id="step-6-configure-__init__py"><a class="header" href="#step-6-configure-__init__py">Step 6: Configure <code>__init__.py</code></a></h3>
+<p>This file registers the environment with the OPENAI gym library. Include at least the following code.</p>
+<pre><code class="language-python">import os
+import gymnasium as gym
+from . import env_cfg
+
+gym.register(
+    id="TASK_NAME-v0",
+    entry_point='isaaclab.envs:ManagerBasedRLEnv',
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": env_cfg.TaskEnvCfg,
+        "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent.pt", # This is optional
+    }
+)
+
+</code></pre>
+<h3 id="step-7-running-the-task"><a class="header" href="#step-7-running-the-task">Step 7: Running the Task</a></h3>
+<p>With everything set up, you can now run the task as follows:</p>
+<pre><code class="language-python"># Run training policy
+cd examples/02_train
+python train.py --task="TASK_NAME-v0" --num_envs=128
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><p>Benchmarks will be available soon. Stay tuned!</p>
 
                     </main>
