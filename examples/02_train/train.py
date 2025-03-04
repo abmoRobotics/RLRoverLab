@@ -11,7 +11,6 @@ from isaaclab.app import AppLauncher
 
 # add argparse arguments
 parser = argparse.ArgumentParser("Welcome to Isaac Lab: Omniverse Robotics Environments!")
-# parser.add_argument("--headless", action="store_true", default=False, help="Force display off at all times.")
 parser.add_argument("--video", action="store_true", default=False, help="Record videos during training.")
 parser.add_argument("--video_length", type=int, default=200, help="Length of the recorded video (in steps).")
 parser.add_argument("--video_interval", type=int, default=2000, help="Interval between video recordings (in steps).")
@@ -19,14 +18,6 @@ parser.add_argument("--num_envs", type=int, default=None, help="Number of enviro
 parser.add_argument("--task", type=str, default="AAURoverEnv-v0", help="Name of the task.")
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
 parser.add_argument("--agent", type=str, default="PPO", help="Name of the agent.")
-# args_cli = parser.parse_args()
-# launch the simulator
-# config = {"headless": args_cli.headless}
-# load cheaper kit config in headless
-# if args_cli.headless:
-#     app_experience = f"{os.environ['EXP_PATH']}/omni.isaac.sim.python.gym.headless.kit"
-# else:
-#     app_experience = f"{os.environ['EXP_PATH']}/omni.isaac.sim.python.kit"
 
 AppLauncher.add_app_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
@@ -128,8 +119,6 @@ def video_record(
 
 
 from isaaclab_tasks.utils import parse_env_cfg  # noqa: E402
-#     env.close()
-#     simulation_app.close()
 from skrl.trainers.torch import SequentialTrainer  # noqa: E402
 from skrl.utils import set_seed  # noqa: E402, F401
 
