@@ -3,7 +3,7 @@ name: Github Documentation Pages
 on:
   push:
     branches:
-      - dev
+      - main
     paths:
       - 'docs/**'
       - '.github/workflows/docs.yml'
