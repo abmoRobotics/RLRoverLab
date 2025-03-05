@@ -4,7 +4,13 @@ from isaaclab.envs import ManagerBasedRLEnv
 from rover_envs.envs.navigation.learning.skrl.agents import PPO_agent, RPO_agent, SAC_agent, TD3_agent, TRPO_agent
 
 
-def get_agent(agent: str, env: ManagerBasedRLEnv, observation_space: Box, action_space: Box, experiment_cfg):
+def get_agent(
+        agent: str,
+        env: ManagerBasedRLEnv,
+        observation_space: Box,
+        action_space: Box,
+        experiment_cfg,
+        conv: bool = False):
     """
     Function to get the agent.
 
@@ -15,7 +21,7 @@ def get_agent(agent: str, env: ManagerBasedRLEnv, observation_space: Box, action
         Agent: The agent.
     """
     if agent == "PPO":
-        return PPO_agent(experiment_cfg, observation_space, action_space, env)
+        return PPO_agent(experiment_cfg, observation_space, action_space, env, conv)
     if agent == "TRPO":
         return TRPO_agent(experiment_cfg, observation_space, action_space, env)
     if agent == "RPO":

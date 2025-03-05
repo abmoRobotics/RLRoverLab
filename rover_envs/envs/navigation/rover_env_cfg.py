@@ -248,7 +248,7 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
 
     # Create scene
     scene: RoverSceneCfg = RoverSceneCfg(
-        num_envs=5, env_spacing=4.0, replicate_physics=False)
+        num_envs=128, env_spacing=4.0, replicate_physics=False)
 
     # Setup PhysX Settings
     sim: SimCfg = SimCfg(

@@ -9,6 +9,7 @@ INSTALL_REQUIRES = [
     "prettytable==3.3.0",
     "pymeshlab",
     "open3d",
+    "gdown",
     # devices
     "hidapi",
     "skrl==1.3.0",
