@@ -18,6 +18,7 @@ parser.add_argument("--num_envs", type=int, default=None, help="Number of enviro
 parser.add_argument("--task", type=str, default="AAURoverEnv-v0", help="Name of the task.")
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
 parser.add_argument("--agent", type=str, default="PPO", help="Name of the agent.")
+parser.add_argument("--checkpoint", type=str, default=None, help="Path to model checkpoint to resume training.")
 
 AppLauncher.add_app_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
@@ -124,7 +125,7 @@ from skrl.utils import set_seed  # noqa: E402, F401
 
 import rover_envs.envs.navigation.robots  # noqa: E402, F401
 # Import agents
-from rover_envs.learning.train import get_agent  # noqa: E402
+from rover_envs.envs.navigation.learning.skrl import get_agent  # noqa: E402
 from rover_envs.utils.config import parse_skrl_cfg  # noqa: E402
 
 def train():
