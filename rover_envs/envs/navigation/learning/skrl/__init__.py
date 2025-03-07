@@ -20,6 +20,8 @@ def get_agent(
     Returns:
         Agent: The agent.
     """
+
+    agent = agent.upper()
     if agent == "PPO":
         return PPO_agent(experiment_cfg, observation_space, action_space, env, conv)
     if agent == "TRPO":

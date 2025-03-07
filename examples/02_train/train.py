@@ -131,7 +131,8 @@ from rover_envs.utils.config import parse_skrl_cfg  # noqa: E402
 def train():
     args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
     env_cfg = parse_env_cfg(args_cli.task, device="cuda:0" if not args_cli.cpu else "cpu", num_envs=args_cli.num_envs)
-    experiment_cfg = parse_skrl_cfg(args_cli.task + f"_{args_cli.agent}")
+    experiment_cfg_file = gym.spec(args_cli.task).kwargs.get("skrl_cfgs")[args_cli.agent.upper()] # key = agent name, value = path to config file
+    experiment_cfg = parse_skrl_cfg(experiment_cfg_file)
 
     log_dir = log_setup(experiment_cfg, env_cfg, args_cli.agent)
 
