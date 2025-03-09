@@ -19,7 +19,7 @@ gym.register(
             "TD3": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_td3.yaml",
             "SAC": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_sac.yaml",
             "RPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_rpo.yaml",
-    },
+        },
     }
 )
 
@@ -34,13 +34,13 @@ gym.register(
     }
 )
 
-gym.register(
-    id="AAURoverEnvCamera-v0",
-    entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": env_cfg.AAURoverRGBEnvCfg,
-        "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent.pt",
-        "get_agent_fn": get_agent,
-    }
-)
+# gym.register(
+#     id="AAURoverEnvCamera-v0",
+#     entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
+#     disable_env_checker=True,
+#     kwargs={
+#         "env_cfg_entry_point": env_cfg.AAURoverRGBEnvCfg,
+#         "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent.pt",
+#         "get_agent_fn": get_agent,
+#     }
+# )
