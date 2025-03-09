@@ -16,8 +16,8 @@ AAU_ROVER_CFG = ArticulationCfg(
         collision_props=sim_utils.CollisionPropertiesCfg(contact_offset=0.04, rest_offset=0.01),
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             max_linear_velocity=1.5,
-            max_angular_velocity=1000.0,
-            max_depenetration_velocity=1.0,
+            max_angular_velocity=4.0,
+            max_depenetration_velocity=0.5,
             disable_gravity=False,
         ),
         articulation_props=sim_utils.ArticulationRootPropertiesCfg(
@@ -30,7 +30,7 @@ AAU_ROVER_CFG = ArticulationCfg(
     init_state=ArticulationCfg.InitialStateCfg(
         pos=(0.0, 0.0, 0.0),
         joint_pos={".*Steer_Revolute": 0.0},
-        joint_vel={".*Steer_Revolute": 0.0, ".*Drive_Continous": 0.0},
+        joint_vel={".*Steer_Revolute": 0.0, ".*Drive_Continuous": 0.0},
     ),
     actuators={
         "base_steering": ImplicitActuatorCfg(
@@ -41,15 +41,15 @@ AAU_ROVER_CFG = ArticulationCfg(
             damping=1000.0,
         ),
         "base_drive": ImplicitActuatorCfg(
-            joint_names_expr=[".*Drive_Continous"],
+            joint_names_expr=[".*Drive_Continuous"],
             velocity_limit=6,
             effort_limit=12,
             stiffness=100.0,
             damping=4000.0,
         ),
         "passive_joints": ImplicitActuatorCfg(
-            joint_names_expr=[".*Boogie_Revolute"],
-            velocity_limit=15,
+            joint_names_expr=[".*(Rocker|Differential)_Revolute"],
+            velocity_limit=6,
             effort_limit=0,
             stiffness=0.0,
             damping=0.0,
