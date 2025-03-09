@@ -5,17 +5,20 @@ In the example we show how to train a new agent using the suite:
 ```bash
 # Run training script or evaluate pre-trained policy
 cd examples/02_train/train.py
+python train.py --task="AAURoverEnvSimple-v0" --num_envs=128
 python train.py --task="AAURoverEnv-v0" --num_envs=128
 ```
 ## Using pre-trained agent
 ```bash
 # Run training script or evaluate pre-trained policy
 cd examples/03_inference_pretrained
-python eval.py --task="AAURoverEnv-v0" --num_envs=128
+python eval.py --task="AAURoverEnvSimple-v0" --num_envs=32
+python eval.py --task="AAURoverEnv-v0" --num_envs=32
 ```
 ## Recording data
 ```bash
 # Run training script or evaluate pre-trained policy
 cd examples/03_inference_pretrained
-python record.py --task="AAURoverEnv-v0" --num_envs=16
+python record.py --task="AAURoverEnvSimple-v0" --num_envs=32
+python record.py --task="AAURoverEnv-v0" --num_envs=32
 ```
