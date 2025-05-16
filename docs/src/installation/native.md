@@ -14,7 +14,7 @@ If you prefer to install the suite natively without using Docker, follow these s
     ./post_install.sh
     ./isaac-sim.selector.sh
     ```
-1. **Install Isaac Lab**
+2. **Install Isaac Lab**
    ```bash
    git clone https://github.com/isaac-sim/IsaacLab
    cd isaac_lab
@@ -37,7 +37,7 @@ If you prefer to install the suite natively without using Docker, follow these s
 
    ```
 
-2. **Set up the RL-suite:**
+3. **Set up the RL-suite:**
 
    ```bash
    # Clone Repo
@@ -47,8 +47,13 @@ If you prefer to install the suite natively without using Docker, follow these s
    # Install Repo (make sure conda is activated)
    python -m pip install -e .[all]
    ```
+4. **Download terrain assets:**
+   ```bash
+   pip3 install gdown
+   python3 download_usd.py
+   ```
 
-3. **Running The Suite**
+5. **Running The Suite**
 
    **To train a model**, navigate to the training script and run:
    ```bash
