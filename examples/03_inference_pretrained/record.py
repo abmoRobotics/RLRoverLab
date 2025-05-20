@@ -119,11 +119,29 @@ import rover_envs.envs.navigation.robots  # noqa: E402, F401
 # Import agents
 from rover_envs.envs.navigation.learning.skrl import get_agent  # noqa: E402
 from rover_envs.utils.config import parse_skrl_cfg  # noqa: E402
-
-
+from isaaclab.managers import DatasetExportMode # noqa: E402
+from rover_envs.mdp.recorders.recorders_cfg import ReinforcementLearningRecorderManagerCfg # noqa: E402
 def main():
     args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
     env_cfg = parse_env_cfg(args_cli.task, device="cuda:0" if not args_cli.cpu else "cpu", num_envs=args_cli.num_envs)
+    
+    # env_cfg.observations.policy.concatenate_terms = False
+    
+
+    print(f'printing recorder: {env_cfg.recorders}')
+    # Add the RL Data Recorder configuration
+    # env_cfg.recorders = ReinforcementLearningRecorderManagerCfg()
+    # env_cfg.recorders.dataset_export_dir_path = "./dataset"
+    # env_cfg.recorders.dataset_filename = "dataset5.hdf5"
+    # env_cfg.recorders.dataset_export_mode = DatasetExportMode.EXPORT_NONE
+    # env_cfg.recorders.export_in_record_pre_reset = True
+
+    
+   # env_cfg.recorders.dataset_export_dir_path = "./dataset"
+    print(f'printing recorder: {env_cfg.recorders}')
+    #exit()
+
+
     # key = agent name, value = path to config file
     experiment_cfg_file = gym.spec(args_cli.task).kwargs.get("skrl_cfgs")[args_cli.agent.upper()]
     experiment_cfg = parse_skrl_cfg(experiment_cfg_file)
@@ -146,7 +164,7 @@ def main():
     action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(num_actions,))
 
     trainer_cfg = experiment_cfg["trainer"]
-    trainer_cfg["timesteps"] = 1000000
+    trainer_cfg["timesteps"] = 400
 
     agent = get_agent(args_cli.agent, env, observation_space, action_space, experiment_cfg, conv=True)
 
@@ -160,7 +178,7 @@ def main():
 
     trainer = SequentialTrainer(cfg=trainer_cfg, agents=agent, env=env)
     trainer.eval()
-
+    env.recorder_manager.export_episodes()
     env.close()
     simulation_app.close()
 
