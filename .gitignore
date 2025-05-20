@@ -341,3 +341,4 @@ rover_envs/assets/robots/__pycache__/*
 rover_envs/assets/terrains/debug/__pycache__/*
 
 ./vscode*
+*.hdf5
