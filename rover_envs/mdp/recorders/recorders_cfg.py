@@ -25,9 +25,14 @@ class NextObservationRecorderCfg(RecorderTermCfg):
     class_type: type[RecorderTerm] = recorders.NextObservationRecorder
 
 @configclass
-class RLDataRecorderManagerCfg(RecorderManagerBaseCfg):
+class ReinforcementLearningRecorderManagerCfg(RecorderManagerBaseCfg):
     record_actions: ActionRecorderCfg = ActionRecorderCfg()
     record_observations: ObservationRecorderCfg = ObservationRecorderCfg()
     record_rewards: RewardRecorderCfg = RewardRecorderCfg()
     record_dones: DoneRecorderCfg = DoneRecorderCfg()
     record_next_observations: NextObservationRecorderCfg = NextObservationRecorderCfg()
+
+@configclass
+class ImitationLearningRecorderManagerCfg(RecorderManagerBaseCfg):
+    record_actions: ActionRecorderCfg = ActionRecorderCfg()
+    record_observations: ObservationRecorderCfg = ObservationRecorderCfg()
