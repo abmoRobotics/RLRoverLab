@@ -5,7 +5,6 @@ import random
 import sys
 from datetime import datetime
 
-import carb
 import gymnasium as gym
 from isaaclab.app import AppLauncher
 
@@ -38,15 +37,6 @@ from isaaclab_rl.skrl import SkrlVecEnvWrapper  # noqa: E402
 
 simulation_app = app_launcher.app
 
-carb_settings = carb.settings.get_settings()
-carb_settings.set_bool(
-    "rtx/raytracing/cached/enabled",
-    False,
-)
-carb_settings.set_int(
-    "rtx/descriptorSets",
-    8192,
-)
 from isaaclab.envs import ManagerBasedRLEnv  # noqa: E402
 from isaaclab.utils.dict import print_dict  # noqa: E402
 from isaaclab.utils.io import dump_pickle, dump_yaml  # noqa: E402
