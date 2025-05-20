@@ -34,10 +34,10 @@ from rover_envs.envs.navigation.utils.terrains.commands_cfg import TerrainBasedP
 # from rover_envs.envs.navigation.utils.terrains.terrain_importer import TerrainBasedPositionCommandCustom  # noqa: F401
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import RoverTerrainImporter  # noqa: F401
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import TerrainBasedPositionCommand  # noqa: F401
-
+from rover_envs.mdp.recorders.recorders_cfg import ReinforcementLearningRecorderManagerCfg
 
 @configclass
-class RoverSceneCfg(MarsTerrainSceneCfg):
+class RoverSceneCfg(DebugTerrainSceneCfg):
     """
     Rover Scene Configuration
 
@@ -280,6 +280,9 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
     rewards: RewardsCfg = RewardsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
     commands: CommandsCfg = CommandsCfg()
+
+    # Recorder Settings
+    recorders: ReinforcementLearningRecorderManagerCfg = ReinforcementLearningRecorderManagerCfg()
     # curriculum: CurriculumCfg = CurriculumCfg()
 
     def __post_init__(self):
