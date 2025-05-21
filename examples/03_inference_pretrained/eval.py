@@ -83,13 +83,13 @@ def main():
     # Get the observation and action spaces
     num_obs = env.observation_manager.group_obs_dim["policy"][0]
     num_actions = env.action_manager.action_term_dim[0]
-    observation_space = gym.spaces.Box(low=-math.inf, high=math.inf, shape=(num_obs,))
-    action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(num_actions,))
+    #observation_space = gym.spaces.Box(low=-math.inf, high=math.inf, shape=(num_obs,))
+    #action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(num_actions,))
 
     trainer_cfg = experiment_cfg["trainer"]
     trainer_cfg["timesteps"] = 1000000
 
-    agent = get_agent(args_cli.agent, env, observation_space, action_space, experiment_cfg, conv=True)
+    agent = get_agent(args_cli.agent, env, env.observation_space, env.action_space, experiment_cfg, conv=True)
 
     # Get the checkpoint path from the experiment configuration
     print(f'args_cli.task: {args_cli.task}')
