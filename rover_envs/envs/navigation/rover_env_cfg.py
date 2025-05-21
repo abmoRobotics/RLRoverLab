@@ -34,7 +34,7 @@ from rover_envs.envs.navigation.utils.terrains.commands_cfg import TerrainBasedP
 # from rover_envs.envs.navigation.utils.terrains.terrain_importer import TerrainBasedPositionCommandCustom  # noqa: F401
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import RoverTerrainImporter  # noqa: F401
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import TerrainBasedPositionCommand  # noqa: F401
-
+from rover_envs.mdp.recorders.recorders_cfg import ReinforcementLearningRecorderManagerCfg
 
 @configclass
 class RoverSceneCfg(MarsTerrainSceneCfg):
@@ -77,7 +77,7 @@ class RoverSceneCfg(MarsTerrainSceneCfg):
     #     prim_path="{ENV_REGEX_NS}/Robot")
 
     contact_sensor = ContactSensorCfg(
-        prim_path="{ENV_REGEX_NS}/Robot/.*_(Drive|Steer|Boogie|Body)",
+        prim_path="{ENV_REGEX_NS}/Robot/.*_(Drive|Steer|Boogie|Body|Rocker)",
         filter_prim_paths_expr=["/World/terrain/obstacles/obstacles"],
     )
     # contact_sensor = None
@@ -280,6 +280,9 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
     rewards: RewardsCfg = RewardsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
     commands: CommandsCfg = CommandsCfg()
+
+    # Recorder Settings
+    recorders: ReinforcementLearningRecorderManagerCfg = ReinforcementLearningRecorderManagerCfg()
     # curriculum: CurriculumCfg = CurriculumCfg()
 
     def __post_init__(self):

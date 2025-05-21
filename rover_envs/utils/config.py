@@ -6,41 +6,9 @@
 
 """Utility functions for parsing skrl configuration files."""
 
-import os
-
 import yaml
-from skrl.resources.preprocessors.torch import RunningStandardScaler  # noqa: F401
-from skrl.resources.schedulers.torch import KLAdaptiveRL  # noqa: F401
 
-# Convenient way to switch between skrl versions
-try:
-    from skrl.utils.model_instantiators import Shape  # noqa: F401
-except ImportError:
-    from skrl.utils.model_instantiators.torch import Shape  # noqa: F401
-
-from rover_envs.envs import ROVER_LAB_ENVS_DATA_DIR
-
-__all__ = ["SKRL_PPO_CONFIG_FILE", "parse_skrl_cfg"]
-
-
-SKRL_PPO_CONFIG_FILE = {
-    # classic
-    "AAURoverEnv-v0": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_ppo.yaml"),
-    "AAURoverEnvCamera-v0": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_ppo.yaml"),
-    "AAURoverEnvNew-v0": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_ppo.yaml"),
-    "AAURoverEnvNoObstacles-v0": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_ppo.yaml"),
-    "AAURoverEnv-v0_PPO": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_ppo.yaml"),
-    "AAURoverEnv-v0_TRPO": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_trpo.yaml"),
-    "AAURoverEnv-v0_TD3": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_td3.yaml"),
-    "AAURoverEnv-v0_SAC": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_sac.yaml"),
-    "AAURoverEnv-v0_RPO": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_rpo.yaml"),
-    "Exomy-v0_PPO": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_ppo.yaml"),
-    "Exomy-v0_TRPO": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_trpo.yaml"),
-    "Exomy-v0_TD3": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_td3.yaml"),
-    "Exomy-v0_SAC": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_sac.yaml"),
-    "Exomy-v0_RPO": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_rpo.yaml"),
-    "AAURoverEnvCamera-v0_PPO": os.path.join(ROVER_LAB_ENVS_DATA_DIR, "skrl/configs/rover_ppo.yaml"),
-}
+__all__ = ["parse_skrl_cfg"]
 
 
 def parse_skrl_cfg(task_name) -> dict:
@@ -55,7 +23,8 @@ def parse_skrl_cfg(task_name) -> dict:
 
     # retrieve the default environment config file
     try:
-        config_file = SKRL_PPO_CONFIG_FILE[task_name]
+        #config_file = SKRL_PPO_CONFIG_FILE[task_name]
+        config_file = task_name
     except KeyError:
         raise ValueError(f"Task not found: {task_name}")
 

@@ -37,9 +37,13 @@
    git clone https://github.com/abmoRobotics/RLRoverLab
    cd RLRoverLab/docker
    ```
-2. Download terrains from Google Drive:
-   1. Download from Google Drive: https://drive.google.com/file/d/1VXFTD2OgHcsQL_ifO81AzD2HDkA98h93/view?usp=sharing
-   2. Unzip files in root folder of the git repository
+2. **Download terrain assets:**
+   ```bash
+   pip3 install gdown
+   python3 download_usd.py
+   ```
+   <!-- 1. Download from Google Drive: https://drive.google.com/file/d/1VXFTD2OgHcsQL_ifO81AzD2HDkA98h93/view?usp=sharing
+   1. Unzip files in root folder of the git repository -->
 3. **Build and start the Docker container**:
    ```bash
    ./run.sh

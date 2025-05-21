@@ -9,7 +9,7 @@ import ::anno::version;
 import ::tex::gamma_mode;
 import ::state::normal;
 
-export material Brushed_Antique_Copper(*)
+export material Cast_Metal_Silver_Vein(*)
 [[
     ::anno::display_name("Omni PBR "),
     ::anno::description("Omni PBR, supports ORM textures"),
@@ -19,7 +19,7 @@ export material Brushed_Antique_Copper(*)
 ]]
  = ::OmniPBR::OmniPBR(
     diffuse_color_constant: color(0.200000003f, 0.200000003f, 0.200000003f),
-    diffuse_texture: texture_2d("../textures/Brushed_Antique_Copper_BaseColor.png" /* tag 2881, version 3331264037 */, ::tex::gamma_srgb),
+    diffuse_texture: texture_2d("../textures/Cast_Metal_Silver_Vein_BaseColor.png" /* tag 2887, version 3522366492 */, ::tex::gamma_srgb),
     albedo_desaturation: 0.f,
     albedo_add: 0.f,
     albedo_brightness: 1.f,
@@ -32,7 +32,7 @@ export material Brushed_Antique_Copper(*)
     metallic_texture: texture_2d(),
     specular_level: 0.5f,
     enable_ORM_texture: true,
-    ORM_texture: texture_2d("../textures/Brushed_Antique_Copper_ORM.png" /* tag 2885, version 2626562058 */, ::tex::gamma_linear),
+    ORM_texture: texture_2d("../textures/Cast_Metal_Silver_Vein_ORM.png" /* tag 2891, version 2285210443 */, ::tex::gamma_linear),
     ao_to_diffuse: 0.f,
     ao_texture: texture_2d(),
     enable_emission: false,
@@ -40,7 +40,7 @@ export material Brushed_Antique_Copper(*)
     emissive_mask_texture: texture_2d(),
     emissive_intensity: 40.f,
     bump_factor: 1.f,
-    normalmap_texture: texture_2d("../textures/Brushed_Antique_Copper_N.png" /* tag 2883, version 2395521129 */, ::tex::gamma_linear),
+    normalmap_texture: texture_2d("../textures/Cast_Metal_Silver_Vein_N.png" /* tag 2889, version 4204690550 */, ::tex::gamma_linear),
     detail_bump_factor: 0.300000012f,
     detail_normalmap_texture: texture_2d(),
     project_uvw: false,

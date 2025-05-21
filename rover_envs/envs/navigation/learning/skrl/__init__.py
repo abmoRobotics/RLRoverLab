@@ -1,4 +1,4 @@
-from gym.spaces import Box
+from gymnasium.spaces import Box
 from isaaclab.envs import ManagerBasedRLEnv
 
 from rover_envs.envs.navigation.learning.skrl.agents import PPO_agent, RPO_agent, SAC_agent, TD3_agent, TRPO_agent
@@ -20,6 +20,8 @@ def get_agent(
     Returns:
         Agent: The agent.
     """
+
+    agent = agent.upper()
     if agent == "PPO":
         return PPO_agent(experiment_cfg, observation_space, action_space, env, conv)
     if agent == "TRPO":

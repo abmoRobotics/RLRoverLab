@@ -22,15 +22,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt -y autoremove && apt clean autoclean && \
     rm -rf /var/lib/apt/lists/*
 
-# Clone Isaac Lab
-RUN git clone https://github.com/isaac-sim/IsaacLab ${ISAAC_LAB_PATH}
-RUN /bin/bash -c "cd ${ISAAC_LAB_PATH} && git checkout -b 157c6b7"
-# Create symlink to Isaac Sim
-RUN ln -sf ${ISAAC_SIM_PATH} ${ISAAC_LAB_PATH}/_isaac_sim
+# Install this Isaac Lab and SKRL
+RUN ${ISAAC_SIM_PATH}/python.sh -m pip install isaaclab==2.0.2 skrl==1.4.1 gym
 
-# Install Isaac Lab
-RUN ${ISAAC_LAB_PATH}/isaaclab.sh --install
-# --extra
 
 RUN echo "alias isaaclab=${ISAAC_LAB_PATH}/isaaclab.sh" >> ${HOME}/.bashrc && \
     echo "alias python=${ISAAC_SIM_PATH}/python.sh" >> ${HOME}/.bashrc && \
@@ -40,6 +34,7 @@ RUN echo "alias isaaclab=${ISAAC_LAB_PATH}/isaaclab.sh" >> ${HOME}/.bashrc && \
     echo "alias tensorboard='${ISAAC_SIM_PATH}/python.sh ${ISAAC_SIM_PATH}/tensorboard'" >> ${HOME}/.bashrc && \
     echo "export TZ=$(date +%Z)" >> ${HOME}/.bashrc \
     echo "export TZ=$(date +%Z)" >> ${HOME}/.bashrc
+
 
 # Configure /workspace/isaac_rover as a safe directory, so that Weights & Biases can be used.
 RUN git config --global --add safe.directory /workspace/isaac_rover

@@ -1,16 +1,7 @@
-# Copyright (c) 2022-2025, The Isaac Lab Project Developers.
-# All rights reserved.
-#
-# SPDX-License-Identifier: BSD-3-Clause
-
-
 x-default-isaac-lab-volumes:
   &default-isaac-lab-volumes
     # These volumes follow from this page
     # https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/install_faq.html#save-isaac-sim-configs-on-local-disk
-
-      # These volumes follow from this page
-      # https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/install_faq.html#save-isaac-sim-configs-on-local-disk
     - type: volume
       source: isaac-cache-kit
       target: ${DOCKER_ISAAC_SIM_PATH}/kit/cache
@@ -45,16 +36,9 @@ x-default-isaac-lab-volumes:
     - type: bind
       source: ${HOME}/.Xauthority
       target: ${DOCKER_USER_HOME}/.Xauthority
-      # This overlay allows changes on the local files to
-      # be reflected within the container immediately
     - type: bind
       source: ../
       target: ${RLROVERLAB_PATH}
-      # The effect of these volumes is twofold:
-      # 1. Prevent root-owned files from flooding the _build and logs dir
-      #    on the host machine
-      # 2. Preserve the artifacts in persistent volumes for later copying
-      #    to the host machine
     - type: volume
       source: orbit-docs
       target: /workspace/orbit/docs/_build
@@ -82,10 +66,9 @@ x-default-isaac-lab-enviroment:
     DISPLAY: ${DISPLAY}
     OMNI_KIT_ALLOW_ROOT: 1
 
+
+
 services:
-  # This service is used to build the Docker image
-  # The docker image is built from the root directory
-  #profiles: ["base"]
   rover-lab-base:
     build:
       context: ../
@@ -100,16 +83,13 @@ services:
       - .env
     environment: *default-isaac-lab-environment
     volumes: *default-isaac-lab-volumes
-    # command: bash -c "${DOCKER_ISAAC_SIM_PATH}/python.sh -m pip install -e ${RLROVERLAB_PATH} && bash"
     network_mode: host
     deploy: *default-isaac-lab-deploy
-    # This is the entrypoint for the container
     entrypoint: bash -c "${DOCKER_ISAAC_SIM_PATH}/python.sh -m pip install -e ${RLROVERLAB_PATH} && bash"
     stdin_open: true
     tty: true
 
   rover-lab-ros2:
-    #profiles: ["ros2"]
     env_file:
       - .env
       - .env.ros2
@@ -117,9 +97,6 @@ services:
       context: ../
       dockerfile: docker/Dockerfile.ros2
       args:
-          # ROS2_APT_PACKAGE will default to NONE. This is to
-          # avoid a warning message when building only the base profile
-          # with the .env.base file
         - ROS2_APT_PACKAGE=${ROS2_APT_PACKAGE:-NONE}
         - USER_HOME=${DOCKER_USER_HOME}
     image: rover-lab-ros2
@@ -128,14 +105,12 @@ services:
     volumes: *default-isaac-lab-volumes
     network_mode: host
     deploy: *default-isaac-lab-deploy
-    # This is the entrypoint for the container
     entrypoint: bash -c "${DOCKER_ISAAC_SIM_PATH}/python.sh -m pip install -e ${RLROVERLAB_PATH} && bash"
     stdin_open: true
     tty: true
 
 
 volumes:
-  # isaac-sim
   isaac-cache-kit:
   isaac-cache-ov:
   isaac-cache-pip:
@@ -145,7 +120,6 @@ volumes:
   isaac-carb-logs:
   isaac-data:
   isaac-docs:
-  # isaac-lab
   orbit-docs:
   orbit-logs:
   orbit-data:
