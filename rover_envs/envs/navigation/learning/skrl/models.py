@@ -387,12 +387,17 @@ class GaussianNeuralNetworkConv(GaussianMixin, BaseModel):
 
     def compute(self, states, role="actor"):
         # Split the states into proprioception and heightmap if the heightmap is used.
+        
         if self.encoder_input_size is None:
             x = states["states"]
         else:
             encoder_output = self.encoder(states["states"][:, self.mlp_input_size - 1:-1])
             x = states["states"][:, 0:self.mlp_input_size]
             x = torch.cat([x, encoder_output], dim=1)
+
+        # states = self.tensor_to_space(states["states"], self.observation_space)
+        # encoder_output = self.encoder(states["height_scan"])
+        # x = torch.cat([states["actions"], states["distance"], states["heading"], states["angle_diff"], encoder_output], dim=1)
 
         # Compute the output of the MLP.
         for layer in self.mlp:

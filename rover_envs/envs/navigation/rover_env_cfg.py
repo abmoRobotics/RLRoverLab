@@ -37,7 +37,7 @@ from rover_envs.envs.navigation.utils.terrains.terrain_importer import TerrainBa
 from rover_envs.mdp.recorders.recorders_cfg import ReinforcementLearningRecorderManagerCfg
 
 @configclass
-class RoverSceneCfg(DebugTerrainSceneCfg):
+class RoverSceneCfg(MarsTerrainSceneCfg):
     """
     Rover Scene Configuration
 
