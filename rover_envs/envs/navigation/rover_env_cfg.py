@@ -22,7 +22,7 @@ from isaaclab.sim import SimulationCfg as SimCfg
 from isaaclab.terrains import TerrainImporter, TerrainImporterCfg  # noqa: F401
 from isaaclab.utils import configclass
 from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise  # noqa: F401
-
+from isaaclab.sensors.camera.tiled_camera_cfg import TiledCameraCfg
 ##
 # Scene Description
 ##
@@ -91,6 +91,10 @@ class RoverSceneCfg(MarsTerrainSceneCfg):
         mesh_prim_paths=["/World/terrain/hidden_terrain"],
         max_distance=100.0,
     )
+
+    tiled_camera: TiledCameraCfg | None = None
+
+
 
 
 @configclass
@@ -242,6 +246,8 @@ class EventCfg:
 #     target_distance = CurrTerm(func=mdp.goal_distance_curriculum)
 
 
+
+
 @configclass
 class RoverEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the rover environment."""
@@ -296,3 +302,6 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
             self.scene.height_scanner.update_period = self.sim.dt * self.decimation
         if self.scene.contact_sensor is not None:
             self.scene.contact_sensor.update_period = self.sim.dt * self.decimation
+        if self.scene.tiled_camera is not None:
+            self.scene.tiled_camera.update_period = self.sim.dt * self.decimation
+

@@ -11,10 +11,13 @@ from isaaclab.app import AppLauncher
 parser = argparse.ArgumentParser(description="Empty Scene")
 
 parser.add_argument("--cpu", default=False, action="store_true", help="Run on CPU")
+parser.add_argument("--headless", default=False, action="store_true", help="Run in headless mode")
+parser.add_argument("--device", type=str, default="cuda:0", help="Device to run on")
 parser.add_argument("--disable_fabric", action="store_true", default=False, help="Disable Fabric")
 parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to create")
 parser.add_argument("--task", type=str, default="AAURoverEnv-v0", help="Task name")
 parser.add_argument("--robot", type=str, default="aau_rover", help="Robot name")
+parser.add_argument("--enable_cameras", action="store_true", default=False, help="Enable cameras")
 
 args_cli = parser.parse_args()
 
@@ -49,6 +52,8 @@ def main():
     while simulation_app.is_running:
         with torch.inference_mode():
             actions = torch.zeros(env.action_space.shape, device=env.unwrapped.device)
+            actions[:, 0] = 1.0  # Move forward
+            actions[:, 1] = 0.0
             env.step(actions)
 
 

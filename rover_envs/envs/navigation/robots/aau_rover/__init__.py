@@ -41,13 +41,13 @@ gym.register(
     }
 )
 
-# gym.register(
-#     id="AAURoverEnvCamera-v0",
-#     entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
-#     disable_env_checker=True,
-#     kwargs={
-#         "env_cfg_entry_point": env_cfg.AAURoverRGBEnvCfg,
-#         "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent.pt",
-#         "get_agent_fn": get_agent,
-#     }
-# )
+gym.register(
+    id="AAURoverEnvCamera-v0",
+    entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": env_cfg.AAURoverRGBResnetEnvCfg,
+        #"best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent.pt",
+        "get_agent_fn": get_agent,
+    }
+)
