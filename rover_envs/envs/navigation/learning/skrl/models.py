@@ -4,6 +4,18 @@ from skrl.models.torch.base import Model as BaseModel
 from skrl.models.torch.deterministic import DeterministicMixin
 from skrl.models.torch.gaussian import GaussianMixin
 
+MODEL_REGISTRY = {}
+
+
+def register_model(name):
+    """Decorator to register a model class in the MODEL_REGISTRY."""
+    def decorator(cls):
+        if name in MODEL_REGISTRY:
+            raise ValueError(f"Model with name '{name}' already registered.")
+        MODEL_REGISTRY[name] = cls
+        return cls
+    return decorator
+
 
 def get_activation(activation_name):
     """Get the activation function by name."""
@@ -334,7 +346,7 @@ class Critic(DeterministicMixin, BaseModel):
 
         return x, {}
 
-
+@register_model("GaussianNeuralNetworkConv")
 class GaussianNeuralNetworkConv(GaussianMixin, BaseModel):
     """Gaussian neural network model."""
 
@@ -387,7 +399,7 @@ class GaussianNeuralNetworkConv(GaussianMixin, BaseModel):
 
     def compute(self, states, role="actor"):
         # Split the states into proprioception and heightmap if the heightmap is used.
-        
+
         if self.encoder_input_size is None:
             x = states["states"]
         else:
@@ -405,7 +417,7 @@ class GaussianNeuralNetworkConv(GaussianMixin, BaseModel):
 
         return x, self.log_std_parameter, {}
 
-
+@register_model("DeterministicNeuralNetworkConv")
 class DeterministicNeuralNetworkConv(DeterministicMixin, BaseModel):
     """Gaussian neural network model."""
 
