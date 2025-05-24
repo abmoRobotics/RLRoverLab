@@ -39,7 +39,7 @@ from rover_envs.mdp.recorders.recorders_cfg import ReinforcementLearningRecorder
 
 
 @configclass
-class RoverSceneCfg(DebugTerrainSceneCfg):
+class RoverSceneCfg(MarsTerrainSceneCfg):
     """
     Rover Scene Configuration
 
