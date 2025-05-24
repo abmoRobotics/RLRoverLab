@@ -5,7 +5,7 @@ seed: 42
 models:
   separate: False
   policy:
-    type: "DeterministicActor"
+    type: "DeterministicPolicyConv"
     params:
       mlp_input_size: 5
       mlp_layers: [256, 160, 128]
@@ -13,7 +13,7 @@ models:
       encoder_layers: [8, 16, 32, 64]
       encoder_activation: "leaky_relu"
   target_policy:
-    type: "DeterministicActor"
+    type: "DeterministicPolicyConv"
     params:
       mlp_input_size: 5
       mlp_layers: [256, 160, 128]
@@ -21,7 +21,7 @@ models:
       encoder_layers: [8, 16, 32, 64]
       encoder_activation: "leaky_relu"
   critic_1:
-    type: "Critic"
+    type: "CriticConv"
     params:
       mlp_input_size: 5
       mlp_layers: [256, 160, 128]
@@ -29,7 +29,7 @@ models:
       encoder_layers: [8, 16, 32, 64]
       encoder_activation: "leaky_relu"
   critic_2:
-    type: "Critic"
+    type: "CriticConv"
     params:
       mlp_input_size: 5
       mlp_layers: [256, 160, 128]
@@ -37,7 +37,7 @@ models:
       encoder_layers: [8, 16, 32, 64]
       encoder_activation: "leaky_relu"
   target_critic_1:
-    type: "Critic"
+    type: "CriticConv"
     params:
       mlp_input_size: 5
       mlp_layers: [256, 160, 128]
@@ -45,7 +45,7 @@ models:
       encoder_layers: [8, 16, 32, 64]
       encoder_activation: "leaky_relu"
   target_critic_2:
-    type: "Critic"
+    type: "CriticConv"
     params:
       mlp_input_size: 5
       mlp_layers: [256, 160, 128]

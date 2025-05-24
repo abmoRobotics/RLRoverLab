@@ -5,7 +5,7 @@ seed: 42
 models:
   separate: False
   policy:
-    type: "GaussianNeuralNetworkConv"
+    type: "GaussianPolicyConv"
     params:
       mlp_input_size: 5
       mlp_layers: [256, 160, 128]
@@ -13,7 +13,7 @@ models:
       encoder_layers: [8, 16, 32, 64]
       encoder_activation: "leaky_relu"
   value:
-    type: "DeterministicNeuralNetworkConv"
+    type: "ValueNetworkConv"
     params:
       mlp_input_size: 5
       mlp_layers: [256, 160, 128]
