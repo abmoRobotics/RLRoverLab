@@ -40,15 +40,14 @@ simulation_app = app_launcher.app
 from isaaclab.envs import ManagerBasedRLEnv  # noqa: E402
 from isaaclab.utils.dict import print_dict  # noqa: E402
 from isaaclab.utils.io import dump_pickle, dump_yaml  # noqa: E402
-
-
 from isaaclab_tasks.utils import parse_env_cfg  # noqa: E402
+from skrl.agents.torch.base import Agent  # noqa: E402
 from skrl.trainers.torch import SequentialTrainer  # noqa: E402
 from skrl.utils import set_seed  # noqa: E402, F401
 
 import rover_envs.envs.navigation.robots  # noqa: E402, F401
-# Import agents
-from rover_envs.envs.navigation.learning.skrl import get_agent  # noqa: E402
+# Import the general agent factory
+from rover_envs.learning.agents import create_agent  # noqa: E402
 from rover_envs.utils.config import parse_skrl_cfg  # noqa: E402
 from rover_envs.utils.logging_utils import log_setup, video_record  # noqa: E402
 
@@ -84,7 +83,7 @@ def train():
     # exit()
     trainer_cfg = experiment_cfg["trainer"]
 
-    agent = get_agent(args_cli.agent, env, observation_space, action_space, experiment_cfg, conv=True)
+    agent: Agent = create_agent(args_cli.agent, env, experiment_cfg)
     trainer = SequentialTrainer(cfg=trainer_cfg, agents=agent, env=env)
     trainer.train()
 

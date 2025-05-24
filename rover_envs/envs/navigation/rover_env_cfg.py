@@ -17,12 +17,13 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg  # noqa: F401
 from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, patterns
+from isaaclab.sensors.camera.tiled_camera_cfg import TiledCameraCfg
 from isaaclab.sim import PhysxCfg
 from isaaclab.sim import SimulationCfg as SimCfg
 from isaaclab.terrains import TerrainImporter, TerrainImporterCfg  # noqa: F401
 from isaaclab.utils import configclass
 from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise  # noqa: F401
-from isaaclab.sensors.camera.tiled_camera_cfg import TiledCameraCfg
+
 ##
 # Scene Description
 ##
@@ -36,8 +37,9 @@ from rover_envs.envs.navigation.utils.terrains.terrain_importer import RoverTerr
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import TerrainBasedPositionCommand  # noqa: F401
 from rover_envs.mdp.recorders.recorders_cfg import ReinforcementLearningRecorderManagerCfg
 
+
 @configclass
-class RoverSceneCfg(MarsTerrainSceneCfg):
+class RoverSceneCfg(DebugTerrainSceneCfg):
     """
     Rover Scene Configuration
 
@@ -304,4 +306,3 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
             self.scene.contact_sensor.update_period = self.sim.dt * self.decimation
         if self.scene.tiled_camera is not None:
             self.scene.tiled_camera.update_period = self.sim.dt * self.decimation
-

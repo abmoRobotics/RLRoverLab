@@ -4,33 +4,8 @@ from skrl.models.torch.base import Model as BaseModel
 from skrl.models.torch.deterministic import DeterministicMixin
 from skrl.models.torch.gaussian import GaussianMixin
 
-MODEL_REGISTRY = {}
-
-
-def register_model(name):
-    """Decorator to register a model class in the MODEL_REGISTRY."""
-    def decorator(cls):
-        if name in MODEL_REGISTRY:
-            raise ValueError(f"Model with name '{name}' already registered.")
-        MODEL_REGISTRY[name] = cls
-        return cls
-    return decorator
-
-
-def get_activation(activation_name):
-    """Get the activation function by name."""
-    activation_fns = {
-        "leaky_relu": nn.LeakyReLU(inplace=True),
-        "relu": nn.ReLU(),
-        "tanh": nn.Tanh(),
-        "sigmoid": nn.Sigmoid(),
-        "elu": nn.ELU(),
-        "relu6": nn.ReLU6(),
-        "selu": nn.SELU(),
-    }
-    if activation_name not in activation_fns:
-        raise ValueError(f"Activation function {activation_name} not supported.")
-    return activation_fns[activation_name]
+# Import general model utilities
+from rover_envs.learning.models import MODEL_REGISTRY, get_activation, register_model
 
 
 class HeightmapEncoder(nn.Module):
@@ -102,6 +77,7 @@ class ConvHeightmapEncoder(nn.Module):
         return x
 
 
+@register_model("GaussianNeuralNetwork")
 class GaussianNeuralNetwork(GaussianMixin, BaseModel):
     """Gaussian neural network model."""
 
