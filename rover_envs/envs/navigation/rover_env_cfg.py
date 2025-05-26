@@ -290,9 +290,9 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
     commands: CommandsCfg = CommandsCfg()
 
     # Recorder Settings
-    recorders: ReinforcementLearningRecorderManagerCfg = ReinforcementLearningRecorderManagerCfg()
+    #recorders: ReinforcementLearningRecorderManagerCfg = ReinforcementLearningRecorderManagerCfg()
     # curriculum: CurriculumCfg = CurriculumCfg()
-
+    recorders = None
     def __post_init__(self):
         self.sim.dt = 1 / 30.0
         self.decimation = 6

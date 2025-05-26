@@ -3,7 +3,7 @@
 import argparse
 import traceback
 
-import carb
+#import carb
 import gymnasium as gym
 import torch
 from isaaclab.app import AppLauncher
@@ -61,7 +61,8 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        carb.log_error(f"Error in main: {e}")
-        carb.log_error(traceback.format_exc())
+        print(f"Error in main: {e}")
+        # carb.log_error(f"Error in main: {e}")
+        # carb.log_error(traceback.format_exc())
     finally:
         simulation_app.close()
