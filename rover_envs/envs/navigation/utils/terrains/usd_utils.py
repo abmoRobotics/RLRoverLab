@@ -143,17 +143,9 @@ def get_triangles_and_vertices_from_prim(prim_path):
     # face_vertex_counts = mesh_prim.GetAttribute("faceVertexCounts").Get()
     face_vertex_indices = mesh_prim.GetAttribute("faceVertexIndices").Get()
 
-    # Convert points to numpy array and extract xyz coordinates efficiently
-    vertices_array = np.array(points, dtype=np.float32)
-    if vertices_array.ndim == 2 and vertices_array.shape[1] >= 3:
-        # Take only x, y, z coordinates if there are more than 3 components
-        vertices = vertices_array[:, :3]
-    else:
-        vertices = vertices_array
-    
-    # Convert face indices to numpy array and reshape to triangles
-    face_indices_array = np.array(face_vertex_indices, dtype=np.int32)
-    faces = face_indices_array.reshape(-1, 3)
+    vertices = [(point[0], point[1], point[2]) for point in points]
+    faces = [(face_vertex_indices[i], face_vertex_indices[i+1], face_vertex_indices[i+2])
+             for i in range(0, len(face_vertex_indices), 3)]
 
     return faces, vertices
 
