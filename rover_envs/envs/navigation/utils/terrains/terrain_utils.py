@@ -38,31 +38,57 @@ class HeightmapManager():
         max_x, max_y, _ = np.max(vertices, axis=0) - border_margin
 
         # Calculate the grid size
-        # grid_size = grid_size_in_m / resolution_in_m
         grid_size_x = (max_x - min_x) / self.resolution_in_m
         grid_size_y = (max_y - min_y) / self.resolution_in_m
+        
+        # Grid dimensions
+        grid_width = int(grid_size_x + 1)
+        grid_height = int(grid_size_y + 1)
 
         # Initialize the heightmap
-        heightmap = np.ones((int(grid_size_x+1), int(grid_size_y+1)), dtype=np.float32) * -99
+        heightmap = np.full((grid_height, grid_width), -99.0, dtype=np.float32)
 
         # Calculate the size of a grid cell
-        cell_size_x = (max_x - min_x) / (grid_size_x)
-        cell_size_y = (max_y - min_y) / (grid_size_y)
+        cell_size_x = (max_x - min_x) / grid_size_x
+        cell_size_y = (max_y - min_y) / grid_size_y
 
-        # Iterate over each face to update the heightmap
-        for face in faces:
-            # Get the vertices
-            v1, v2, v3 = vertices[face]
-            # Project to 2D grid
-            min_i = int((min(v1[0], v2[0], v3[0]) - min_x) / cell_size_x)
-            max_i = min(int((max(v1[0], v2[0], v3[0]) - min_x) / cell_size_x), heightmap.shape[1] - 1)
-            min_j = int((min(v1[1], v2[1], v3[1]) - min_y) / cell_size_y)
-            max_j = min(int((max(v1[1], v2[1], v3[1]) - min_y) / cell_size_y), heightmap.shape[0] - 1)
-
-            # Update the heightmap
-            for i in range(min_i, max_i + 1):
-                for j in range(min_j, max_j + 1):
-                    heightmap[j, i] = max(heightmap[j, i], v1[2], v2[2], v3[2])
+        if len(faces) > 0:
+            # Get all triangle vertices at once
+            face_vertices = vertices[faces]  # Shape: (n_faces, 3, 3)
+            
+            # Extract x, y, z coordinates for all triangles
+            x_coords = face_vertices[:, :, 0]  # Shape: (n_faces, 3)
+            y_coords = face_vertices[:, :, 1]  # Shape: (n_faces, 3)
+            z_coords = face_vertices[:, :, 2]  # Shape: (n_faces, 3)
+            
+            # Find bounding box for each triangle
+            min_x_tri = np.min(x_coords, axis=1)
+            max_x_tri = np.max(x_coords, axis=1)
+            min_y_tri = np.min(y_coords, axis=1)
+            max_y_tri = np.max(y_coords, axis=1)
+            max_z_tri = np.max(z_coords, axis=1)
+            
+            # Convert to grid coordinates
+            min_i = np.maximum(0, ((min_x_tri - min_x) / cell_size_x).astype(int))
+            max_i = np.minimum(grid_width - 1, ((max_x_tri - min_x) / cell_size_x).astype(int))
+            min_j = np.maximum(0, ((min_y_tri - min_y) / cell_size_y).astype(int))
+            max_j = np.minimum(grid_height - 1, ((max_y_tri - min_y) / cell_size_y).astype(int))
+            
+            # Process triangles in batches to manage memory
+            batch_size = 10000
+            for batch_start in range(0, len(faces), batch_size):
+                batch_end = min(batch_start + batch_size, len(faces))
+                
+                for idx in range(batch_start, batch_end):
+                    i_range = max_i[idx] - min_i[idx] + 1
+                    j_range = max_j[idx] - min_j[idx] + 1
+                    
+                    if i_range > 0 and j_range > 0:
+                        # Update heightmap for this triangle's bounding box
+                        heightmap[min_j[idx]:max_j[idx]+1, min_i[idx]:max_i[idx]+1] = np.maximum(
+                            heightmap[min_j[idx]:max_j[idx]+1, min_i[idx]:max_i[idx]+1],
+                            max_z_tri[idx]
+                        )
 
         return heightmap, min_x, min_y, max_x, max_y
 
@@ -245,45 +271,6 @@ class TerrainManager():
         reset_buf_len = len(env_ids)
         return env_ids, reset_buf_len
 
-    def mesh_to_heightmap(self, vertices, faces, grid_size_in_m, resolution_in_m=0.1):
-
-        # Border Margin
-        border_margin = 1.0
-        # Define bounding box
-        min_x, min_y, _ = np.min(vertices, axis=0) + border_margin
-        max_x, max_y, _ = np.max(vertices, axis=0) - border_margin
-
-        # Calculate the grid size
-        # grid_size = grid_size_in_m / resolution_in_m
-        grid_size_x = (max_x - min_x) / resolution_in_m
-        grid_size_y = (max_y - min_y) / resolution_in_m
-
-        # Initialize the heightmap
-        heightmap = np.ones((int(grid_size_x+1), int(grid_size_y+1)), dtype=np.float32) * -99
-
-        # Calculate the size of a grid cell
-        cell_size_x = (max_x - min_x) / (grid_size_x)
-        cell_size_y = (max_y - min_y) / (grid_size_y)
-
-        # Iterate over each face to update the heightmap
-        for face in faces:
-            # Get the vertices
-            v1, v2, v3 = vertices[face]
-            # Project to 2D grid
-            min_i = int((min(v1[0], v2[0], v3[0]) - min_x) / cell_size_x)
-            max_i = min(int((max(v1[0], v2[0], v3[0]) - min_x) / cell_size_x), heightmap.shape[1] - 1)
-            min_j = int((min(v1[1], v2[1], v3[1]) - min_y) / cell_size_y)
-            max_j = min(int((max(v1[1], v2[1], v3[1]) - min_y) / cell_size_y), heightmap.shape[0] - 1)
-
-            # Update the heightmap
-            try:
-                for i in range(min_i, max_i + 1):
-                    for j in range(min_j, max_j + 1):
-                        heightmap[j, i] = max(heightmap[j, i], v1[2], v2[2], v3[2])
-            except Exception as e:
-                print(f"Error: {e}, max_i: {max_i}, max_j: {max_j}, min_i: {min_i}, min_j: {min_j}")
-
-        return heightmap
 
     def find_rocks_in_heightmap(self, heightmap, threshold=0.1):
         import cv2

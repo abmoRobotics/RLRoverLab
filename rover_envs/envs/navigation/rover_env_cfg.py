@@ -17,6 +17,7 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg  # noqa: F401
 from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, patterns
+from isaaclab.sensors.camera.tiled_camera_cfg import TiledCameraCfg
 from isaaclab.sim import PhysxCfg
 from isaaclab.sim import SimulationCfg as SimCfg
 from isaaclab.terrains import TerrainImporter, TerrainImporterCfg  # noqa: F401
@@ -35,6 +36,7 @@ from rover_envs.envs.navigation.utils.terrains.commands_cfg import TerrainBasedP
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import RoverTerrainImporter  # noqa: F401
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import TerrainBasedPositionCommand  # noqa: F401
 from rover_envs.mdp.recorders.recorders_cfg import ReinforcementLearningRecorderManagerCfg
+
 
 @configclass
 class RoverSceneCfg(MarsTerrainSceneCfg):
@@ -91,6 +93,10 @@ class RoverSceneCfg(MarsTerrainSceneCfg):
         mesh_prim_paths=["/World/terrain/hidden_terrain"],
         max_distance=100.0,
     )
+
+    tiled_camera: TiledCameraCfg | None = None
+
+
 
 
 @configclass
@@ -242,6 +248,8 @@ class EventCfg:
 #     target_distance = CurrTerm(func=mdp.goal_distance_curriculum)
 
 
+
+
 @configclass
 class RoverEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the rover environment."""
@@ -282,9 +290,9 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
     commands: CommandsCfg = CommandsCfg()
 
     # Recorder Settings
-    recorders: ReinforcementLearningRecorderManagerCfg = ReinforcementLearningRecorderManagerCfg()
+    #recorders: ReinforcementLearningRecorderManagerCfg = ReinforcementLearningRecorderManagerCfg()
     # curriculum: CurriculumCfg = CurriculumCfg()
-
+    recorders = None
     def __post_init__(self):
         self.sim.dt = 1 / 30.0
         self.decimation = 6
@@ -296,3 +304,5 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
             self.scene.height_scanner.update_period = self.sim.dt * self.decimation
         if self.scene.contact_sensor is not None:
             self.scene.contact_sensor.update_period = self.sim.dt * self.decimation
+        if self.scene.tiled_camera is not None:
+            self.scene.tiled_camera.update_period = self.sim.dt * self.decimation
