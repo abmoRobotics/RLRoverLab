@@ -203,6 +203,49 @@ class TerrainManager():
 
         return vertices, faces
 
+    # TODO Remove this function
+    def get_valid_targets(self, target_positions: torch.Tensor, device: str = "cuda:0") -> torch.Tensor:
+        """
+        Computes the closest valid target positions from a set of potential target positions.
+        Valid targets are determined based on a rock mask, which indicates traversable terrain.
+        The computations are performed on the specified device (e.g., 'cuda' or 'cpu').
+
+        Args:
+            target_positions (torch.Tensor): A tensor of shape (N, 2) containing the target positions.
+            device (str, optional): The device on which to perform the computations. Defaults to "cuda:0".
+
+        Returns:
+            torch.Tensor: A tensor of the closest valid target positions.
+        """
+
+        # Generate a coordinate grid based on the rock mask dimensions
+        coordinate_grid_y, coordinate_grid_x = torch.meshgrid(
+            torch.arange(self.rock_mask.shape[0], device=device),
+            torch.arange(self.rock_mask.shape[1], device=device),
+            indexing='ij'
+        )
+        coordinate_grid = torch.stack((coordinate_grid_x, coordinate_grid_y), dim=-1).view(-1, 2)
+
+        # Adjust grid coordinates based on resolution and offset
+        scaled_grid = coordinate_grid.float()
+        scaled_grid *= self.resolution_in_m
+        scaled_grid[:, 0] += self._heightmap_manager.min_x
+        scaled_grid[:, 1] += self._heightmap_manager.min_y
+
+        # Flatten the target positions and transfer to the correct device
+        target_positions_flat = target_positions.view(-1, 2).to(device)
+
+        # Compute pairwise distances between grid points and target positions
+        distances = torch.cdist(scaled_grid, target_positions_flat, p=2.0).view(*self.rock_mask.shape, -1)
+
+        # Mask out distances on the rock mask to consider only valid positions
+        distances_masked = torch.where(self.rock_mask_tensor == 1, torch.inf, distances)
+
+        # Find the closest valid target positions
+        min_distances, min_indices = torch.min(distances_masked.view(-1, distances_masked.size(2)), dim=0)
+
+        # Returns closest valid target positions
+        return scaled_grid[min_indices]
 
     # TODO finish this function
     def check_if_target_is_valid(
