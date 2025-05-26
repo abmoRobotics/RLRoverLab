@@ -203,49 +203,6 @@ class TerrainManager():
 
         return vertices, faces
 
-    # TODO Remove this function
-    def get_valid_targets(self, target_positions: torch.Tensor, device: str = "cuda:0") -> torch.Tensor:
-        """
-        Computes the closest valid target positions from a set of potential target positions.
-        Valid targets are determined based on a rock mask, which indicates traversable terrain.
-        The computations are performed on the specified device (e.g., 'cuda' or 'cpu').
-
-        Args:
-            target_positions (torch.Tensor): A tensor of shape (N, 2) containing the target positions.
-            device (str, optional): The device on which to perform the computations. Defaults to "cuda:0".
-
-        Returns:
-            torch.Tensor: A tensor of the closest valid target positions.
-        """
-
-        # Generate a coordinate grid based on the rock mask dimensions
-        coordinate_grid_y, coordinate_grid_x = torch.meshgrid(
-            torch.arange(self.rock_mask.shape[0], device=device),
-            torch.arange(self.rock_mask.shape[1], device=device),
-            indexing='ij'
-        )
-        coordinate_grid = torch.stack((coordinate_grid_x, coordinate_grid_y), dim=-1).view(-1, 2)
-
-        # Adjust grid coordinates based on resolution and offset
-        scaled_grid = coordinate_grid.float()
-        scaled_grid *= self.resolution_in_m
-        scaled_grid[:, 0] += self._heightmap_manager.min_x
-        scaled_grid[:, 1] += self._heightmap_manager.min_y
-
-        # Flatten the target positions and transfer to the correct device
-        target_positions_flat = target_positions.view(-1, 2).to(device)
-
-        # Compute pairwise distances between grid points and target positions
-        distances = torch.cdist(scaled_grid, target_positions_flat, p=2.0).view(*self.rock_mask.shape, -1)
-
-        # Mask out distances on the rock mask to consider only valid positions
-        distances_masked = torch.where(self.rock_mask_tensor == 1, torch.inf, distances)
-
-        # Find the closest valid target positions
-        min_distances, min_indices = torch.min(distances_masked.view(-1, distances_masked.size(2)), dim=0)
-
-        # Returns closest valid target positions
-        return scaled_grid[min_indices]
 
     # TODO finish this function
     def check_if_target_is_valid(
@@ -271,45 +228,6 @@ class TerrainManager():
         reset_buf_len = len(env_ids)
         return env_ids, reset_buf_len
 
-    def mesh_to_heightmap(self, vertices, faces, grid_size_in_m, resolution_in_m=0.1):
-
-        # Border Margin
-        border_margin = 1.0
-        # Define bounding box
-        min_x, min_y, _ = np.min(vertices, axis=0) + border_margin
-        max_x, max_y, _ = np.max(vertices, axis=0) - border_margin
-
-        # Calculate the grid size
-        # grid_size = grid_size_in_m / resolution_in_m
-        grid_size_x = (max_x - min_x) / resolution_in_m
-        grid_size_y = (max_y - min_y) / resolution_in_m
-
-        # Initialize the heightmap
-        heightmap = np.ones((int(grid_size_x+1), int(grid_size_y+1)), dtype=np.float32) * -99
-
-        # Calculate the size of a grid cell
-        cell_size_x = (max_x - min_x) / (grid_size_x)
-        cell_size_y = (max_y - min_y) / (grid_size_y)
-
-        # Iterate over each face to update the heightmap
-        for face in faces:
-            # Get the vertices
-            v1, v2, v3 = vertices[face]
-            # Project to 2D grid
-            min_i = int((min(v1[0], v2[0], v3[0]) - min_x) / cell_size_x)
-            max_i = min(int((max(v1[0], v2[0], v3[0]) - min_x) / cell_size_x), heightmap.shape[1] - 1)
-            min_j = int((min(v1[1], v2[1], v3[1]) - min_y) / cell_size_y)
-            max_j = min(int((max(v1[1], v2[1], v3[1]) - min_y) / cell_size_y), heightmap.shape[0] - 1)
-
-            # Update the heightmap
-            try:
-                for i in range(min_i, max_i + 1):
-                    for j in range(min_j, max_j + 1):
-                        heightmap[j, i] = max(heightmap[j, i], v1[2], v2[2], v3[2])
-            except Exception as e:
-                print(f"Error: {e}, max_i: {max_i}, max_j: {max_j}, min_i: {min_i}, min_j: {min_j}")
-
-        return heightmap
 
     def find_rocks_in_heightmap(self, heightmap, threshold=0.1):
         import cv2
