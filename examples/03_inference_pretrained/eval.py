@@ -41,23 +41,21 @@ from isaaclab_rl.skrl import SkrlVecEnvWrapper  # noqa: E402
 simulation_app = app_launcher.app
 
 from isaaclab.envs import ManagerBasedRLEnv  # noqa: E402
-from isaaclab.managers import DatasetExportMode  # noqa: E402
 from isaaclab.utils.dict import print_dict  # noqa: E402
 from isaaclab.utils.io import dump_pickle, dump_yaml  # noqa: E402
+
+
 from isaaclab_tasks.utils import parse_env_cfg  # noqa: E402
-from skrl.agents.torch.base import Agent  # noqa: E402
 from skrl.trainers.torch import SequentialTrainer  # noqa: E402
 from skrl.utils import set_seed  # noqa: E402, F401
 
 import rover_envs  # noqa: E402
 import rover_envs.envs.navigation.robots  # noqa: E402, F401
-# Import the general agent factory
-from rover_envs.learning.agents import create_agent  # noqa: E402
-# Import to ensure navigation agents are registered
-#import rover_envs.envs.navigation.learning.skrl.agents  # noqa: E402, F401
+from rover_envs.utils.logging_utils import video_record, log_setup, configure_datarecorder  # noqa: E402
+# Import agents
+from rover_envs.envs.navigation.learning.skrl import get_agent  # noqa: E402
 from rover_envs.utils.config import parse_skrl_cfg  # noqa: E402
-from rover_envs.utils.logging_utils import configure_datarecorder, log_setup, video_record  # noqa: E402
-
+from isaaclab.managers import DatasetExportMode  # noqa: E402
 
 def main():
     args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
@@ -91,7 +89,7 @@ def main():
     trainer_cfg = experiment_cfg["trainer"]
     trainer_cfg["timesteps"] = 1000000
 
-    agent: Agent = create_agent(args_cli.agent, env, experiment_cfg)
+    agent = get_agent(args_cli.agent, env, env.observation_space, env.action_space, experiment_cfg, conv=True)
 
     # Get the checkpoint path from the experiment configuration
     print(f'args_cli.task: {args_cli.task}')
