@@ -15,7 +15,8 @@ INSTALL_REQUIRES = [
     "skrl==1.4.1",
     "wandb",
     "opencv-python",
-    "isaaclab==2.1.0"
+    "isaaclab==2.1.0",
+    "cosmos-tokenizer@git+https://github.com/NVIDIA/Cosmos-Tokenizer.git"
 ]
 
 # url=EXTENSION_TOML_DATA["package"]["repository"], # add later
@@ -24,6 +25,7 @@ INSTALL_REQUIRES = [
 # keywords=EXTENSION_TOML_DATA["package"]["keywords"],
 EXTRAS_REQUIRE = {
     "rsl_rl": ["rsl_rl@git+https://github.com/leggedrobotics/rsl_rl.git"],
+    #"cosmos": ["cosmos-tokenizer@git+https://github.com/NVIDIA/Cosmos-Tokenizer.git"],
 }
 
 # cumulation of all extra-requires
