@@ -8,10 +8,10 @@ import rover_envs.envs.navigation.mdp as mdp
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import SceneEntityCfg
 import math
+from ...mdp.observations import extended_image_features as extended_image_features
 
 @configclass
 class RoverResNetObservationsCfg:
-    # ... (contents as before) ...
     @configclass
     class PolicyCfg(ObsGroup):
         actions = ObsTerm(func=mdp.last_action)
@@ -31,11 +31,45 @@ class RoverResNetObservationsCfg:
             scale=1 / math.pi
         )
         image_resnet_features = ObsTerm(
-            func=mdp.image_features,
+            func=extended_image_features,
             params={
                 "sensor_cfg": SceneEntityCfg("tiled_camera"),
                 "data_type": "rgb",
-                "model_name": "resnet18",
+                "model_name": "resnet18",  # Can use any of the Cosmos models
+            },
+        )
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+    policy: PolicyCfg = PolicyCfg()
+
+
+@configclass
+class RoverCosmosObservationsCfg:
+    @configclass
+    class PolicyCfg(ObsGroup):
+        actions = ObsTerm(func=mdp.last_action)
+        distance_to_target = ObsTerm(
+            func=mdp.distance_to_target_euclidean,
+            params={"command_name": "target_pose"},
+            scale=0.11
+        )
+        heading_to_target = ObsTerm(
+            func=mdp.angle_to_target_observation,
+            params={"command_name": "target_pose"},
+            scale=1 / math.pi
+        )
+        angle_difference_to_target = ObsTerm(
+            func=mdp.angle_diff,
+            params={"command_name": "target_pose"},
+            scale=1 / math.pi
+        )
+        image_cosmos_features = ObsTerm(
+            func=extended_image_features,
+            params={
+                "sensor_cfg": SceneEntityCfg("tiled_camera"),
+                "data_type": "rgb",
+                "model_name": "Cosmos-0.1-Tokenizer-CI8x8",  # Can use any of the Cosmos models
             },
         )
         def __post_init__(self):
@@ -67,4 +101,10 @@ class RoverCameraSceneCfg(RoverSceneCfg):
 class RoverRGBResnetEnvCfg(RoverEnvCfg):
 
     observations: RoverResNetObservationsCfg = RoverResNetObservationsCfg()
+    scene: RoverCameraSceneCfg = RoverCameraSceneCfg(num_envs=8, env_spacing=4.0, replicate_physics=False)
+
+@configclass
+class RoverCosmosEnvCfg(RoverEnvCfg):
+
+    observations: RoverCosmosObservationsCfg = RoverCosmosObservationsCfg()
     scene: RoverCameraSceneCfg = RoverCameraSceneCfg(num_envs=8, env_spacing=4.0, replicate_physics=False)
