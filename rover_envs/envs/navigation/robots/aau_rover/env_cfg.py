@@ -54,7 +54,7 @@ class AAURoverRGBResnetEnvCfg(RoverRGBResnetEnvCfg):
 
     def __post_init__(self):
         super().__post_init__()
-        self.scene.robot = AAU_ROVER_SIMPLE_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.robot = AAU_ROVER_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.actions.actions = mdp.AckermannActionCfg(
             asset_name="robot",
             wheelbase_length=0.849,

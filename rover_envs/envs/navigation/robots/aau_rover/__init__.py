@@ -47,6 +47,6 @@ gym.register(
         "skrl_cfgs": {
             "PPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_ppo_camera_resnet.yaml",
         },
-        #"best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent.pt",
+        "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_camera_resnet.pt",
     }
 )
