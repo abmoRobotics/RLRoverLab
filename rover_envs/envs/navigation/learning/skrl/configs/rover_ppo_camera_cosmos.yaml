@@ -1,0 +1,48 @@
+seed: 42
+
+models:
+  separate: False
+  policy:
+    type: "GaussianPolicyResnet"
+    params:
+      mlp_input_size: 5
+      mlp_layers: [256, 160, 128]
+      mlp_activation: "leaky_relu"
+      encoder_layers: [80,60]
+      encoder_activation: "leaky_relu"
+
+  value:
+    type: "ValueNetworkResnet"
+    params:
+      mlp_input_size: 5
+      mlp_layers: [256, 160, 128]
+      mlp_activation: "leaky_relu"
+      encoder_layers: [80,60]
+      encoder_activation: "leaky_relu"
+
+agent:
+  rollouts: 60
+  learning_epochs: 4
+  mini_batches: 60
+  discount_factor: 0.99
+  lambda: 0.95
+  learning_rate: 1.e-4
+
+  random_timesteps: 0
+  learning_starts: 0
+  grad_norm_clip: 0.5 #1.0
+  ratio_clip: 0.2
+  value_clip: 0.2
+  clip_predicted_values: True
+  entropy_loss_scale: 0.0
+  value_loss_scale: 1.0
+  kl_threshold: 0.008
+  experiment:
+    directory: "rover_ppo_camera"
+    experiment_name: ""
+    write_interval: 40
+    checkpoint_interval: 400
+    wandb: True             # whether to use Weights & Biases
+
+trainer:
+  timesteps: 1000000
