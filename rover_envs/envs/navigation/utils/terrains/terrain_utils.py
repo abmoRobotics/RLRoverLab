@@ -1,7 +1,47 @@
+"""
+Professional Terrain Management Utilities for Robotics Simulation
+
+This module provides comprehensive terrain analysis and management capabilities for 
+robotics simulation environments, particularly focused on rover navigation scenarios.
+
+Key Features:
+    - High-performance heightmap generation from 3D mesh data
+    - Gradient-based terrain difficulty analysis
+    - Rock/obstacle detection and safety zone computation
+    - Intelligent spawn location generation with safety constraints
+    - Multi-device support (CPU/CUDA) for scalable performance
+    - Debug visualization tools for terrain analysis
+    - Robust USD file loading with Isaac Sim integration
+
+Classes:
+    HeightmapManager: Core heightmap generation and height query functionality
+    TerrainManager: High-level terrain analysis and spawn generation
+    DebugVisualizer: Visualization tools for terrain analysis and debugging
+
+Example:
+    >>> # Initialize terrain manager
+    >>> terrain = TerrainManager(
+    ...     num_envs=100,
+    ...     device='cuda',
+    ...     debug_mode=True,
+    ...     terrain_usd_path="path/to/terrain.usd"
+    ... )
+    >>> 
+    >>> # Get spawn locations
+    >>> spawn_positions = terrain.spawn_locations
+    >>> 
+    >>> # Query height at specific positions
+    >>> positions = torch.tensor([[10.0, 15.0], [20.0, 25.0]], device='cuda')
+    >>> heights = terrain._heightmap_manager.get_height_at(positions)
+
+Author: RLRoverLab Team
+Version: 2.0.0
+"""
+
 # from isaaclab.markers.visualization_markers import VisualizationMarkersCfg, VisualizationMarkers
 # import isaaclab.sim as sim_utils
 import os
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Union
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
@@ -26,69 +66,140 @@ except ImportError:
     USD_STANDALONE_AVAILABLE = False
     print("Warning: USD standalone libraries not available")
 
-class HeightmapManager():
+class HeightmapManager:
+    """
+    A professional heightmap manager for converting 3D mesh data to 2D heightmaps.
+    
+    This class handles the conversion of 3D mesh vertices and faces into a structured
+    2D heightmap representation, enabling efficient height queries and terrain analysis.
+    Supports both CPU and CUDA tensor operations for performance optimization.
+    
+    Attributes:
+        resolution_in_m (float): The resolution of the heightmap in meters per pixel.
+        device (str): The device to use for tensor operations ('cpu', 'cuda', or 'cuda:0').
+        heightmap (np.ndarray): The 2D heightmap as a numpy array.
+        min_x (float): Minimum X coordinate of the heightmap bounds.
+        min_y (float): Minimum Y coordinate of the heightmap bounds.
+        max_x (float): Maximum X coordinate of the heightmap bounds.
+        max_y (float): Maximum Y coordinate of the heightmap bounds.
+        heightmap_tensor (torch.Tensor): GPU/CPU tensor version of the heightmap.
+        offset_tensor (torch.Tensor): Offset tensor for coordinate transformations.
+    """
 
-    def __init__(self, resolution_in_m, vertices, faces, device='cpu'):
+    def __init__(self, resolution_in_m: float, vertices: np.ndarray, faces: np.ndarray, device: str = 'cpu') -> None:
+        """
+        Initialize the HeightmapManager with mesh data and configuration.
+        
+        Args:
+            resolution_in_m: The resolution of the heightmap in meters per pixel.
+            vertices: 3D vertex array of shape (N, 3) containing [x, y, z] coordinates.
+            faces: Face indices array of shape (M, 3) referencing vertices.
+            device: Device for tensor operations ('cpu', 'cuda', or 'cuda:0').
+            
+        Raises:
+            ValueError: If vertices or faces arrays have invalid shapes.
+            RuntimeError: If CUDA is requested but not available.
+        """
+        if len(vertices.shape) != 2 or vertices.shape[1] != 3:
+            raise ValueError(f"Vertices must have shape (N, 3), got {vertices.shape}")
+        if len(faces.shape) != 2 or faces.shape[1] != 3:
+            raise ValueError(f"Faces must have shape (M, 3), got {faces.shape}")
+        
         self.resolution_in_m = resolution_in_m
         self.device = device
-        self.heightmap, self.min_x, self.min_y, self.max_x, self.max_y = self.mesh_to_heightmap(vertices, faces)
-        if device == 'cuda' or device == 'cuda:0':
+        
+        # Generate heightmap from mesh data
+        self.heightmap, self.min_x, self.min_y, self.max_x, self.max_y = self._mesh_to_heightmap(vertices, faces)
+        
+        # Initialize tensors based on device
+        self._initialize_tensors()
+    
+    def _initialize_tensors(self) -> None:
+        """Initialize heightmap and offset tensors on the specified device."""
+        if self.device in ['cuda', 'cuda:0']:
+            if not torch.cuda.is_available():
+                raise RuntimeError(f"CUDA requested but not available. Falling back to CPU.")
             self.heightmap_tensor = torch.from_numpy(self.heightmap).cuda()
-            self.offset_tensor = torch.tensor([self.min_x, self.min_y]).cuda()
+            self.offset_tensor = torch.tensor([self.min_x, self.min_y], dtype=torch.float32).cuda()
         else:
             self.heightmap_tensor = torch.from_numpy(self.heightmap)
-            self.offset_tensor = torch.tensor([self.min_x, self.min_y])
+            self.offset_tensor = torch.tensor([self.min_x, self.min_y], dtype=torch.float32)
 
-    def mesh_to_heightmap(self, vertices, faces):
-        # Border Margin
+    def _mesh_to_heightmap(self, vertices: np.ndarray, faces: np.ndarray) -> Tuple[np.ndarray, float, float, float, float]:
+        """
+        Convert 3D mesh data to a 2D heightmap representation.
+        
+        This method projects 3D triangular mesh faces onto a 2D grid, recording the maximum
+        height at each grid cell. The resulting heightmap provides an efficient way to
+        query terrain heights at arbitrary 2D positions.
+        
+        Args:
+            vertices: 3D vertex coordinates array of shape (N, 3).
+            faces: Triangle face indices array of shape (M, 3).
+            
+        Returns:
+            A tuple containing:
+                - heightmap (np.ndarray): 2D height grid of shape (height, width).
+                - min_x (float): Minimum X coordinate of the heightmap bounds.
+                - min_y (float): Minimum Y coordinate of the heightmap bounds.
+                - max_x (float): Maximum X coordinate of the heightmap bounds.
+                - max_y (float): Maximum Y coordinate of the heightmap bounds.
+                
+        Note:
+            A border margin of 1.0 meter is applied to prevent edge effects.
+            Grid cells without mesh coverage are initialized to -99.0 meters.
+        """
+        # Apply border margin to prevent edge effects
         border_margin = 1.0
-        # Define bounding box
+        
+        # Calculate bounding box with margin
         min_x, min_y, _ = np.min(vertices, axis=0) + border_margin
         max_x, max_y, _ = np.max(vertices, axis=0) - border_margin
 
-        # Calculate the grid size
+        # Calculate grid dimensions
         grid_size_x = (max_x - min_x) / self.resolution_in_m
         grid_size_y = (max_y - min_y) / self.resolution_in_m
         
-        # Grid dimensions
+        # Grid dimensions (add 1 for inclusive bounds)
         grid_width = int(grid_size_x + 1)
         grid_height = int(grid_size_y + 1)
 
-        # Initialize the heightmap
+        # Initialize heightmap with sentinel value for uncovered areas
         heightmap = np.full((grid_height, grid_width), -99.0, dtype=np.float32)
 
-        # Calculate the size of a grid cell
+        # Calculate cell sizes
         cell_size_x = (max_x - min_x) / grid_size_x
         cell_size_y = (max_y - min_y) / grid_size_y
 
         if len(faces) > 0:
-            # Get all triangle vertices
+            # Vectorized processing of all triangles
             face_vertices = vertices[faces]
             
-            # Extract coordinates
+            # Extract coordinate components
             x_coords = face_vertices[:, :, 0]
             y_coords = face_vertices[:, :, 1]
             z_coords = face_vertices[:, :, 2]
             
-            # Find bounding box for each triangle
+            # Calculate bounding boxes for all triangles
             min_x_tri = np.min(x_coords, axis=1)
             max_x_tri = np.max(x_coords, axis=1)
             min_y_tri = np.min(y_coords, axis=1)
             max_y_tri = np.max(y_coords, axis=1)
             max_z_tri = np.max(z_coords, axis=1)
             
-            # Convert to grid coordinates
+            # Convert world coordinates to grid coordinates
             min_i = np.maximum(0, ((min_x_tri - min_x) / cell_size_x).astype(int))
             max_i = np.minimum(grid_width - 1, ((max_x_tri - min_x) / cell_size_x).astype(int))
             min_j = np.maximum(0, ((min_y_tri - min_y) / cell_size_y).astype(int))
             max_j = np.minimum(grid_height - 1, ((max_y_tri - min_y) / cell_size_y).astype(int))
             
-            # Process triangles
+            # Project triangles onto heightmap
             for idx in range(len(faces)):
                 i_range = max_i[idx] - min_i[idx] + 1
                 j_range = max_j[idx] - min_j[idx] + 1
                 
                 if i_range > 0 and j_range > 0:
+                    # Update heightmap with maximum height in each cell
                     heightmap[min_j[idx]:max_j[idx]+1, min_i[idx]:max_i[idx]+1] = np.maximum(
                         heightmap[min_j[idx]:max_j[idx]+1, min_i[idx]:max_i[idx]+1],
                         max_z_tri[idx]
@@ -98,39 +209,134 @@ class HeightmapManager():
 
     def get_height_at(self, position: torch.Tensor) -> torch.Tensor:
         """
-        Returns the height at the specified position.
-
+        Query the height at specified 2D positions using bilinear interpolation.
+        
+        This method efficiently retrieves terrain heights at arbitrary 2D world coordinates
+        by mapping them to the heightmap grid and performing lookups. Input positions are
+        automatically clamped to the heightmap bounds to prevent out-of-bounds access.
+        
         Args:
-            position (torch.Tensor): The position at which to get the height. Shape (N, 2).
-
+            position: 2D world coordinates tensor of shape (N, 2) containing [x, y] positions.
+                     Must be on the same device as the HeightmapManager.
+                     
         Returns:
-            torch.Tensor: The height at the specified position. Shape (N,).
+            Height values tensor of shape (N,) corresponding to each input position.
+            
+        Raises:
+            RuntimeError: If position tensor is not on the same device as the heightmap.
+            
+        Example:
+            >>> positions = torch.tensor([[10.0, 15.0], [20.0, 25.0]], device='cuda')
+            >>> heights = heightmap_manager.get_height_at(positions)
+            >>> print(heights.shape)  # torch.Size([2])
+            
+        Note:
+            Positions outside the heightmap bounds are clamped to the nearest valid grid cell.
+            This prevents extrapolation and ensures consistent behavior at terrain edges.
         """
-        # Find the grid cell in self.heightmap_tensor
-
-        # Scale the position to match the heightmap indices
+        if position.device != self.heightmap_tensor.device:
+            raise RuntimeError(f"Position tensor device ({position.device}) must match "
+                             f"heightmap device ({self.heightmap_tensor.device})")
+        
+        if position.shape[-1] != 2:
+            raise ValueError(f"Position tensor must have shape (..., 2), got {position.shape}")
+        
+        # Transform world coordinates to grid coordinates
         scaled_position = position / self.resolution_in_m + self.offset_tensor
-        # Convert to long to get the grid cell
+        
+        # Convert to integer grid indices
         grid_cell = scaled_position.long()
 
-        # Clamp the grid cell to the heightmap dimensions
-        grid_cell[:, 0] = torch.clamp(grid_cell[:, 0], 0, self.heightmap_tensor.shape[1]-1)
-        grid_cell[:, 1] = torch.clamp(grid_cell[:, 1], 0, self.heightmap_tensor.shape[0]-1)
+        # Clamp indices to valid heightmap bounds
+        grid_cell[:, 0] = torch.clamp(grid_cell[:, 0], 0, self.heightmap_tensor.shape[1] - 1)
+        grid_cell[:, 1] = torch.clamp(grid_cell[:, 1], 0, self.heightmap_tensor.shape[0] - 1)
 
-        # Return the heights at the specified positions
+        # Retrieve heights at the specified grid positions
         return self.heightmap_tensor[grid_cell[:, 1], grid_cell[:, 0]]
+    
+    def get_heightmap_bounds(self) -> Tuple[float, float, float, float]:
+        """
+        Get the world coordinate bounds of the heightmap.
+        
+        Returns:
+            A tuple containing (min_x, min_y, max_x, max_y) in world coordinates.
+        """
+        return self.min_x, self.min_y, self.max_x, self.max_y
+    
+    def get_heightmap_shape(self) -> Tuple[int, int]:
+        """
+        Get the dimensions of the heightmap grid.
+        
+        Returns:
+            A tuple containing (height, width) of the heightmap in grid cells.
+        """
+        return self.heightmap.shape
+    
+    def is_position_valid(self, position: torch.Tensor) -> torch.Tensor:
+        """
+        Check if positions are within the valid heightmap bounds.
+        
+        Args:
+            position: 2D world coordinates tensor of shape (N, 2).
+            
+        Returns:
+            Boolean tensor of shape (N,) indicating valid positions.
+        """
+        within_x_bounds = (position[:, 0] >= self.min_x) & (position[:, 0] <= self.max_x)
+        within_y_bounds = (position[:, 1] >= self.min_y) & (position[:, 1] <= self.max_y)
+        return within_x_bounds & within_y_bounds
 
-class TerrainManager():
+class TerrainManager:
+    """
+    Professional terrain management system for robotics simulation environments.
+    
+    This class provides comprehensive terrain analysis capabilities including heightmap generation,
+    gradient analysis, obstacle detection, and safe spawn location generation. It supports both
+    Isaac Sim runtime environments and standalone debugging with USD files.
+    
+    Features:
+        - Heightmap generation from 3D mesh data
+        - Gradient-based terrain difficulty analysis
+        - Rock/obstacle detection and safety zone generation
+        - Intelligent spawn location generation
+        - Multi-device support (CPU/CUDA)
+        - Debug visualization capabilities
+    
+    Attributes:
+        num_envs (int): Number of simulation environments.
+        device (str): Computation device ('cpu', 'cuda', or 'cuda:0').
+        debug_mode (bool): Whether running in debug mode with USD files.
+        resolution_in_m (float): Heightmap resolution in meters per pixel.
+        gradient_threshold (float): Threshold for steep terrain detection.
+        spawn_locations (torch.Tensor): Pre-generated safe spawn positions.
+        rock_mask (np.ndarray): Binary mask indicating rock locations.
+        gradient_mask (np.ndarray): Binary mask indicating steep terrain.
+        safe_rock_mask (np.ndarray): Dilated rock mask for safety margins.
+        safe_gradient_mask (np.ndarray): Dilated gradient mask for safety margins.
+    """
 
     def __init__(self, 
                  num_envs: int, 
                  device: str, 
                  debug_mode: bool = False, 
-                 terrain_usd_path: str = None, 
-                 rock_usd_path: str = None,
+                 terrain_usd_path: Optional[str] = None, 
+                 rock_usd_path: Optional[str] = None,
                  safety_margin: float = 2.0
-                 ):
+                 ) -> None:
         """
+        Initialize the TerrainManager with specified configuration.
+        
+        Args:
+            num_envs: Number of simulation environments requiring spawn locations.
+            device: Device for tensor computations ('cpu', 'cuda', or 'cuda:0').
+            debug_mode: Enable debug mode for standalone USD file loading.
+            terrain_usd_path: Path to terrain USD file (debug mode only).
+            rock_usd_path: Path to rock/obstacle USD file (debug mode only).
+            safety_margin: Safety margin in meters around obstacles and steep terrain.
+            
+        Raises:
+            FileNotFoundError: If USD files are not found in debug mode.
+            RuntimeError: If mesh loading fails and fallback is unsuccessful.
         """
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
         self.debug_mode = debug_mode or not ISAAC_SIM_AVAILABLE
@@ -148,7 +354,7 @@ class TerrainManager():
                 raise FileNotFoundError(f"Debug mode requires terrain USD file at: {terrain_path}")
         else:
             # Isaac Sim runtime mode
-            terrain_path = "/World/terrain/hidden_terrain/terrain"
+            terrain_path = "/World/terrain/terrain/ground"
             rock_mesh_path = "/World/terrain/obstacles/obstacles"
 
         self.meshes = [terrain_path, rock_mesh_path]
@@ -178,35 +384,50 @@ class TerrainManager():
                 raise
         
         # Load rocks if available and combine with terrain for spawn height queries
-        try:
-            print("Getting triangles and vertices from rock USD file")
-            rock_vertices, rock_faces = self.get_mesh(self.meshes["rock"])
-            
-            # Combine terrain and rocks for complete heightmap
-            print("Combining terrain and rock meshes...")
-            combined_vertices = np.vstack([terrain_vertices, rock_vertices])
-            combined_faces = np.vstack([terrain_faces, rock_faces + len(terrain_vertices)])
-            
-            # Create combined heightmap manager (for spawn height queries)
-            print("Generating combined heightmap")
-            self._heightmap_manager = HeightmapManager(self.resolution_in_m, combined_vertices, combined_faces, device)
-            
-            # Create terrain-only heightmap with SAME BOUNDS as combined heightmap
-            print("Generating terrain-only heightmap with matched bounds")
-            self.terrain_only_heightmap_manager = HeightmapManager(self.resolution_in_m, terrain_vertices, terrain_faces, device)
-            
-            # Resize terrain-only heightmap to match combined heightmap dimensions
-            self.terrain_only_heightmap_manager = self.resize_terrain_heightmap_to_match_combined(
-                terrain_vertices, terrain_faces, self._heightmap_manager
-            )
-            
-        except Exception as e:
-            print(f"Failed to load rocks: {e}. Using terrain-only heightmap.")
-            # If rocks fail to load, use terrain-only heightmap for everything
+        rock_vertices = None
+        rock_faces = None
+        
+        # First check if rock prim exists (when using Isaac Sim)
+        rocks_available = True
+        if ISAAC_SIM_AVAILABLE:
+            from rover_envs.envs.navigation.utils.terrains.usd_utils import check_prim_exists
+            if not check_prim_exists(self.meshes["rock"]):
+                print(f"No rock obstacles found at {self.meshes['rock']} - using terrain-only mode")
+                rocks_available = False
+        
+        if rocks_available:
+            try:
+                print("Loading rock obstacles from USD file...")
+                rock_vertices, rock_faces = self.get_mesh(self.meshes["rock"])
+                
+                # Combine terrain and rocks for complete heightmap
+                print("Combining terrain and rock meshes...")
+                combined_vertices = np.vstack([terrain_vertices, rock_vertices])
+                combined_faces = np.vstack([terrain_faces, rock_faces + len(terrain_vertices)])
+                
+                # Create combined heightmap manager (for spawn height queries)
+                print("Generating combined heightmap with obstacles")
+                self._heightmap_manager = HeightmapManager(self.resolution_in_m, combined_vertices, combined_faces, device)
+                
+                # Create terrain-only heightmap with SAME BOUNDS as combined heightmap
+                print("Generating terrain-only heightmap with matched bounds")
+                self.terrain_only_heightmap_manager = HeightmapManager(self.resolution_in_m, terrain_vertices, terrain_faces, device)
+                
+                # Resize terrain-only heightmap to match combined heightmap dimensions
+                self.terrain_only_heightmap_manager = self.resize_terrain_heightmap_to_match_combined(
+                    terrain_vertices, terrain_faces, self._heightmap_manager
+                )
+                print("✓ Successfully loaded terrain with rock obstacles")
+                
+            except Exception as e:
+                print(f"Warning: Could not load rock obstacles ({e}). Continuing with terrain-only mode.")
+                rocks_available = False
+        
+        if not rocks_available:
+            # Use terrain-only heightmap for everything
+            print("Using terrain-only mode (no obstacles)")
             self._heightmap_manager = HeightmapManager(self.resolution_in_m, terrain_vertices, terrain_faces, device)
             self.terrain_only_heightmap_manager = self._heightmap_manager
-            rock_vertices = None
-            rock_faces = None
 
         # Generate Gradient Masks (terrain-only for visualization)
         print("Generating gradient masks")
@@ -215,10 +436,10 @@ class TerrainManager():
 
         # Generate Rock Mask if rocks are available
         if rock_vertices is not None:
-            print("Generating rock mask from rock mesh")
+            print("Generating rock obstacle mask from mesh data")
             self.rock_mask, self.safe_rock_mask = self.project_rocks_to_heightmap(rock_vertices, rock_faces)
         else:
-            print("No rocks available, creating empty rock masks")
+            print("No rock obstacles present - using clear obstacle masks")
             # Create empty rock masks
             height, width = self._heightmap_manager.heightmap.shape
             self.rock_mask = np.zeros((height, width), dtype=np.int32)
@@ -230,7 +451,10 @@ class TerrainManager():
             self.terrain_only_heightmap_manager.heightmap, self.gradient_threshold)
 
         # Combine rock and gradient masks for spawn generation
-        print("Combining rock and gradient masks for spawn generation")
+        if rock_vertices is not None:
+            print("Combining obstacle and gradient masks for spawn generation")
+        else:
+            print("Using gradient-based spawn generation (terrain-only mode)")
         combined_safe_mask = np.logical_or(self.safe_rock_mask, self.safe_gradient_mask).astype(np.int32)
 
         # Generate Spawn Locations
@@ -247,44 +471,64 @@ class TerrainManager():
             self.spawn_locations = torch.from_numpy(self.spawn_locations)
             self.safe_rock_mask_tensor = torch.from_numpy(self.safe_rock_mask).unsqueeze(-1)
 
-    def get_mesh(self, prim_path="/") -> Tuple[np.ndarray, np.ndarray]:
-        """ This function reads a USD from the specified prim path and return vertices and faces.
+        # Summary of terrain initialization
+        obstacle_mode = "with obstacles" if rock_vertices is not None else "terrain-only"
+        spawn_count = len(self.spawn_locations)
+        print(f"✓ Terrain initialization complete: {obstacle_mode} mode, {spawn_count} spawn locations generated")
+
+    def get_mesh(self, prim_path: str = "/") -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Load mesh data from USD file or Isaac Sim prim with robust fallback handling.
+        
+        This method attempts to load mesh data using Isaac Sim runtime capabilities first,
+        then falls back to standalone USD loading for debug environments. The loaded mesh
+        is processed through PyMeshLab for consistency and optimization.
         
         Args:
-            prim_path: Prim path for Isaac Sim runtime, or USD file path for debug mode
+            prim_path: Prim path for Isaac Sim runtime, or USD file path for debug mode.
             
         Returns:
-            Tuple of (vertices, faces) as numpy arrays
+            A tuple containing:
+                - vertices (np.ndarray): Vertex coordinates of shape (N, 3).
+                - faces (np.ndarray): Triangle face indices of shape (M, 3).
+                
+        Raises:
+            RuntimeError: If mesh loading fails with all available methods.
+            FileNotFoundError: If USD file doesn't exist in debug mode.
+            
+        Note:
+            The method automatically handles device compatibility and mesh optimization
+            through PyMeshLab processing to ensure consistent data format.
         """
-
         try:
             if ISAAC_SIM_AVAILABLE:
-                # Try Isaac Sim runtime first
+                # Attempt Isaac Sim runtime loading
                 faces, vertices = get_triangles_and_vertices_from_prim(prim_path)
             else:
                 raise ImportError("Isaac Sim not available, falling back to standalone mode")
-        except (ImportError, Exception) as e:
+                
+        except (ImportError, RuntimeError) as e:
             print(f"Isaac Sim method failed ({e}), trying standalone USD loading...")
+            
             if USD_STANDALONE_AVAILABLE and os.path.exists(prim_path):
                 # Fallback to standalone USD loading for debug mode
                 faces, vertices = get_triangles_and_vertices_from_prim_standalone(prim_path)
             else:
-                raise RuntimeError(f"Cannot load mesh: Isaac Sim not available and USD file not found at {prim_path}")
+                # More specific error message based on the failure type
+                if "Invalid or null prim" in str(e) or "not a mesh" in str(e):
+                    raise RuntimeError(f"Cannot load mesh: Prim not found or invalid at {prim_path}")
+                else:
+                    raise RuntimeError(f"Cannot load mesh: Isaac Sim not available and USD file not found at {prim_path}")
 
-        # Create pymeshlab mesh and meshset
+        # Process mesh through PyMeshLab for consistency and optimization
         mesh = pymeshlab.Mesh(vertices, faces)
-
         ms = pymeshlab.MeshSet()
         ms.add_mesh(mesh)
 
-        # get the mesh
-        mesh = ms.current_mesh()  # get the mesh
-
-        # Get vertices as float32 array
-        vertices = mesh.vertex_matrix().astype('float32')
-
-        # Get faces as uint32 array
-        faces = mesh.face_matrix().astype('uint32')
+        # Extract processed mesh data
+        processed_mesh = ms.current_mesh()
+        vertices = processed_mesh.vertex_matrix().astype('float32')
+        faces = processed_mesh.face_matrix().astype('uint32')
 
         return vertices, faces
 
@@ -293,23 +537,42 @@ class TerrainManager():
             env_ids: torch.Tensor,
             target_positions: torch.Tensor,
             device: str = "cuda:0"
-    ) -> torch.Tensor:
-        # Find the grid cell in self.heightmap_tensor
-
-        # Scale the position to match the heightmap indices
+    ) -> Tuple[torch.Tensor, int]:
+        """
+        Validate target positions against terrain safety constraints.
+        
+        This method checks if target positions are located in safe areas (not on rocks
+        or steep terrain) and returns the environment IDs that require reset due to
+        unsafe target placement.
+        
+        Args:
+            env_ids: Environment IDs to check, tensor of shape (N,).
+            target_positions: Target positions to validate, tensor of shape (N, 2 or 3).
+            device: Device for tensor operations (legacy parameter, uses manager's device).
+            
+        Returns:
+            A tuple containing:
+                - env_ids_to_reset (torch.Tensor): Environment IDs requiring reset.
+                - num_resets (int): Number of environments requiring reset.
+                
+        Note:
+            Only uses the first 2 dimensions (x, y) of target_positions for validation.
+            The safety check is performed against the combined rock and gradient safety masks.
+        """
+        # Transform world coordinates to grid coordinates
         scaled_position = target_positions[:, 0:2] / \
             self._heightmap_manager.resolution_in_m + self._heightmap_manager.offset_tensor
-        # Convert to long to get the grid cell
+        
+        # Convert to integer grid indices and clamp to valid bounds
         grid_cell = scaled_position.long()
+        grid_cell[:, 0] = torch.clamp(grid_cell[:, 0], 0, self._heightmap_manager.heightmap_tensor.shape[1] - 1)
+        grid_cell[:, 1] = torch.clamp(grid_cell[:, 1], 0, self._heightmap_manager.heightmap_tensor.shape[0] - 1)
 
-        # Clamp the grid cell to the heightmap dimensions
-        grid_cell[:, 0] = torch.clamp(grid_cell[:, 0], 0, self._heightmap_manager.heightmap_tensor.shape[1]-1)
-        grid_cell[:, 1] = torch.clamp(grid_cell[:, 1], 0, self._heightmap_manager.heightmap_tensor.shape[0]-1)
-
-        reset_buf = torch.where(self.safe_rock_mask_tensor[grid_cell[:, 1], grid_cell[:, 0]] == 1, 1, 0).squeeze(-1)
-        env_ids = env_ids[reset_buf == 1]
-        reset_buf_len = len(env_ids)
-        return env_ids, reset_buf_len
+        # Check safety mask: 1 indicates unsafe areas requiring reset
+        reset_mask = torch.where(self.safe_rock_mask_tensor[grid_cell[:, 1], grid_cell[:, 0]] == 1, 1, 0).squeeze(-1)
+        env_ids_to_reset = env_ids[reset_mask == 1]
+        
+        return env_ids_to_reset, len(env_ids_to_reset)
 
     def project_rocks_to_heightmap(self, rock_vertices: np.ndarray, rock_faces: np.ndarray, safety_margin: float = 2.0):
         """Project rock mesh triangles onto XY plane to create rock masks"""
@@ -439,59 +702,70 @@ class TerrainManager():
     def random_rover_spawns(
             self,
             safe_mask: np.ndarray,
-            heightmap, n_spawns: int = 100,
+            heightmap: np.ndarray, 
+            n_spawns: int = 100,
             border_offset: float = 20.0,
-            seed=None
+            seed: Optional[int] = None
     ) -> np.ndarray:
-        """Generate random rover spawn locations. Calculates random x,y checks if it is a rock, if not,
-        add to list of spawn locations with corresponding z value from heightmap.
-
-        Args:
-            safe_mask (np.ndarray): A binary mask indicating the locations of safe areas. (0 for safe, 1 for unsafe).
-            n_spawns (int, optional): The number of spawn locations to generate. Defaults to 1.
-            border_offset (float, optional): Border offset in meters. Defaults to 20.0.
-            seed (int, optional): Random seed for reproducibility.
-
-        Returns:
-            np.ndarray: An array of shape (n_spawns, 3) containing the spawn locations.
         """
-        # Set the random seed if provided
+        Generate safe random spawn locations for rover deployment.
+        
+        This method creates a specified number of spawn locations by randomly sampling
+        positions within the heightmap bounds and validating them against safety constraints.
+        Generated positions avoid rocks, steep terrain, and maintain border margins.
+        
+        Args:
+            safe_mask: Binary safety mask where 0=safe, 1=unsafe areas.
+            heightmap: Height data for Z-coordinate assignment.
+            n_spawns: Number of spawn locations to generate.
+            border_offset: Safety margin from heightmap edges in meters.
+            seed: Random seed for reproducible generation.
+            
+        Returns:
+            Array of spawn locations with shape (n_spawns, 3) containing [x, y, z] coordinates
+            in world space.
+            
+        Raises:
+            AssertionError: If border_offset is too large for the heightmap dimensions.
+            
+        Note:
+            The method attempts up to 1000 iterations per spawn to find valid locations.
+            Failed spawns will generate a warning but won't halt the process.
+        """
         if seed is not None:
             np.random.seed(seed)
 
-        # Get the heightmap dimensions
         height, width = safe_mask.shape
         min_xy = int(border_offset / self.resolution_in_m)
-        max_xy = int((min(height, width) - min_xy))
+        max_xy = int(min(height, width) - min_xy)
 
-        assert max_xy < width, f"max_xy ({max_xy}) must be less than width ({width})"
-        assert max_xy < height, f"max_xy ({max_xy}) must be less than height ({height})"
+        assert max_xy < width, f"Border offset too large: max_xy ({max_xy}) >= width ({width})"
+        assert max_xy < height, f"Border offset too large: max_xy ({max_xy}) >= height ({height})"
+        assert max_xy > min_xy, f"Invalid range: max_xy ({max_xy}) <= min_xy ({min_xy})"
 
-        # Initialize the spawn locations array
         spawn_locations = np.zeros((n_spawns, 3), dtype=np.float32)
 
-        # Generate spawn locations
         for i in range(n_spawns):
             valid_location = False
             attempts = 0
             max_attempts = 1000
             
             while not valid_location and attempts < max_attempts:
-                # Generate random x, y coordinates within bounds
+                # Generate random grid coordinates within safe bounds
                 x = np.random.randint(min_xy, max_xy)
                 y = np.random.randint(min_xy, max_xy)
                 
-                # Check if the location is not marked as rock and gradient is safe
-                if safe_mask[y, x] == 0:
-                    valid_location = True
+                # Validate against safety mask
+                if safe_mask[y, x] == 0:  # 0 indicates safe area
                     spawn_locations[i, 0] = x
                     spawn_locations[i, 1] = y
                     spawn_locations[i, 2] = heightmap[y, x]
+                    valid_location = True
                 
                 attempts += 1
             
             if attempts >= max_attempts:
-                print(f"Warning: Could not find valid location for spawn {i}")
+                print(f"Warning: Could not find valid location for spawn {i} after {max_attempts} attempts")
 
         # Convert grid coordinates to world coordinates
         spawn_locations[:, 0] = spawn_locations[:, 0] * self.resolution_in_m + self._heightmap_manager.min_x
@@ -570,6 +844,89 @@ class TerrainManager():
             resized_heightmap_manager.offset_tensor = torch.tensor([target_min_x, target_min_y])
         
         return resized_heightmap_manager
+
+    def get_valid_targets(self, target_positions: torch.Tensor, device: str = "cuda:0") -> torch.Tensor:
+        """
+        Filter target positions to return only those in safe areas.
+        
+        Args:
+            target_positions: Candidate target positions, tensor of shape (N, 2 or 3).
+            device: Device for computations (legacy parameter).
+            
+        Returns:
+            Filtered target positions that are in safe areas.
+        """
+        # Transform to grid coordinates
+        scaled_position = target_positions[:, 0:2] / \
+            self._heightmap_manager.resolution_in_m + self._heightmap_manager.offset_tensor
+        grid_cell = scaled_position.long()
+        
+        # Clamp to valid bounds
+        grid_cell[:, 0] = torch.clamp(grid_cell[:, 0], 0, self._heightmap_manager.heightmap_tensor.shape[1] - 1)
+        grid_cell[:, 1] = torch.clamp(grid_cell[:, 1], 0, self._heightmap_manager.heightmap_tensor.shape[0] - 1)
+        
+        # Filter safe positions (safe_mask == 0 means safe)
+        safe_mask_values = self.safe_rock_mask_tensor[grid_cell[:, 1], grid_cell[:, 0]].squeeze(-1)
+        safe_indices = torch.where(safe_mask_values == 0)[0]
+        
+        return target_positions[safe_indices]
+    
+    def get_terrain_statistics(self) -> dict:
+        """
+        Get comprehensive statistics about the terrain.
+        
+        Returns:
+            Dictionary containing terrain analysis statistics.
+        """
+        height, width = self._heightmap_manager.heightmap.shape
+        total_cells = height * width
+        
+        stats = {
+            "heightmap_shape": (height, width),
+            "resolution_m": self.resolution_in_m,
+            "world_bounds": {
+                "min_x": self._heightmap_manager.min_x,
+                "max_x": self._heightmap_manager.max_x,
+                "min_y": self._heightmap_manager.min_y,
+                "max_y": self._heightmap_manager.max_y,
+            },
+            "height_stats": {
+                "min": float(np.min(self._heightmap_manager.heightmap)),
+                "max": float(np.max(self._heightmap_manager.heightmap)),
+                "mean": float(np.mean(self._heightmap_manager.heightmap)),
+                "std": float(np.std(self._heightmap_manager.heightmap))
+            }
+        }
+        
+        if hasattr(self, 'rock_mask'):
+            rock_cells = np.sum(self.rock_mask)
+            safe_rock_cells = np.sum(self.safe_rock_mask)
+            stats["rock_analysis"] = {
+                "rock_cells": int(rock_cells),
+                "rock_percentage": float(rock_cells / total_cells * 100),
+                "safe_rock_cells": int(safe_rock_cells),
+                "safe_rock_percentage": float(safe_rock_cells / total_cells * 100)
+            }
+        
+        if hasattr(self, 'gradient_mask'):
+            gradient_cells = np.sum(self.gradient_mask)
+            safe_gradient_cells = np.sum(self.safe_gradient_mask)
+            stats["gradient_analysis"] = {
+                "steep_cells": int(gradient_cells),
+                "steep_percentage": float(gradient_cells / total_cells * 100),
+                "safe_gradient_cells": int(safe_gradient_cells),
+                "safe_gradient_percentage": float(safe_gradient_cells / total_cells * 100),
+                "gradient_threshold": self.gradient_threshold
+            }
+        
+        if hasattr(self, 'spawn_locations'):
+            stats["spawn_analysis"] = {
+                "total_spawns": len(self.spawn_locations),
+                "spawn_density_per_km2": len(self.spawn_locations) / ((self._heightmap_manager.max_x - self._heightmap_manager.min_x) * 
+                                                                     (self._heightmap_manager.max_y - self._heightmap_manager.min_y) / 1_000_000)
+            }
+        
+        return stats
 
 class DebugVisualizer:
     """Debug visualization helper for terrain analysis"""

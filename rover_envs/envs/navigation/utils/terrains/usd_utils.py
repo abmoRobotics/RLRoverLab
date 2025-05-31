@@ -4,22 +4,41 @@ import numpy as np
 # from isaacsim.core.api.materials import PhysicsMaterial
 # from isaacsim.core.prims import XFormPrim
 from typing import Tuple
-try:
-    from isaacsim.core.utils.stage import get_current_stage
-    ISAAC_SIM_AVAILABLE = True
-except ImportError:
-    ISAAC_SIM_AVAILABLE = False
+
+
 from pxr import Usd, UsdPhysics, UsdGeom
 
 
 def get_triangles_and_vertices_from_prim(prim_path):
+    from isaacsim.core.utils.stage import get_current_stage
     """ Get triangles and vertices from prim """
     stage: Usd.Stage = get_current_stage()
     mesh_prim = stage.GetPrimAtPath(prim_path)
 
-    points = mesh_prim.GetAttribute("points").Get()
-    # face_vertex_counts = mesh_prim.GetAttribute("faceVertexCounts").Get()
-    face_vertex_indices = mesh_prim.GetAttribute("faceVertexIndices").Get()
+    # Validate prim exists and is valid
+    if not mesh_prim or not mesh_prim.IsValid():
+        raise RuntimeError(f"Invalid or null prim at path: {prim_path}")
+    
+    # Check if it's a mesh prim
+    if not mesh_prim.IsA(UsdGeom.Mesh):
+        raise RuntimeError(f"Prim at path {prim_path} is not a mesh")
+
+    # Get mesh attributes with validation
+    points_attr = mesh_prim.GetAttribute("points")
+    face_vertex_indices_attr = mesh_prim.GetAttribute("faceVertexIndices")
+    
+    if not points_attr:
+        raise RuntimeError(f"Mesh at {prim_path} has no points attribute")
+    if not face_vertex_indices_attr:
+        raise RuntimeError(f"Mesh at {prim_path} has no face vertex indices attribute")
+
+    points = points_attr.Get()
+    face_vertex_indices = face_vertex_indices_attr.Get()
+    
+    if points is None:
+        raise RuntimeError(f"Failed to get points data from mesh at {prim_path}")
+    if face_vertex_indices is None:
+        raise RuntimeError(f"Failed to get face indices data from mesh at {prim_path}")
 
     # Convert points to numpy array and extract xyz coordinates efficiently
     vertices_array = np.array(points, dtype=np.float32)
@@ -120,3 +139,27 @@ def get_triangles_and_vertices_from_prim_standalone(usd_file_path: str, prim_pat
     
     print(f"Loaded mesh with {len(vertices)} vertices and {len(faces)} faces")
     return faces, vertices
+
+def check_prim_exists(prim_path):
+    """
+    Check if a prim exists and is valid in the current Isaac Sim stage.
+    
+    Args:
+        prim_path: Path to the prim to check
+        
+    Returns:
+        bool: True if prim exists and is valid, False otherwise
+    """
+    try:
+        from isaacsim.core.utils.stage import get_current_stage
+        stage: Usd.Stage = get_current_stage()
+        mesh_prim = stage.GetPrimAtPath(prim_path)
+
+        return (mesh_prim and 
+                mesh_prim.IsValid() and 
+                mesh_prim.IsA(UsdGeom.Mesh))
+    except ImportError:
+        # Isaac Sim not available
+        return False
+    except Exception:
+        return False
