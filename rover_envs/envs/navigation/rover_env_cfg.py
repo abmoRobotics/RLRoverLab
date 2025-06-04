@@ -197,7 +197,7 @@ class TerminationsCfg:
     )
     far_from_target = DoneTerm(
         func=mdp.far_from_target,
-        params={"command_name": "target_pose", "threshold": 11.0},
+        params={"command_name": "target_pose"},
     )
     collision = DoneTerm(
         func=mdp.collision_with_obstacles,

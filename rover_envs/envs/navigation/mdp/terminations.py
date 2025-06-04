@@ -32,7 +32,7 @@ def is_success(env: ManagerBasedRLEnv, command_name: str, threshold: float) -> t
     # return torch.where(distance < threshold, True, False)
 
 
-def far_from_target(env: ManagerBasedRLEnv, command_name: str, threshold: float) -> torch.Tensor:
+def far_from_target(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     """
     Determine whether the target has been reached.
 
@@ -46,7 +46,9 @@ def far_from_target(env: ManagerBasedRLEnv, command_name: str, threshold: float)
 
     # Calculating the distance and determining if the target is reached
     distance = torch.norm(target_position, p=2, dim=-1)
-
+    
+    threshold = env.scene.terrain.target_distance + 3
+    
     return torch.where(distance > threshold, True, False)
 
 

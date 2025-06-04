@@ -34,18 +34,7 @@ class MarsTerrainSceneCfg(InteractiveSceneCfg):
         init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
     )
 
-    # Ground Terrain
-    terrain = TerrainImporterCfg(
-        class_type=RoverTerrainImporter,
-        prim_path="/World/terrain",
-        terrain_type="usd",
-        collision_group=-1,
-        usd_path=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "terrain1",
-            "terrain_only.usd",
-        ),
-    )
+
 
     # Obstacles
     obstacles = AssetBaseCfg(
@@ -59,4 +48,17 @@ class MarsTerrainSceneCfg(InteractiveSceneCfg):
             ),
         ),
         init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
+    )
+
+        # Ground Terrain
+    terrain = TerrainImporterCfg(
+        class_type=RoverTerrainImporter,
+        prim_path="/World/terrain",
+        terrain_type="usd",
+        collision_group=-1,
+        usd_path=os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "terrain1",
+            "terrain_only.usd",
+        ),
     )
