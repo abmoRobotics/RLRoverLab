@@ -1,147 +1,54 @@
-import isaacsim.core.utils.prims as prim_utils
+# import isaacsim.core.utils.prims as prim_utils
 import numpy as np
-# import isaaclab.utils.kit as kit_utils
-from isaacsim.core.api.materials import PhysicsMaterial
-from isaacsim.core.prims import XFormPrim
-from isaacsim.core.utils.stage import get_current_stage
-from pxr import PhysxSchema, Usd, UsdPhysics
+# # import isaaclab.utils.kit as kit_utils
+# from isaacsim.core.api.materials import PhysicsMaterial
+# from isaacsim.core.prims import XFormPrim
+from typing import Tuple
+from functools import lru_cache
+
+from pxr import Usd, UsdPhysics, UsdGeom
 
 
-def trimesh_to_usd(vertices: np.ndarray, faces: np.ndarray, position=None, orientation=None, name="terrain"):
-    """ Convert trimesh to USD
-
-    Parameters
-    ----------
-    vertices : np.ndarray
-        Vertices of the mesh
-    faces : np.ndarray
-        Faces of the mesh
-    """
-
-    # Get current stage
-    stage: Usd.Stage = get_current_stage()
-
-    # Define terrain mesh
-    mesh_prim = stage.DefinePrim(f"/World/{name}", "Mesh")
-    mesh_prim.GetAttribute("points").Set(vertices)
-    mesh_prim.GetAttribute("faceVertexIndices").Set(faces.flatten())
-    mesh_prim.GetAttribute("faceVertexCounts").Set(np.asarray([3] * faces.shape[0]))  # 3 vertices per face
-
-    terrain_prim = XFormPrim(
-        prim_path=f"/World/{name}",
-        name=f'{name}',
-        position=position,
-        orientation=orientation)
-
-    UsdPhysics.CollisionAPI.Apply(terrain_prim.prim)
-
-    physx_collision_api: PhysxSchema._physxSchema.PhysxCollisionAPI = PhysxSchema.PhysxCollisionAPI.Apply(
-        terrain_prim.prim)
-
-    physx_collision_api.GetContactOffsetAttr().Set(0.04)
-    physx_collision_api.GetRestOffsetAttr().Set(0.01)
-
-    material = PhysicsMaterial(
-        prim_path=f"/World/Materials/{name}",
-        # static_friction=0.1,
-        # dynamic_friction=0.8,
-        static_friction=0.1,
-        dynamic_friction=2,
-        restitution=0.0,
-    )
-    material2: PhysxSchema._physxSchema.PhysxMaterialAPI = PhysxSchema.PhysxMaterialAPI.Apply(material.prim)
-    material2.CreateCompliantContactStiffnessAttr().Set(1000000.0)
-    material2.CreateCompliantContactDampingAttr().Set(20000.0)
-
-    # PhysxSchema._physxSchema.PhysxMaterialAPI.CreateCompliantContactStiffnessAttr(defaultValue=0.0,
-    # writeSparsely=False)
-    # kit_utils.apply_nested_physics_material(terrain_prim.prim_path, material.prim_path)
-
-# TODO: Clean up this function and potentially remove it
-
-
-def add_material_to_stage_from_mdl():
-    # stage: Usd.Stage = get_current_stage()
-
-    import omni.kit.commands
-
-    omni.kit.commands.execute('CreateAndBindMdlMaterialFromLibrary',
-                              mdl_name='omniverse://localhost/NVIDIA/Materials/Base/Natural/Soil_Rocky.mdl',
-                              mtl_name='Soil_Rocky',
-                              mtl_created_list=['/Looks/Soil_Rocky'],
-                              select_new_prim=False)
-
-    omni.kit.commands.execute('CreateAndBindMdlMaterialFromLibrary',
-                              mdl_name='omniverse://localhost/NVIDIA/Materials/Base/Stone/Fieldstone.mdl',
-                              mtl_name='Fieldstone',
-                              mtl_created_list=['/Looks/Fieldstone'],
-                              select_new_prim=False)
-
-    # import time
-    # time.sleep(3)
-    # omni.kit.commands.execute('ChangeProperty',
-    #     prop_path=Sdf.Path('/Looks/Soil_Rocky/Shader.inputs:project_uvw'),
-    #     value=True,
-    #     prev=None)
-
-    # # omni.kit.commands.execute('ChangeProperty',
-    # #     prop_path=Sdf.Path('/Looks/Fieldstone/Shader.inputs:flip_tangent_u'),
-    # #     value=True,
-    # #     prev=None)
-
-    # omni.kit.commands.execute('SelectPrims',
-    #         old_selected_paths=['/Looks'],
-    #         new_selected_paths=['/Looks/Soil_Rocky'],
-    #         expand_in_stage=True)
-
-    prim_utils.create_prim(
-        "/World/AmbientLight",
-        "DistantLight",
-        attributes={"inputs:intensity": 600.0},  # Isaac Sim 2023
-        # attributes={"intensity": 600.0},  # Isaac Sim 2022
-    )
-
-    # omni.kit.commands.execute(
-    #         "ChangeProperty",
-    #         prop_path=f"World/SphereLight.xformOp:translate",
-    #         value=(0.0, 0.0, 1.5 * light_radius),
-    #         prev=None,
-    #     )
-    # soil_rocky_prim = stage.GetPrimAtPath('/Looks/Soil_Rocky/Shader')
-    # print(f'soil_rocky_prim: {soil_rocky_prim.GetAttributes("inputs:project_uvw").Get()}')
-    # soil_rocky_prim.GetAttribute("inputs:project_uvw").Set(True)
-    # soil_rocky_prim.GetAttribute("inputs:texture_scale").Set((0.3,0.3))
-
-    # # soil_rocky_prim.getpro
-
-    # # omni.kit.commands.execute('ChangeProperty',
-    # #     prop_path=Sdf.Path('/Looks/Soil_Rocky/Shader.inputs:texture_scale'),
-    # #     value=Gf.Vec2f(0.1, 0.1),
-    # #     prev=None)
-    # soil_rocky_prim = stage.GetPrimAtPath('/Looks/Soil_Rocky/Shader')
-    # soil_rocky_prim2 = stage.GetPrimAtPath('/Looks/Soil_Rocky')
-    # print(f'soil_rocky_prim: {soil_rocky_prim}')
-    # print(f'soil_rocky_prim2: {soil_rocky_prim2}')
-    # print(f'soil_rocky_prim2.GetAttribute("inputs:project_uvw"): {soil_rocky_prim.GetAttributes()}')
-    # try:
-    #     soil_rocky_prim.GetAttribute("inputs:project_uvw").Set(True)
-    # except Exception as e:
-    #     print(f'Exception: {e}')
-
-    # fieldstone_prim.GetAttribute("inputs:project_uvw").Set(True)
-    # /Looks/Soil_Rocky/Shader.inputs:project_uvw
-    # Type float2
-    # soil_rocky_prim.GetAttribute("inputs:texture_scale").Set([1.0, 1.0])
-
+@lru_cache(maxsize=1) # Cache the result to avoid repeated imports.
+def isaacsim_available():
+    """Check if Isaac Sim is available, with automatic caching."""
+    try:
+        import isaacsim.core
+        return True
+    except ImportError:
+        return False
+    
 
 def get_triangles_and_vertices_from_prim(prim_path):
+    from isaacsim.core.utils.stage import get_current_stage
     """ Get triangles and vertices from prim """
     stage: Usd.Stage = get_current_stage()
     mesh_prim = stage.GetPrimAtPath(prim_path)
 
-    points = mesh_prim.GetAttribute("points").Get()
-    # face_vertex_counts = mesh_prim.GetAttribute("faceVertexCounts").Get()
-    face_vertex_indices = mesh_prim.GetAttribute("faceVertexIndices").Get()
+    # Validate prim exists and is valid
+    if not mesh_prim or not mesh_prim.IsValid():
+        raise RuntimeError(f"Invalid or null prim at path: {prim_path}")
+    
+    # Check if it's a mesh prim
+    if not mesh_prim.IsA(UsdGeom.Mesh):
+        raise RuntimeError(f"Prim at path {prim_path} is not a mesh")
+
+    # Get mesh attributes with validation
+    points_attr = mesh_prim.GetAttribute("points")
+    face_vertex_indices_attr = mesh_prim.GetAttribute("faceVertexIndices")
+    
+    if not points_attr:
+        raise RuntimeError(f"Mesh at {prim_path} has no points attribute")
+    if not face_vertex_indices_attr:
+        raise RuntimeError(f"Mesh at {prim_path} has no face vertex indices attribute")
+
+    points = points_attr.Get()
+    face_vertex_indices = face_vertex_indices_attr.Get()
+    
+    if points is None:
+        raise RuntimeError(f"Failed to get points data from mesh at {prim_path}")
+    if face_vertex_indices is None:
+        raise RuntimeError(f"Failed to get face indices data from mesh at {prim_path}")
 
     # Convert points to numpy array and extract xyz coordinates efficiently
     vertices_array = np.array(points, dtype=np.float32)
@@ -157,17 +64,111 @@ def get_triangles_and_vertices_from_prim(prim_path):
 
     return faces, vertices
 
+def get_triangles_and_vertices_from_prim_standalone(usd_file_path: str, prim_path: str = None) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Standalone USD loader that doesn't require Isaac Sim runtime
+    
+    Args:
+        usd_file_path: Path to the USD file
+        prim_path: Specific prim path to load (if None, finds first mesh)
+        
+    Returns:
+        Tuple of (faces, vertices) as numpy arrays (note order matches Isaac Sim function)
+    """
+    
+    # Open the USD stage
+    stage = Usd.Stage.Open(usd_file_path)
+    if not stage:
+        raise RuntimeError(f"Failed to open USD file: {usd_file_path}")
+    
+    # Find mesh primitive
+    mesh_prim = None
+    if prim_path:
+        mesh_prim = stage.GetPrimAtPath(prim_path)
+        if not mesh_prim or not mesh_prim.IsA(UsdGeom.Mesh):
+            raise RuntimeError(f"No valid mesh found at path: {prim_path}")
+    else:
+        # Find first mesh in the stage
+        for prim in stage.Traverse():
+            if prim.IsA(UsdGeom.Mesh):
+                mesh_prim = prim
+                print(f"Found mesh at path: {prim.GetPath()}")
+                break
+    
+    if not mesh_prim:
+        raise RuntimeError("No mesh found in USD file")
+    
+    # Get mesh data
+    mesh = UsdGeom.Mesh(mesh_prim)
+    
+    # Get points (vertices)
+    points_attr = mesh.GetPointsAttr()
+    if not points_attr:
+        raise RuntimeError("Mesh has no points attribute")
+    points = points_attr.Get()
+    
+    # Get face vertex indices
+    face_vertex_indices_attr = mesh.GetFaceVertexIndicesAttr()
+    if not face_vertex_indices_attr:
+        raise RuntimeError("Mesh has no face vertex indices")
+    face_vertex_indices = face_vertex_indices_attr.Get()
+    
+    # Get face vertex counts (usually 3 for triangles)
+    face_vertex_counts_attr = mesh.GetFaceVertexCountsAttr()
+    face_vertex_counts = face_vertex_counts_attr.Get() if face_vertex_counts_attr else None
+    
+    # Convert to numpy arrays
+    vertices = np.array(points, dtype=np.float32)
+    if vertices.ndim == 2 and vertices.shape[1] >= 3:
+        vertices = vertices[:, :3]  # Take only x, y, z coordinates
+    
+    # Convert faces to triangles
+    face_indices = np.array(face_vertex_indices, dtype=np.int32)
+    
+    if face_vertex_counts is not None:
+        # Handle polygons with different vertex counts
+        faces = []
+        start_idx = 0
+        for count in face_vertex_counts:
+            if count == 3:
+                # Triangle - add directly
+                faces.append(face_indices[start_idx:start_idx + 3])
+            elif count > 3:
+                # Polygon - triangulate by fan triangulation
+                for i in range(1, count - 1):
+                    faces.append([
+                        face_indices[start_idx],
+                        face_indices[start_idx + i],
+                        face_indices[start_idx + i + 1]
+                    ])
+            start_idx += count
+        faces = np.array(faces, dtype=np.int32)
+    else:
+        # Assume all triangles
+        faces = face_indices.reshape(-1, 3)
+    
+    return faces, vertices
 
-def apply_material(prim_path, material_path="/Looks/Soil_Rocky"):
-    """ Apply material to prim """
-    import omni.kit.commands
+def check_prim_exists(prim_path):
+    """
+    Check if a prim exists and is valid in the current Isaac Sim stage.
+    
+    Args:
+        prim_path: Path to the prim to check
+        
+    Returns:
+        bool: True if prim exists and is valid, False otherwise
+    """
+    try:
+        from isaacsim.core.utils.stage import get_current_stage
+        stage: Usd.Stage = get_current_stage()
+        mesh_prim = stage.GetPrimAtPath(prim_path)
 
-    omni.kit.commands.execute('BindMaterial',
-                              material_path=material_path,
-                              prim_path=[prim_path],
-                              strength=['weakerThanDescendants'])
-
-    # stage: Usd.Stage = get_current_stage()
-    # prim = stage.GetPrimAtPath(prim_path)
-
-    # Apply material
+        return (mesh_prim and 
+                mesh_prim.IsValid() and 
+                mesh_prim.IsA(UsdGeom.Mesh))
+    except ImportError:
+        # Isaac Sim not available
+        return False
+    except Exception:
+        return False

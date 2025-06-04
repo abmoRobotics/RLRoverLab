@@ -21,9 +21,6 @@ class RoverEnv(ManagerBasedRLEnv):
         env_ids = torch.arange(self.num_envs, device=self.device)
 
         # Get the terrain and change the origin
-        terrain: TerrainImporter = self.scene.terrain
-        terrain.env_origins[env_ids, 0] += 100
-        terrain.env_origins[env_ids, 1] += 100
 
         self.global_step_counter = 0
 

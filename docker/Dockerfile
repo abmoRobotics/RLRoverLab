@@ -22,9 +22,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt -y autoremove && apt clean autoclean && \
     rm -rf /var/lib/apt/lists/*
 
+
+
 # Install this Isaac Lab and SKRL
 RUN ${ISAAC_SIM_PATH}/python.sh -m pip install isaaclab==2.1.0 skrl==1.4.1 gym
 
+# Clone and install Cosmos Tokenizer
+RUN apt-get update && apt-get install -y git-lfs ffmpeg 
+
+RUN git clone https://github.com/NVIDIA/Cosmos-Tokenizer.git \
+    && cd Cosmos-Tokenizer \
+    && git lfs pull \
+    && ${ISAAC_SIM_PATH}/python.sh -m pip install .
 
 RUN echo "alias isaaclab=${ISAAC_LAB_PATH}/isaaclab.sh" >> ${HOME}/.bashrc && \
     echo "alias python=${ISAAC_SIM_PATH}/python.sh" >> ${HOME}/.bashrc && \
