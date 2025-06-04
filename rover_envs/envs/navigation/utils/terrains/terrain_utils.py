@@ -48,23 +48,16 @@ from matplotlib.patches import Patch
 import numpy as np
 import pymeshlab
 import torch
+from termcolor import colored
 
+from rover_envs.envs.navigation.utils.terrains.usd_utils import get_triangles_and_vertices_from_prim_standalone, isaacsim_available
 # Try to import Isaac Sim dependencies for runtime, fallback for debugging
-try:
-    from rover_envs.envs.navigation.utils.terrains.usd_utils import get_triangles_and_vertices_from_prim, get_triangles_and_vertices_from_prim_standalone
-    ISAAC_SIM_AVAILABLE = True
-except ImportError:
-    ISAAC_SIM_AVAILABLE = False
-    print("Isaac Sim dependencies not available - running in debug mode")
-    from rover_envs.envs.navigation.utils.terrains.usd_utils import get_triangles_and_vertices_from_prim_standalone
 
-# Import standalone USD capabilities for debugging
-try:
-    from pxr import Usd, UsdGeom
-    USD_STANDALONE_AVAILABLE = True
-except ImportError:
-    USD_STANDALONE_AVAILABLE = False
-    print("Warning: USD standalone libraries not available")
+if isaacsim_available():
+    from rover_envs.envs.navigation.utils.terrains.usd_utils import get_triangles_and_vertices_from_prim
+
+
+
 
 class HeightmapManager:
     """
@@ -321,7 +314,13 @@ class TerrainManager:
                  debug_mode: bool = False, 
                  terrain_usd_path: Optional[str] = None, 
                  rock_usd_path: Optional[str] = None,
-                 safety_margin: float = 2.0
+                 safety_margin: float = 2.0,
+                 num_spawn_locations: int = 2000,
+                 target_distance_to_boundary: float = 7.0,
+                 spawn_distance_to_boundary: float = 10.0,
+                 safety_margin_to_obstacles: float = 2.0,
+                 resolution_in_m: float = 0.05,
+                 gradient_threshold: float = 0.35
                  ) -> None:
         """
         Initialize the TerrainManager with specified configuration.
@@ -338,26 +337,44 @@ class TerrainManager:
             FileNotFoundError: If USD files are not found in debug mode.
             RuntimeError: If mesh loading fails and fallback is unsuccessful.
         """
-        self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.debug_mode = debug_mode or not ISAAC_SIM_AVAILABLE
+        ## Initialize parameters - general configuration
+        self.num_envs = num_envs
+        self.device = device
+        self.debug_mode = debug_mode
+
+        # Initialize parameters - terrain configuration
+        self.terrain_usd_path = terrain_usd_path
+        self.rock_usd_path = rock_usd_path
+        self.resolution_in_m = resolution_in_m # resolution for heightmap generation
+        self.gradient_threshold = gradient_threshold  # threshold for steep terrain detection
+
+        # Initialize parameters - spawn generation configuration
+        self.safety_margin = safety_margin
+        self.num_spawn_locations = num_spawn_locations
+        self.spawn_distance_to_boundary = spawn_distance_to_boundary
+        self.safety_margin_to_obstacles = safety_margin_to_obstacles
+
+        # Initialize parameters - target distance
+        self.target_distance_to_boundary = target_distance_to_boundary
+
+        # Check if running in Isaac Sim environment or debug mode
+        self.debug_mode = debug_mode or not isaacsim_available()
         
-        if self.debug_mode and terrain_usd_path:
-            # Debug mode with custom USD files
-            terrain_path = terrain_usd_path
-            rock_mesh_path = rock_usd_path
-        elif self.debug_mode:
-            # Debug mode with default Mars terrain paths
-            base_path = os.path.join(self.dir_path, "..", "..", "..", "..", "assets", "terrains", "mars", "terrain1")
-            terrain_path = os.path.join(base_path, "terrain_only.usd")
-            rock_mesh_path = os.path.join(base_path, "rocks_merged.usd")
-            if not os.path.exists(terrain_path):
-                raise FileNotFoundError(f"Debug mode requires terrain USD file at: {terrain_path}")
-        else:
-            # Isaac Sim runtime mode
+        
+        if isaacsim_available() and not debug_mode:
+            # Isaac Sim runtime mode - use default terrain paths
             terrain_path = "/World/terrain/terrain/ground"
             rock_mesh_path = "/World/terrain/obstacles/obstacles"
-
-        self.meshes = [terrain_path, rock_mesh_path]
+        else:
+            # Debug mode - use provided USD paths or default assets
+            if terrain_usd_path:
+                terrain_path = terrain_usd_path
+                rock_mesh_path = rock_usd_path
+            else:
+                dir_path = os.path.dirname(os.path.realpath(__file__))
+                base_path = os.path.join(dir_path, "..", "..", "..", "..", "assets", "terrains", "mars", "terrain1")
+                terrain_path = os.path.join(base_path, "terrain_only.usd")
+                rock_mesh_path = os.path.join(base_path, "rocks_merged.usd")
 
         self.meshes = {
             "terrain": terrain_path,
@@ -366,22 +383,11 @@ class TerrainManager:
 
         # Terrain Parameters
         self.heightmap = None
-        self.resolution_in_m = 0.05
-        self.gradient_threshold = 0.4
-        self.device = device
 
         # Load Terrain (terrain only, without rocks)
-        print("Getting triangles and vertices from terrain USD file")
-        try:
-            terrain_vertices, terrain_faces = self.get_mesh(self.meshes["terrain"])
-        except Exception as e:
-            print(f"Failed to load terrain: {e}")
-            if not self.debug_mode:
-                print("Trying to fallback to debug mode...")
-                self.debug_mode = True
-                terrain_vertices, terrain_faces = self.get_mesh(self.meshes["terrain"])
-            else:
-                raise
+        self.log("Getting triangles and vertices from terrain USD file", level='info', block=False)
+        #print("Getting triangles and vertices from terrain USD file")
+        terrain_vertices, terrain_faces = self.get_mesh(self.meshes["terrain"])
         
         # Load rocks if available and combine with terrain for spawn height queries
         rock_vertices = None
@@ -389,137 +395,128 @@ class TerrainManager:
         
         # First check if rock prim exists (when using Isaac Sim)
         rocks_available = True
-        if ISAAC_SIM_AVAILABLE:
+        if isaacsim_available():
             from rover_envs.envs.navigation.utils.terrains.usd_utils import check_prim_exists
             if not check_prim_exists(self.meshes["rock"]):
-                print(f"No rock obstacles found at {self.meshes['rock']} - using terrain-only mode")
+                self.log(f"No rock obstacles found at {self.meshes['rock']} - using terrain-only mode", level='warning', block=False)
                 rocks_available = False
         
         if rocks_available:
             try:
-                print("Loading rock obstacles from USD file...")
+                self.log("Loading rock obstacles from USD file...", level='debug', block=False)
                 rock_vertices, rock_faces = self.get_mesh(self.meshes["rock"])
                 
                 # Combine terrain and rocks for complete heightmap
-                print("Combining terrain and rock meshes...")
+                self.log("Combining terrain and rock meshes...", level='debug', block=False)
                 combined_vertices = np.vstack([terrain_vertices, rock_vertices])
                 combined_faces = np.vstack([terrain_faces, rock_faces + len(terrain_vertices)])
                 
                 # Create combined heightmap manager (for spawn height queries)
-                print("Generating combined heightmap with obstacles")
+                self.log("Generating combined heightmap with obstacles", level='debug', block=False)
                 self._heightmap_manager = HeightmapManager(self.resolution_in_m, combined_vertices, combined_faces, device)
                 
                 # Create terrain-only heightmap with SAME BOUNDS as combined heightmap
-                print("Generating terrain-only heightmap with matched bounds")
+                self.log("Generating terrain-only heightmap with matched bounds", level='debug', block=False)
                 self.terrain_only_heightmap_manager = HeightmapManager(self.resolution_in_m, terrain_vertices, terrain_faces, device)
                 
                 # Resize terrain-only heightmap to match combined heightmap dimensions
                 self.terrain_only_heightmap_manager = self.resize_terrain_heightmap_to_match_combined(
                     terrain_vertices, terrain_faces, self._heightmap_manager
                 )
-                print("✓ Successfully loaded terrain with rock obstacles")
-                
+                self.log("✓ Successfully loaded terrain and rock obstacles", level='success', block=False)
+
             except Exception as e:
-                print(f"Warning: Could not load rock obstacles ({e}). Continuing with terrain-only mode.")
+                self.log(f"Warning: Could not load rock obstacles ({e}). Continuing with terrain-only mode.", level='warning', block=False)
                 rocks_available = False
         
         if not rocks_available:
             # Use terrain-only heightmap for everything
-            print("Using terrain-only mode (no obstacles)")
+            self.log("Using terrain-only mode (no obstacles)", level='warning', block=False)
             self._heightmap_manager = HeightmapManager(self.resolution_in_m, terrain_vertices, terrain_faces, device)
             self.terrain_only_heightmap_manager = self._heightmap_manager
 
-        # Generate Gradient Masks (terrain-only for visualization)
-        print("Generating gradient masks")
-        self.gradient_mask, self.safe_gradient_mask = self.compute_gradient_masks(
-            self._heightmap_manager.heightmap, self.gradient_threshold, safety_margin=safety_margin)
-
         # Generate Rock Mask if rocks are available
         if rock_vertices is not None:
-            print("Generating rock obstacle mask from mesh data")
+            self.log("Generating rock obstacle mask from mesh data", level='info', block=False)
             self.rock_mask, self.safe_rock_mask = self.project_rocks_to_heightmap(rock_vertices, rock_faces)
         else:
-            print("No rock obstacles present - using clear obstacle masks")
+            self.log("No rock obstacles present - using clear obstacle masks", level='warning', block=False)
             # Create empty rock masks
             height, width = self._heightmap_manager.heightmap.shape
             self.rock_mask = np.zeros((height, width), dtype=np.int32)
             self.safe_rock_mask = np.zeros((height, width), dtype=np.int32)
 
         # Generate Gradient Mask using terrain-only heightmap
-        print("Generating gradient mask from terrain-only heightmap")
+        self.log("Generating gradient mask from terrain-only heightmap", level='info', block=False)
         self.gradient_mask, self.safe_gradient_mask = self.compute_gradient_masks(
             self.terrain_only_heightmap_manager.heightmap, self.gradient_threshold)
 
         # Combine rock and gradient masks for spawn generation
-        if rock_vertices is not None:
-            print("Combining obstacle and gradient masks for spawn generation")
-        else:
-            print("Using gradient-based spawn generation (terrain-only mode)")
+        self.log("Combining rock and gradient masks for spawn generation", level='debug', block=False)
         combined_safe_mask = np.logical_or(self.safe_rock_mask, self.safe_gradient_mask).astype(np.int32)
 
         # Generate Spawn Locations
         self.spawn_locations = self.random_rover_spawns(
             safe_mask=combined_safe_mask,
             heightmap=self._heightmap_manager.heightmap,
-            n_spawns=num_envs*2 if num_envs > 100 else 200,
+            n_spawns=num_spawn_locations,#num_envs*2 if num_envs > 100 else 200,
             border_offset=25.0,
             seed=12345)
-        if device == 'cuda:0' or device == 'cuda':
+        
+        if str(self.device).startswith("cuda"):
             self.spawn_locations = torch.from_numpy(self.spawn_locations).cuda()
             self.safe_rock_mask_tensor = torch.from_numpy(self.safe_rock_mask).cuda().unsqueeze(-1)
         else:
             self.spawn_locations = torch.from_numpy(self.spawn_locations)
             self.safe_rock_mask_tensor = torch.from_numpy(self.safe_rock_mask).unsqueeze(-1)
-
         # Summary of terrain initialization
         obstacle_mode = "with obstacles" if rock_vertices is not None else "terrain-only"
         spawn_count = len(self.spawn_locations)
-        print(f"✓ Terrain initialization complete: {obstacle_mode} mode, {spawn_count} spawn locations generated")
+        self.log(
+            "✓ Terrain Initialization Complete\n"
+            f"→ Obstacle Mode: {obstacle_mode}\n"
+            f"→ Spawn Locations Generated: {spawn_count}",
+            level='success', block=True
+        )
+
+    def log(self, message, level='info', block=False):
+        """Simple logger with color-coded levels and optional block formatting."""
+        if not self.debug_mode and level not in ['success', 'error', 'warning', 'info']:
+            return
+
+        colors = {
+            'info': 'white',
+            'debug': 'cyan',
+            'success': 'green',
+            'warning': 'yellow',
+            'error': 'red'
+        }
+
+        if block:
+            border = "=" * 60
+            msg = f"{border}\n{message}\n{border}"
+        else:
+            msg = message
+        print(colored(msg, colors.get(level, 'white')))
 
     def get_mesh(self, prim_path: str = "/") -> Tuple[np.ndarray, np.ndarray]:
         """
-        Load mesh data from USD file or Isaac Sim prim with robust fallback handling.
+        Load mesh data from USD file or Isaac Sim prim.
         
         This method attempts to load mesh data using Isaac Sim runtime capabilities first,
         then falls back to standalone USD loading for debug environments. The loaded mesh
-        is processed through PyMeshLab for consistency and optimization.
+        is processed through PyMeshLab.
         
         Args:
-            prim_path: Prim path for Isaac Sim runtime, or USD file path for debug mode.
+            prim_path: Prim path when using Isaac Sim, or USD file path in standalone(debug) mode.
             
         Returns:
             A tuple containing:
                 - vertices (np.ndarray): Vertex coordinates of shape (N, 3).
                 - faces (np.ndarray): Triangle face indices of shape (M, 3).
-                
-        Raises:
-            RuntimeError: If mesh loading fails with all available methods.
-            FileNotFoundError: If USD file doesn't exist in debug mode.
-            
-        Note:
-            The method automatically handles device compatibility and mesh optimization
-            through PyMeshLab processing to ensure consistent data format.
         """
-        try:
-            if ISAAC_SIM_AVAILABLE:
-                # Attempt Isaac Sim runtime loading
-                faces, vertices = get_triangles_and_vertices_from_prim(prim_path)
-            else:
-                raise ImportError("Isaac Sim not available, falling back to standalone mode")
-                
-        except (ImportError, RuntimeError) as e:
-            print(f"Isaac Sim method failed ({e}), trying standalone USD loading...")
-            
-            if USD_STANDALONE_AVAILABLE and os.path.exists(prim_path):
-                # Fallback to standalone USD loading for debug mode
-                faces, vertices = get_triangles_and_vertices_from_prim_standalone(prim_path)
-            else:
-                # More specific error message based on the failure type
-                if "Invalid or null prim" in str(e) or "not a mesh" in str(e):
-                    raise RuntimeError(f"Cannot load mesh: Prim not found or invalid at {prim_path}")
-                else:
-                    raise RuntimeError(f"Cannot load mesh: Isaac Sim not available and USD file not found at {prim_path}")
-
+        faces, vertices = get_triangles_and_vertices_from_prim(prim_path) if isaacsim_available() \
+            else get_triangles_and_vertices_from_prim_standalone(prim_path)
         # Process mesh through PyMeshLab for consistency and optimization
         mesh = pymeshlab.Mesh(vertices, faces)
         ms = pymeshlab.MeshSet()
@@ -542,8 +539,12 @@ class TerrainManager:
         Validate target positions against terrain safety constraints.
         
         This method checks if target positions are located in safe areas (not on rocks
-        or steep terrain) and returns the environment IDs that require reset due to
-        unsafe target placement.
+        or obstacles) and returns the environment IDs that require reset due to
+        unsafe target placement. Additionally checks if targets are within valid boundary
+        distance from the map edges.
+        
+        Note: Targets are allowed on steep terrain - only rock/obstacle constraints apply.
+        Rovers can navigate to targets on steep terrain, but shouldn't spawn on them.
         
         Args:
             env_ids: Environment IDs to check, tensor of shape (N,).
@@ -557,8 +558,27 @@ class TerrainManager:
                 
         Note:
             Only uses the first 2 dimensions (x, y) of target_positions for validation.
-            The safety check is performed against the combined rock and gradient safety masks.
+            The safety check is performed against rock safety masks only (not gradient masks)
+            and boundary distance constraints using target_distance_to_boundary parameter.
         """
+        # Check 1: Boundary distance constraints
+        # Ensure targets are not too close to the map boundaries
+        x_coords = target_positions[:, 0]
+        y_coords = target_positions[:, 1]
+        
+        # Get heightmap bounds
+        min_x, min_y, max_x, max_y = self._heightmap_manager.get_heightmap_bounds()
+        
+        # Check if targets are within valid boundary distance
+        boundary_margin = self.target_distance_to_boundary
+        boundary_violations = (
+            (x_coords < min_x + boundary_margin) |
+            (x_coords > max_x - boundary_margin) |
+            (y_coords < min_y + boundary_margin) |
+            (y_coords > max_y - boundary_margin)
+        )
+        
+        # Check 2: Rock/obstacle safety constraints (targets allowed on steep terrain)
         # Transform world coordinates to grid coordinates
         scaled_position = target_positions[:, 0:2] / \
             self._heightmap_manager.resolution_in_m + self._heightmap_manager.offset_tensor
@@ -568,9 +588,12 @@ class TerrainManager:
         grid_cell[:, 0] = torch.clamp(grid_cell[:, 0], 0, self._heightmap_manager.heightmap_tensor.shape[1] - 1)
         grid_cell[:, 1] = torch.clamp(grid_cell[:, 1], 0, self._heightmap_manager.heightmap_tensor.shape[0] - 1)
 
-        # Check safety mask: 1 indicates unsafe areas requiring reset
-        reset_mask = torch.where(self.safe_rock_mask_tensor[grid_cell[:, 1], grid_cell[:, 0]] == 1, 1, 0).squeeze(-1)
-        env_ids_to_reset = env_ids[reset_mask == 1]
+        # Check rock safety mask only (targets can be on steep terrain, just not on rocks): 1 indicates unsafe areas requiring reset
+        safety_violations = torch.where(self.safe_rock_mask_tensor[grid_cell[:, 1], grid_cell[:, 0]] == 1, 1, 0).squeeze(-1)
+        
+        # Combine both violation checks: reset if either boundary or safety is violated
+        combined_violations = boundary_violations | (safety_violations == 1)
+        env_ids_to_reset = env_ids[combined_violations]
         
         return env_ids_to_reset, len(env_ids_to_reset)
 
@@ -587,7 +610,7 @@ class TerrainManager:
         # Initialize rock mask
         rock_mask = np.zeros((height, width), dtype=np.uint8)
         
-        print(f"Projecting {len(rock_faces)} rock triangles onto XY plane...")
+        self.log(f'Projecting {len(rock_faces)} rock triangles onto XY plane', level='debug', block=False)
         
         if len(rock_faces) > 0:
             # Get all triangle vertices and project to 2D
@@ -620,8 +643,9 @@ class TerrainManager:
                 if i_range > 0 and j_range > 0:
                     rock_mask[min_j[idx]:max_j[idx]+1, min_i[idx]:max_i[idx]+1] = 1
         
-        print("Rock projection completed. Applying morphological operations...")
-        
+        self.log(f'Rocks projected onto heightmap: {np.sum(rock_mask)} cells marked as rocks', level='debug', block=True)
+        self.log("Rock projection completed. Applying morphological operations...", level='debug', block=False)
+
         # Apply morphological operations to clean up the mask
         kernel_small = np.ones((3, 3), np.uint8)
         rock_mask = cv2.morphologyEx(rock_mask, cv2.MORPH_CLOSE, kernel_small)
@@ -640,10 +664,13 @@ class TerrainManager:
         safety_margin_size = int(safety_margin / self.resolution_in_m)  # 2 meter safety margin
         kernel_safety = np.ones((safety_margin_size, safety_margin_size), np.uint8)
         safe_rock_mask = cv2.dilate(rock_mask, kernel_safety, iterations=1)
-        
-        print(f"Rock mask created: {np.sum(rock_mask)} cells marked as rocks")
-        print(f"Rock safety mask created: {np.sum(safe_rock_mask)} cells marked as unsafe")
-        
+
+        self.log(
+            f"Rock mask created: {np.sum(rock_mask)} cells marked as rocks\n"
+            f"Rock safety mask created: {np.sum(safe_rock_mask)} cells marked as unsafe",
+            level='debug', block=True
+        )
+
         return rock_mask.astype(np.int32), safe_rock_mask.astype(np.int32)
 
     def compute_gradient_masks(self, heightmap, threshold=0.1, safety_margin=2.0):
@@ -693,10 +720,13 @@ class TerrainManager:
         safety_margin_size = int(safety_margin / self.resolution_in_m)  # default 2.0 meter safety margin
         kernel_safety = np.ones((safety_margin_size, safety_margin_size), np.uint8)
         safe_gradient_mask = cv2.dilate(gradient_mask, kernel_safety, iterations=1)
-        
-        print(f"Gradient mask created: {np.sum(gradient_mask)} cells marked as steep")
-        print(f"Gradient safety mask created: {np.sum(safe_gradient_mask)} cells marked as unsafe")
-        
+
+        self.log(
+            f"Gradient mask created: {np.sum(gradient_mask)} cells marked as steep\n"
+            f"Gradient safety mask created: {np.sum(safe_gradient_mask)} cells marked as unsafe",
+            level='debug', block=True
+        )
+
         return gradient_mask.astype(np.int32), safe_gradient_mask.astype(np.int32)
 
     def random_rover_spawns(
@@ -822,7 +852,8 @@ class TerrainManager:
                         max_z_tri[idx]
                     )
         
-        print(f"Terrain-only heightmap resized to match combined dimensions: {terrain_heightmap.shape}")
+        self.log(f"Resizing terrain-only heightmap to match combined heightmap dimensions: {target_height}x{target_width}", level='debug', block=False)
+
         
         # Create a new HeightmapManager with the resized terrain heightmap
         # Use same bounds as the reference heightmap
@@ -844,18 +875,42 @@ class TerrainManager:
             resized_heightmap_manager.offset_tensor = torch.tensor([target_min_x, target_min_y])
         
         return resized_heightmap_manager
-
+    
+    # TODO : Remove
     def get_valid_targets(self, target_positions: torch.Tensor, device: str = "cuda:0") -> torch.Tensor:
         """
         Filter target positions to return only those in safe areas.
+        
+        This method filters target positions to only include those that are safe for
+        navigation targets. Targets are allowed on steep terrain - only rock/obstacle
+        constraints and boundary distance requirements apply.
         
         Args:
             target_positions: Candidate target positions, tensor of shape (N, 2 or 3).
             device: Device for computations (legacy parameter).
             
         Returns:
-            Filtered target positions that are in safe areas.
+            Filtered target positions that are in safe areas (not on rocks) and within 
+            boundary distance constraints.
         """
+        # Check 1: Boundary distance constraints
+        # Ensure targets are not too close to the map boundaries
+        x_coords = target_positions[:, 0]
+        y_coords = target_positions[:, 1]
+        
+        # Get heightmap bounds
+        min_x, min_y, max_x, max_y = self._heightmap_manager.get_heightmap_bounds()
+        
+        # Check if targets are within valid boundary distance
+        boundary_margin = self.target_distance_to_boundary
+        boundary_valid = (
+            (x_coords >= min_x + boundary_margin) &
+            (x_coords <= max_x - boundary_margin) &
+            (y_coords >= min_y + boundary_margin) &
+            (y_coords <= max_y - boundary_margin)
+        )
+        
+        # Check 2: Rock/obstacle safety constraints (targets allowed on steep terrain)
         # Transform to grid coordinates
         scaled_position = target_positions[:, 0:2] / \
             self._heightmap_manager.resolution_in_m + self._heightmap_manager.offset_tensor
@@ -865,11 +920,15 @@ class TerrainManager:
         grid_cell[:, 0] = torch.clamp(grid_cell[:, 0], 0, self._heightmap_manager.heightmap_tensor.shape[1] - 1)
         grid_cell[:, 1] = torch.clamp(grid_cell[:, 1], 0, self._heightmap_manager.heightmap_tensor.shape[0] - 1)
         
-        # Filter safe positions (safe_mask == 0 means safe)
+        # Filter safe positions (rock safe_mask == 0 means safe, targets can be on steep terrain)
         safe_mask_values = self.safe_rock_mask_tensor[grid_cell[:, 1], grid_cell[:, 0]].squeeze(-1)
-        safe_indices = torch.where(safe_mask_values == 0)[0]
+        safety_valid = (safe_mask_values == 0)
         
-        return target_positions[safe_indices]
+        # Combine both constraints: valid if both boundary and safety checks pass
+        combined_valid = boundary_valid & safety_valid
+        valid_indices = torch.where(combined_valid)[0]
+        
+        return target_positions[valid_indices]
     
     def get_terrain_statistics(self) -> dict:
         """
@@ -927,225 +986,3 @@ class TerrainManager:
             }
         
         return stats
-
-class DebugVisualizer:
-    """Debug visualization helper for terrain analysis"""
-    
-    def __init__(self, terrain_manager: TerrainManager):
-        """Initialize with terrain manager"""
-        self.terrain_manager = terrain_manager
-        self.heightmap_manager = terrain_manager._heightmap_manager  # Use the actual attribute name
-        self.resolution_in_m = terrain_manager.resolution_in_m
-
-    def visualize_combined_rock_gradient_mask(self, spawn_locations: np.ndarray):
-        """Visualize combined rock and gradient masks with spawn points"""
-        plt.figure(figsize=(15, 10))
-        
-        # Convert spawn locations to grid coordinates for plotting
-        spawn_grid_x = (spawn_locations[:, 0] - self.heightmap_manager.min_x) / self.resolution_in_m
-        spawn_grid_y = (spawn_locations[:, 1] - self.heightmap_manager.min_y) / self.resolution_in_m
-        
-        # Show combined heightmap as background
-        plt.imshow(self.heightmap_manager.heightmap, cmap='terrain', origin='lower', alpha=0.7)
-        
-        # Overlay gradient mask (steep terrain)
-        gradient_mask = self.terrain_manager.gradient_mask
-        gradient_mask_overlay = np.ma.masked_where(gradient_mask == 0, gradient_mask)
-        plt.imshow(gradient_mask_overlay, cmap='Purples', alpha=0.8, origin='lower', vmin=0, vmax=1)
-
-        # Overlay rock mask if available
-        if hasattr(self.terrain_manager, 'rock_mask') and self.terrain_manager.rock_mask is not None:
-            rock_mask = self.terrain_manager.rock_mask
-            safe_rock_mask = self.terrain_manager.safe_rock_mask
-            
-            rock_mask_overlay = np.ma.masked_where(rock_mask == 0, rock_mask)
-            plt.imshow(rock_mask_overlay, cmap='Reds', alpha=0.8, origin='lower', label='Rock Mask')
-            
-            # Overlay rock safety mask
-            safety_rock_mask_overlay = np.ma.masked_where(safe_rock_mask == 0, safe_rock_mask)
-            plt.imshow(safety_rock_mask_overlay, cmap='Oranges', alpha=0.3, origin='lower', label='Rock Safety Zone')
-        
-        # Overlay gradient safety mask
-        safe_gradient_mask = self.terrain_manager.safe_gradient_mask
-        safety_gradient_mask_overlay = np.ma.masked_where(safe_gradient_mask == 0, safe_gradient_mask)
-        plt.imshow(safety_gradient_mask_overlay, cmap='Blues', alpha=0.3, origin='lower', label='Gradient Safety Zone')
-        
-        # Plot spawn points
-        plt.scatter(spawn_grid_x, spawn_grid_y, c='cyan', marker='o', s=30, 
-                   edgecolor='blue', linewidth=1, label='Spawn Points', zorder=5)
-        
-        plt.colorbar(label='Height (m)')
-        plt.title('Combined Rock and Gradient Masks with Spawn Points')
-        plt.xlabel('X Grid Coordinate')
-        plt.ylabel('Y Grid Coordinate')
-        
-        # Create custom legend
-        legend_elements = [
-            Patch(facecolor='purple', alpha=0.8, label='Steep Terrain'),
-            Patch(facecolor='blue', alpha=0.3, label='Gradient Safety Zones'),
-            plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='cyan', 
-                      markeredgecolor='blue', markersize=8, label='Spawn Points')
-        ]
-        
-        # Add rock-related legend items if rocks are available
-        if hasattr(self.terrain_manager, 'rock_mask') and self.terrain_manager.rock_mask is not None:
-            legend_elements.insert(1, Patch(facecolor='red', alpha=0.8, label='Rock Areas'))
-            legend_elements.insert(3, Patch(facecolor='orange', alpha=0.3, label='Rock Safety Zones'))
-        
-        plt.legend(handles=legend_elements, loc='upper right')
-        
-        plt.tight_layout()
-        plt.show()
-    
-    def visualize_terrain_analysis_subplots(self, spawn_locations: np.ndarray):
-        """Visualize terrain gradients and rocks in two subplots on the same page"""
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 10))
-        
-        # Convert spawn locations to grid coordinates for plotting
-        spawn_grid_x = (spawn_locations[:, 0] - self.heightmap_manager.min_x) / self.resolution_in_m
-        spawn_grid_y = (spawn_locations[:, 1] - self.heightmap_manager.min_y) / self.resolution_in_m
-        
-        # Left subplot: Terrain gradients only
-        terrain_only_heightmap = getattr(self.terrain_manager, 'terrain_only_heightmap_manager', self.heightmap_manager)
-        ax1.imshow(terrain_only_heightmap.heightmap, cmap='terrain', origin='lower', alpha=0.8)
-        
-        # Overlay gradient mask (steep terrain only, no rocks)
-        gradient_mask = self.terrain_manager.gradient_mask
-        gradient_mask_overlay = np.ma.masked_where(gradient_mask == 0, gradient_mask)
-        ax1.imshow(gradient_mask_overlay, cmap='Purples', alpha=0.9, origin='lower', vmin=0, vmax=1)
-        
-        # Overlay gradient safety mask
-        safe_gradient_mask = self.terrain_manager.safe_gradient_mask
-        safety_gradient_mask_overlay = np.ma.masked_where(safe_gradient_mask == 0, safe_gradient_mask)
-        ax1.imshow(safety_gradient_mask_overlay, cmap='Blues', alpha=0.4, origin='lower')
-        
-        # Plot spawn points
-        ax1.scatter(spawn_grid_x, spawn_grid_y, c='cyan', marker='o', s=20, 
-                   edgecolor='blue', linewidth=1, zorder=5)
-        
-        ax1.set_title('Terrain Gradients Only (No Rocks)', fontsize=14)
-        ax1.set_xlabel('X Grid Coordinate')
-        ax1.set_ylabel('Y Grid Coordinate')
-        
-        # Right subplot: Rocks only (if available)
-        ax2.imshow(self.heightmap_manager.heightmap, cmap='terrain', origin='lower', alpha=0.8)
-        
-        if hasattr(self.terrain_manager, 'rock_mask') and self.terrain_manager.rock_mask is not None:
-            # Overlay rock mask only
-            rock_mask = self.terrain_manager.rock_mask
-            rock_mask_overlay = np.ma.masked_where(rock_mask == 0, rock_mask)
-            ax2.imshow(rock_mask_overlay, cmap='Reds', alpha=0.9, origin='lower', vmin=0, vmax=1)
-            
-            # Overlay rock safety mask
-            safe_rock_mask = self.terrain_manager.safe_rock_mask
-            safety_rock_mask_overlay = np.ma.masked_where(safe_rock_mask == 0, safe_rock_mask)
-            ax2.imshow(safety_rock_mask_overlay, cmap='Oranges', alpha=0.4, origin='lower')
-            
-            ax2.set_title('Rock Areas Only (No Terrain Gradients)', fontsize=14)
-        else:
-            ax2.text(0.5, 0.5, 'No Rock Data Available', transform=ax2.transAxes, 
-                    ha='center', va='center', fontsize=16, bbox=dict(boxstyle='round', facecolor='wheat'))
-            ax2.set_title('No Rock Data Available', fontsize=14)
-        
-        # Plot spawn points
-        ax2.scatter(spawn_grid_x, spawn_grid_y, c='cyan', marker='o', s=20, 
-                   edgecolor='blue', linewidth=1, zorder=5)
-        
-        ax2.set_xlabel('X Grid Coordinate')
-        ax2.set_ylabel('Y Grid Coordinate')
-        
-        # Create custom legend for both subplots
-        legend_elements = [
-            Patch(facecolor='purple', alpha=0.9, label='Steep Terrain'),
-            Patch(facecolor='blue', alpha=0.4, label='Gradient Safety Zones'),
-            plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='cyan', 
-                      markeredgecolor='blue', markersize=8, label='Spawn Points')
-        ]
-        
-        # Add rock-related legend items if rocks are available
-        if hasattr(self.terrain_manager, 'rock_mask') and self.terrain_manager.rock_mask is not None:
-            legend_elements.insert(1, Patch(facecolor='red', alpha=0.9, label='Rock Areas'))
-            legend_elements.insert(3, Patch(facecolor='orange', alpha=0.4, label='Rock Safety Zones'))
-        
-        fig.legend(handles=legend_elements, loc='upper center', bbox_to_anchor=(0.5, 0.95), ncol=len(legend_elements))
-        
-        plt.tight_layout()
-        plt.subplots_adjust(top=0.88)  # Make room for legend
-        plt.show()
-
-
-def main():
-    """Main debug function"""
-    print("=== Terrain Utils Debug Tool ===")
-    
-    # Configuration - Mars terrain paths
-    base_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "..", "assets", "terrains", "debug", "debug1")
-    terrain_usd_path = os.path.join(base_path, "terrain_only.usd")
-    rock_usd_path = os.path.join(base_path, "rocks_merged.usd")
-    
-    # Check if USD files exist
-    if not os.path.exists(terrain_usd_path):
-        print(f"Terrain USD file not found: {terrain_usd_path}")
-        print("Please check that the Mars terrain assets are available")
-        return
-    
-    if not os.path.exists(rock_usd_path):
-        print(f"Rock USD file not found: {rock_usd_path}")
-        print("Continuing without rock mesh...")
-        rock_usd_path = None
-
-    try:
-        # Initialize terrain manager in debug mode
-        print("Initializing terrain manager in debug mode...")
-        terrain_manager = TerrainManager(
-            num_envs=1,  # Only need 1 environment for debugging
-            device='cuda' if torch.cuda.is_available() else 'cpu',
-            debug_mode=True,
-            terrain_usd_path=terrain_usd_path,
-            rock_usd_path=rock_usd_path
-        )
-        
-        # Initialize visualizer
-        visualizer = DebugVisualizer(terrain_manager)
-        
-        # Generate spawn locations
-        print("Generating spawn locations...")
-        spawn_locations = terrain_manager.random_rover_spawns(
-            safe_mask=np.logical_or(
-                terrain_manager.safe_rock_mask,
-                terrain_manager.safe_gradient_mask
-            ),
-            heightmap=terrain_manager._heightmap_manager.heightmap,
-            n_spawns=2000, 
-            seed=42
-        )
-        spawn_locations_np = spawn_locations.cpu().numpy() if isinstance(spawn_locations, torch.Tensor) else spawn_locations
-        print(f"Generated {len(spawn_locations_np)} spawn locations")
-        
-        # Visualizations
-        print("Creating visualizations...")
-        
-        # Show terrain analysis in subplots (gradients and rocks side by side)
-        visualizer.visualize_terrain_analysis_subplots(spawn_locations_np)
-        
-        # Show combined rock and gradient masks - Second plot
-        visualizer.visualize_combined_rock_gradient_mask(spawn_locations_np)
-        
-        # Test height queries
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        print(f"Testing height queries on {device}...")
-        test_positions = torch.tensor([[5.0, 5.0], [10.0, 10.0], [15.0, 15.0]], device=device)
-        heights = terrain_manager._heightmap_manager.get_height_at(test_positions)
-        print(f"Test positions: {test_positions}")
-        print(f"Heights: {heights}")
-        
-        print("Debug session completed successfully!")
-        
-    except Exception as e:
-        print(f"Error during debug session: {e}")
-        import traceback
-        traceback.print_exc()
-
-
-if __name__ == "__main__":
-    main()

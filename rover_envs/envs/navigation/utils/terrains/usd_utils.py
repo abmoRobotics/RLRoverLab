@@ -4,10 +4,20 @@ import numpy as np
 # from isaacsim.core.api.materials import PhysicsMaterial
 # from isaacsim.core.prims import XFormPrim
 from typing import Tuple
-
+from functools import lru_cache
 
 from pxr import Usd, UsdPhysics, UsdGeom
 
+
+@lru_cache(maxsize=1) # Cache the result to avoid repeated imports.
+def isaacsim_available():
+    """Check if Isaac Sim is available, with automatic caching."""
+    try:
+        import isaacsim.core
+        return True
+    except ImportError:
+        return False
+    
 
 def get_triangles_and_vertices_from_prim(prim_path):
     from isaacsim.core.utils.stage import get_current_stage
@@ -137,7 +147,6 @@ def get_triangles_and_vertices_from_prim_standalone(usd_file_path: str, prim_pat
         # Assume all triangles
         faces = face_indices.reshape(-1, 3)
     
-    print(f"Loaded mesh with {len(vertices)} vertices and {len(faces)} faces")
     return faces, vertices
 
 def check_prim_exists(prim_path):

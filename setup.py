@@ -10,6 +10,7 @@ INSTALL_REQUIRES = [
     "pymeshlab",
     "open3d",
     "gdown",
+    "termcolor",
     # devices
     "hidapi",
     "skrl==1.4.1",
