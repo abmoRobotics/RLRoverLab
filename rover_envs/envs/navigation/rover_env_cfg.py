@@ -177,7 +177,7 @@ class RewardsCfg:
     far_from_target = RewTerm(
         func=mdp.far_from_target_reward,
         weight=-2.0,
-        params={"command_name": "target_pose", "threshold": 11.0},
+        params={"command_name": "target_pose"},
     )
     angle_diff = RewTerm(
         func=mdp.angle_to_goal_reward,
