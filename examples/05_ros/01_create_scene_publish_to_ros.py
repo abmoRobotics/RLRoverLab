@@ -42,9 +42,9 @@ from rover_envs.assets.robots.aau_rover import AAU_ROVER_CFG  # noqa: F401, E402
 # Avoid Circular Import
 from rover_envs.assets.robots.aau_rover_simple import AAU_ROVER_SIMPLE_CFG  # noqa: F401, E402
 from rover_envs.mdp.actions.ackermann_actions import AckermannActionNonVec  # noqa: F401, E402
-from rover_envs.utils.ros2.publishers import publish_camera_info  # noqa: F401, E402
-from rover_envs.utils.ros2.publishers import RoverPose, goal_position, publish_depth, publish_rgb  # noqa: F401, E402
-from rover_envs.utils.ros2.subscribers import TwistSubscriber  # noqa: F401, E402
+from rover_envs.integrations.ros2.publishers import publish_camera_info  # noqa: F401, E402
+from rover_envs.integrations.ros2.publishers import RoverPose, goal_position, publish_depth, publish_rgb  # noqa: F401, E402
+from rover_envs.integrations.ros2.subscribers import TwistSubscriber  # noqa: F401, E402
 
 if TYPE_CHECKING:
     from rover_envs.envs.navigation.utils.articulation.articulation import RoverArticulation

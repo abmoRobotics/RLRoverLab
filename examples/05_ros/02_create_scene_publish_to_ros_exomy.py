@@ -159,8 +159,8 @@ def run_simulation(sim: sim_utils.SimulationContext, scene: InteractiveScene):
         scene.update(sim_dt)
 
 
-from rover_envs.utils.ros2.publishers import publish_camera_info, publish_depth, publish_rgb  # noqa: F401, E402
-from rover_envs.utils.ros2.subscribers import TwistSubscriber  # noqa: F401, E402
+from rover_envs.integrations.ros2.publishers import publish_camera_info, publish_depth, publish_rgb  # noqa: F401, E402
+from rover_envs.integrations.ros2.subscribers import TwistSubscriber  # noqa: F401, E402
 
 
 def main():
