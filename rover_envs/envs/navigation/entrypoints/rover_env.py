@@ -9,7 +9,7 @@ from rover_envs.envs.navigation.rover_env_cfg import RoverEnvCfg
 VecEnvStepReturn = tuple[VecEnvObs, torch.Tensor,
                          torch.Tensor, torch.Tensor, dict]
 
-
+from mdp.randomizations import reset_root_state_rover
 class RoverEnv(ManagerBasedRLEnv):
     """ Rover environment.
 
@@ -17,8 +17,17 @@ class RoverEnv(ManagerBasedRLEnv):
         This is a placeholder class for the rover environment. That is, this class is not yet implemented."""
 
     def __init__(self, cfg: RoverEnvCfg, **kwargs):
+
         super().__init__(cfg, **kwargs)
         env_ids = torch.arange(self.num_envs, device=self.device)
+
+        reset_root_state_rover(
+            self, env_ids, self.scene.rover_asset_cfg, z_offset=0.5
+        )
+
+        # Reset all environments
+        # self._reset_idx(env_ids) 
+
 
         # Get the terrain and change the origin
 

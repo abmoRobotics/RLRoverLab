@@ -56,10 +56,10 @@ class TerrainBasedPositionCommand(CommandTerm):
 
         # crete buffers to store the command
         # -- commands: (x, y, z, heading)
-        self.pos_command_w = torch.zeros(self.num_envs, 3, device=self.device)
-        self.heading_command_w = torch.zeros(self.num_envs, device=self.device)
-        self.pos_command_b = torch.zeros_like(self.pos_command_w)
-        self.heading_command_b = torch.zeros_like(self.heading_command_w)
+        self.pos_command_w = torch.ones(self.num_envs, 3, device=self.device)
+        self.heading_command_w = torch.ones(self.num_envs, device=self.device)
+        self.pos_command_b = torch.ones_like(self.pos_command_w)
+        self.heading_command_b = torch.ones_like(self.heading_command_w)
         # -- metrics
         self.metrics["error_pos"] = torch.zeros(
             self.num_envs, device=self.device)
