@@ -78,12 +78,47 @@ class RoverCosmosObservationsCfg:
     policy: PolicyCfg = PolicyCfg()
 
 @configclass
+class RoverRGBDRawObservationsCfg:
+    @configclass
+    class PolicyCfg(ObsGroup):
+        actions = ObsTerm(func=mdp.last_action)
+        distance = ObsTerm(
+            func=mdp.distance_to_target_euclidean,
+            params={"command_name": "target_pose"},
+            scale=0.11
+        )
+        heading = ObsTerm(
+            func=mdp.angle_to_target_observation,
+            params={"command_name": "target_pose"},
+            scale=1 / math.pi
+        )
+        angle_diff = ObsTerm(
+            func=mdp.angle_diff,
+            params={"command_name": "target_pose"},
+            scale=1 / math.pi
+        )
+
+        height_scan = ObsTerm(
+            func=mdp.height_scan_rover,
+            scale=1,
+            params={"sensor_cfg": SceneEntityCfg(name="height_scanner")},
+        )
+        rgb_image = ObsTerm(func=mdp.image, params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb"})
+        depth_image = ObsTerm(func=mdp.image, params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "depth"})
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = False
+
+
+    policy: PolicyCfg = PolicyCfg()
+
+@configclass
 class RoverCameraSceneCfg(RoverSceneCfg):
 
     tiled_camera: TiledCameraCfg = TiledCameraCfg(
         prim_path="{ENV_REGEX_NS}/Robot/Body/Camera",
         offset=TiledCameraCfg.OffsetCfg(pos=(-0.151, 0, 0.73428), rot=(0.57923, 0.40558, -0.40558, -0.57923),convention="opengl"),
-        data_types=["rgb"],
+        data_types=["rgb",  "depth"],
         spawn=sim_utils.PinholeCameraCfg(
             focal_length=2.1,
             horizontal_aperture=4.416,
@@ -94,7 +129,6 @@ class RoverCameraSceneCfg(RoverSceneCfg):
         height=224,
     )
 
-    height_scanner = None
 
 
 @configclass
@@ -102,9 +136,18 @@ class RoverRGBResnetEnvCfg(RoverEnvCfg):
 
     observations: RoverResNetObservationsCfg = RoverResNetObservationsCfg()
     scene: RoverCameraSceneCfg = RoverCameraSceneCfg(num_envs=8, env_spacing=4.0, replicate_physics=False)
+    scene.height_scanner = None
 
 @configclass
 class RoverCosmosEnvCfg(RoverEnvCfg):
 
     observations: RoverCosmosObservationsCfg = RoverCosmosObservationsCfg()
+    scene: RoverCameraSceneCfg = RoverCameraSceneCfg(num_envs=8, env_spacing=4.0, replicate_physics=False)
+    scene.height_scanner = None
+
+@configclass
+class RoverRGBDRawEnvCfg(RoverEnvCfg):
+    """Configuration for the Rover environment with RGB-D raw observations, will be used for learning by cheating"""
+
+    observations: RoverRGBDRawObservationsCfg = RoverRGBDRawObservationsCfg()
     scene: RoverCameraSceneCfg = RoverCameraSceneCfg(num_envs=8, env_spacing=4.0, replicate_physics=False)

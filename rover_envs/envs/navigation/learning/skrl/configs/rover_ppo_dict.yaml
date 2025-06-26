@@ -12,6 +12,7 @@ models:
       mlp_activation: "leaky_relu"
       encoder_layers: [8, 16, 32, 64]
       encoder_activation: "leaky_relu"
+      encoder_input_size: 10201
   value:
     type: "ValueNetworkConvDict"
     params:
@@ -20,6 +21,7 @@ models:
       mlp_activation: "leaky_relu"
       encoder_layers: [8, 16, 32, 64]
       encoder_activation: "leaky_relu"
+      encoder_input_size: 10201
 
 
 #   learning_rate_scheduler: "KLAdaptiveRL"

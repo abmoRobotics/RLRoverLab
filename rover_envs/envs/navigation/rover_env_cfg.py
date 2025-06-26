@@ -306,3 +306,18 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
             self.scene.contact_sensor.update_period = self.sim.dt * self.decimation
         if self.scene.tiled_camera is not None:
             self.scene.tiled_camera.update_period = self.sim.dt * self.decimation
+
+import copy
+
+
+@configclass
+class RoverEnvDictCfg(RoverEnvCfg):
+    """Configuration for the rover environment with dictionary observations."""
+
+    def __post_init__(self):
+        """Post-initialization."""
+        super().__post_init__()
+        # deepcopy observations to avoid modifying the base class
+        self.observations = copy.deepcopy(self.observations)
+        # set concatenate_terms to False for dictionary observations
+        self.observations.policy.concatenate_terms = False
