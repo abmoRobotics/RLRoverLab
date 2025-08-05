@@ -155,6 +155,29 @@ class RoverZed2iWVGAEnvCfg(RoverSceneCfg):
         height=224,
     )
 
+@configclass
+class RoverZed2iWVGAEnvCfgTEMP(RoverZed2iWVGAEnvCfg):
+    """Temporary configuration for the Rover environment with ZED2i WVGA camera, will be used for learning by cheating"""
+
+    tiled_camera: TiledCameraCfg = TiledCameraCfg(
+        prim_path="{ENV_REGEX_NS}/Robot/Body/Camera",
+        offset=TiledCameraCfg.OffsetCfg(
+            pos=(-0.151, 0, 0.73428),
+            rot=(0.64086, 0.29884, -0.29884, -0.64086),
+            convention="opengl",
+        ),
+        data_types=["rgb", "depth"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=2.12,
+            horizontal_aperture=5.376, 
+            vertical_aperture=3.008,
+            clipping_range=(0.01, 1000000.0),
+        ),
+        width=160,
+        height=90,
+    )
+
+
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import TerrainBasedPositionCommand  # noqa: F401
 from rover_envs.envs.navigation.utils.terrains.commands_cfg import TerrainBasedPositionCommandCfg  # noqa: F401
 
@@ -194,4 +217,14 @@ class RoverRGBDRawEnvCfg(RoverEnvCfg):
     observations: RoverRGBDRawObservationsCfg = RoverRGBDRawObservationsCfg()
     scene: RoverZed2iWVGAEnvCfg = RoverZed2iWVGAEnvCfg(num_envs=8, env_spacing=4.0, replicate_physics=False)
     commands: CommandsNoVizCfg = CommandsNoVizCfg()
+
+@configclass
+class RoverRGBDRawTempEnvCfg(RoverEnvCfg):
+    """Temporary configuration for the Rover environment with RGB-D raw observations, will be used for learning by cheating"""
+
+    observations: RoverRGBDRawObservationsCfg = RoverRGBDRawObservationsCfg()
+    scene: RoverZed2iWVGAEnvCfgTEMP = RoverZed2iWVGAEnvCfgTEMP(num_envs=8, env_spacing=4.0, replicate_physics=False)
+    commands: CommandsNoVizCfg = CommandsNoVizCfg()
+
+
 
