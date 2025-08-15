@@ -5,6 +5,7 @@ FROM nvcr.io/nvidia/isaac-sim:${ISAAC_SIM_VERSION}
 SHELL ["/bin/bash", "-c"]
 
 ARG ISAAC_SIM_PATH
+ARG ISAAC_LAB_VERSION
 # Set environment variables
 ENV LANG=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
@@ -25,7 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 
 # Install this Isaac Lab and SKRL
-RUN ${ISAAC_SIM_PATH}/python.sh -m pip install isaaclab==2.1.0 skrl==1.4.1 gym
+RUN ${ISAAC_SIM_PATH}/python.sh -m pip install isaaclab==${ISAAC_LAB_VERSION} skrl==1.4.1 gym
 
 # Clone and install Cosmos Tokenizer
 RUN apt-get update && apt-get install -y git-lfs ffmpeg 
