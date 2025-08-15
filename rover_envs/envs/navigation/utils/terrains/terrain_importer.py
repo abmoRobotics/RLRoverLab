@@ -12,7 +12,7 @@ from isaaclab.markers import VisualizationMarkers
 from isaaclab.markers.config import GREEN_ARROW_X_MARKER_CFG
 from isaaclab.markers.visualization_markers import VisualizationMarkersCfg
 from isaaclab.terrains import TerrainImporter, TerrainImporterCfg
-from isaaclab.utils.math import quat_from_euler_xyz, quat_rotate_inverse, wrap_to_pi, yaw_quat
+from isaaclab.utils.math import quat_from_euler_xyz, quat_apply_inverse, wrap_to_pi, yaw_quat
 
 from .terrain_utils import TerrainManager
 
@@ -100,7 +100,7 @@ class TerrainBasedPositionCommand(CommandTerm):
         """Re-target the position command to the current root position and heading."""
         target_vec = self.pos_command_w - \
             self.robot.data.root_link_pos_w[:, :3]
-        self.pos_command_b[:] = quat_rotate_inverse(
+        self.pos_command_b[:] = quat_apply_inverse(
             yaw_quat(self.robot.data.root_link_quat_w), target_vec)
         self.heading_command_b[:] = wrap_to_pi(
             self.heading_command_w - self.robot.data.heading_w)
