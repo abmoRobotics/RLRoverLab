@@ -16,7 +16,7 @@ INSTALL_REQUIRES = [
     "skrl==1.4.1",
     "wandb",
     "opencv-python",
-    "isaaclab==2.1.0",
+    "isaaclab==2.2.0",
     "cosmos-tokenizer@git+https://github.com/NVIDIA/Cosmos-Tokenizer.git"
 ]
 

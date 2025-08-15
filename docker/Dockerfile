@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 
 # Install this Isaac Lab and SKRL
-RUN ${ISAAC_SIM_PATH}/python.sh -m pip install isaaclab==${ISAAC_LAB_VERSION} skrl==1.4.1 gym
+RUN ${ISAAC_SIM_PATH}/python.sh -m pip install isaaclab==${ISAAC_LAB_VERSION} skrl==1.4.1 gym 
 
 # Clone and install Cosmos Tokenizer
 RUN apt-get update && apt-get install -y git-lfs ffmpeg 
@@ -45,6 +45,7 @@ RUN echo "alias isaaclab=${ISAAC_LAB_PATH}/isaaclab.sh" >> ${HOME}/.bashrc && \
     echo "export TZ=$(date +%Z)" >> ${HOME}/.bashrc \
     echo "export TZ=$(date +%Z)" >> ${HOME}/.bashrc
 
+RUN ${ISAAC_SIM_PATH}/python.sh -m pip install open3d pymeshlab gdown termcolor prettytable hidapi opencv-python wandb
 
 # Configure /workspace/isaac_rover as a safe directory, so that Weights & Biases can be used.
 RUN git config --global --add safe.directory /workspace/isaac_rover
