@@ -87,7 +87,7 @@ class RoverSceneCfg(MarsTerrainSceneCfg):
     height_scanner = RayCasterCfg(
         prim_path="{ENV_REGEX_NS}/Robot/Body",
         offset=RayCasterCfg.OffsetCfg(pos=[0.0, 0.0, 10.0]),
-        attach_yaw_only=True,
+        ray_alignment="yaw",
         pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[5.0, 5.0]),
         debug_vis=False,
         mesh_prim_paths=["/World/terrain/hidden_terrain"],
@@ -177,7 +177,7 @@ class RewardsCfg:
     far_from_target = RewTerm(
         func=mdp.far_from_target_reward,
         weight=-2.0,
-        params={"command_name": "target_pose", "threshold": 11.0},
+        params={"command_name": "target_pose"},
     )
     angle_diff = RewTerm(
         func=mdp.angle_to_goal_reward,
@@ -306,3 +306,18 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
             self.scene.contact_sensor.update_period = self.sim.dt * self.decimation
         if self.scene.tiled_camera is not None:
             self.scene.tiled_camera.update_period = self.sim.dt * self.decimation
+
+import copy
+
+
+@configclass
+class RoverEnvDictCfg(RoverEnvCfg):
+    """Configuration for the rover environment with dictionary observations."""
+
+    def __post_init__(self):
+        """Post-initialization."""
+        super().__post_init__()
+        # deepcopy observations to avoid modifying the base class
+        self.observations = copy.deepcopy(self.observations)
+        # set concatenate_terms to False for dictionary observations
+        self.observations.policy.concatenate_terms = False

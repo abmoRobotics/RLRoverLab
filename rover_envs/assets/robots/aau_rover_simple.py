@@ -42,22 +42,22 @@ AAU_ROVER_SIMPLE_CFG = ArticulationCfg(
     actuators={
         "base_steering": ImplicitActuatorCfg(
             joint_names_expr=[".*Steer_Revolute"],
-            velocity_limit=6,
-            effort_limit=12,
+            velocity_limit_sim=6,
+            effort_limit_sim=12,
             stiffness=8000.0,
             damping=1000.0,
         ),
         "base_drive": ImplicitActuatorCfg(
             joint_names_expr=[".*Drive_Continuous"],
-            velocity_limit=6,
-            effort_limit=12,
+            velocity_limit_sim=6,
+            effort_limit_sim=12,
             stiffness=100.0,
             damping=4000.0,
         ),
         "passive_joints": ImplicitActuatorCfg(
             joint_names_expr=[".*Boogie_Revolute"],
-            velocity_limit=15,
-            effort_limit=0,
+            velocity_limit_sim=15,
+            effort_limit_sim=0,
             stiffness=0.0,
             damping=0.0,
         ),

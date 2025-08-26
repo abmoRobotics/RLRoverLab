@@ -20,7 +20,7 @@ class ObservationRecorder(RecorderTerm):
     Records the observations received at each step in the environment (o_t)
     """
     def record_pre_step(self):
-        return "observations", self._env.obs_buf["policy"]
+        return "obs", self._env.obs_buf["policy"]
     
 class RewardRecorder(RecorderTerm):
     """
@@ -47,4 +47,4 @@ class NextObservationRecorder(RecorderTerm):
     _env: ManagerBasedRLEnv
     
     def record_post_step(self):
-        return "next_observations", self._env.obs_buf["policy"]
+        return "next_obs", self._env.obs_buf["policy"]

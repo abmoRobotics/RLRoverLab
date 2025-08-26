@@ -460,3 +460,126 @@ class ValueNetworkResnet(DeterministicMixin, BaseModel):
             x = layer(x)
 
         return x, {}
+    
+
+@register_model("GaussianPolicyConvDict")
+class GaussianPolicyConvDict(GaussianMixin, BaseModel):
+    """Gaussian policy network with convolutional encoder (outputs action distributions)."""
+
+    def __init__(
+        self,
+        observation_space,
+        action_space,
+        device,
+        mlp_input_size=5,
+        mlp_layers=[256, 160, 128],
+        mlp_activation="leaky_relu",
+        encoder_input_size=None,
+        encoder_layers=[80, 60],
+        encoder_activation="leaky_relu",
+        **kwargs,
+    ):
+        """Initialize the Gaussian neural network model.
+
+        Args:
+            observation_space (gym.spaces.Space): The observation space of the environment.
+            action_space (gym.spaces.Space): The action space of the environment.
+            device (torch.device): The device to use for computation.
+            encoder_features (list): The number of features for each encoder layer.
+            encoder_activation (str): The activation function to use for each encoder layer.
+        """
+        BaseModel.__init__(self, observation_space, action_space, device)
+        GaussianMixin.__init__(
+            self, clip_actions=True, clip_log_std=True, min_log_std=-20.0, max_log_std=2.0, reduction="sum"
+        )
+
+        self.mlp_input_size = mlp_input_size
+        self.encoder_input_size = encoder_input_size
+
+        in_channels = self.mlp_input_size
+        if self.encoder_input_size is not None:
+            self.encoder = ConvHeightmapEncoder(self.encoder_input_size, encoder_layers, encoder_activation)
+            in_channels += self.encoder.out_features
+
+        self.mlp = nn.ModuleList()
+
+        for feature in mlp_layers:
+            self.mlp.append(nn.Linear(in_channels, feature))
+            self.mlp.append(get_activation(mlp_activation))
+            in_channels = feature
+
+        action_space = action_space.shape[0]
+        self.mlp.append(nn.Linear(in_channels, action_space))
+        self.mlp.append(nn.Tanh())
+        self.log_std_parameter = nn.Parameter(torch.zeros(action_space))
+
+    def compute(self, states, role="actor"):
+
+        states = self.tensor_to_space(states["states"], self.observation_space)
+        encoder_output = self.encoder(states["height_scan"])
+        x = torch.cat([states["actions"], states["distance"], states["heading"], states["angle_diff"], encoder_output], dim=1)
+
+        # Compute the output of the MLP.
+        for layer in self.mlp:
+            x = layer(x)
+
+        return x, self.log_std_parameter, {}
+
+@register_model("ValueNetworkConvDict")
+class ValueNetworkConvDict(DeterministicMixin, BaseModel):
+    """Value network model with convolutional encoder for state value estimation."""
+
+    def __init__(
+        self,
+        observation_space,
+        action_space,
+        device,
+        mlp_input_size=4,
+        mlp_layers=[256, 160, 128],
+        mlp_activation="leaky_relu",
+        encoder_input_size=None,
+        encoder_layers=[80, 60],
+        encoder_activation="leaky_relu",
+        **kwargs,
+    ):
+        """Initialize the Gaussian neural network model.
+
+        Args:
+            observation_space (gym.spaces.Space): The observation space of the environment.
+            action_space (gym.spaces.Space): The action space of the environment.
+            device (torch.device): The device to use for computation.
+            encoder_features (list): The number of features for each encoder layer.
+            encoder_activation (str): The activation function to use for each encoder layer.
+        """
+        BaseModel.__init__(self, observation_space, action_space, device)
+        DeterministicMixin.__init__(self, clip_actions=False)
+
+        self.mlp_input_size = mlp_input_size
+        self.encoder_input_size = encoder_input_size
+
+        in_channels = self.mlp_input_size
+        if self.encoder_input_size is not None:
+            self.encoder = ConvHeightmapEncoder(self.encoder_input_size, encoder_layers, encoder_activation)
+            in_channels += self.encoder.out_features
+
+        self.mlp = nn.ModuleList()
+
+        action_space = action_space.shape[0]
+        for feature in mlp_layers:
+            self.mlp.append(nn.Linear(in_channels, feature))
+            self.mlp.append(get_activation(mlp_activation))
+            in_channels = feature
+
+        self.mlp.append(nn.Linear(in_channels, 1))
+
+    def compute(self, states, role="actor"):
+        
+        states = self.tensor_to_space(states["states"], self.observation_space)
+        encoder_output = self.encoder(states["height_scan"])
+        x = torch.cat([states["actions"], states["distance"], states["heading"], states["angle_diff"], encoder_output], dim=1)
+
+
+        for layer in self.mlp:
+            x = layer(x)
+
+        return x, {}

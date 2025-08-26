@@ -4,41 +4,41 @@ x-default-isaac-lab-volumes:
     # https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/install_faq.html#save-isaac-sim-configs-on-local-disk
     - type: volume
       source: isaac-cache-kit
-      target: ${DOCKER_ISAAC_SIM_PATH}/kit/cache
+      target: /isaac-sim/kit/cache
     - type: volume
       source: isaac-cache-ov
-      target: ${DOCKER_USER_HOME}/.cache/ov
+      target: /root/.cache/ov
     - type: volume
       source: isaac-cache-pip
-      target: ${DOCKER_USER_HOME}/.cache/pip
+      target: /root/.cache/pip
     - type: volume
       source: isaac-cache-gl
-      target: ${DOCKER_USER_HOME}/.cache/nvidia/GLCache
+      target: /root/.cache/nvidia/GLCache
     - type: volume
       source: isaac-cache-compute
-      target: ${DOCKER_USER_HOME}/.nv/ComputeCache
+      target: /root/.nv/ComputeCache
     - type: volume
       source: isaac-logs
-      target: ${DOCKER_USER_HOME}/.nvidia-omniverse/logs
+      target: /root/.nvidia-omniverse/logs
     - type: volume
       source: isaac-carb-logs
-      target: ${DOCKER_ISAAC_SIM_PATH}/kit/logs/Kit/Isaac-Sim
+      target: /isaac-sim/kit/logs/Kit/Isaac-Sim
     - type: volume
       source: isaac-data
-      target: ${DOCKER_USER_HOME}/.local/share/ov/data
+      target: /root/.local/share/ov/data
     - type: volume
       source: isaac-docs
-      target: ${DOCKER_USER_HOME}/Documents
+      target: /root/Documents
       # These volumes allow X11 Forwarding
     # - type: bind
       # source: /tmp/.X11-unix
       # target: /tmp/.X11-unix
     - type: bind
       source: ${HOME}/.Xauthority
-      target: ${DOCKER_USER_HOME}/.Xauthority
+      target: /root/.Xauthority
     - type: bind
       source: ../
-      target: ${RLROVERLAB_PATH}
+      target: /workspace/isaac_rover/
     - type: volume
       source: orbit-docs
       target: /workspace/orbit/docs/_build
@@ -62,9 +62,14 @@ x-default-isaac-lab-deploy:
 
 x-default-isaac-lab-enviroment:
   &default-isaac-lab-environment
-    ISAAC_SIM_PATH: ${DOCKER_ISAAC_SIM_PATH}
+    ISAAC_SIM_PATH: /isaac-sim
     DISPLAY: ${DISPLAY}
     OMNI_KIT_ALLOW_ROOT: 1
+    ACCEPT_EULA: Y
+    RMW_IMPLEMENTATION: rmw_fastrtps_cpp
+    FASTRTPS_DEFAULT_PROFILES_FILE: /root/.ros/fastdds.xml
+    CYCLONEDDS_URI: /root/.ros/cyclonedds.xml
+    RLROVERLAB_PATH: /workspace/isaac_rover/
 
 
 
@@ -74,38 +79,36 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
       args:
-        - ISAAC_SIM_VERSION=${ISAAC_SIM_VERSION}
-        - ISAAC_SIM_PATH=${DOCKER_ISAAC_SIM_PATH}
-        - USER_HOME=${DOCKER_USER_HOME}
+        - ISAAC_SIM_VERSION=5.0.0
+        - ISAAC_LAB_VERSION=2.2.0
+        - ISAAC_SIM_PATH=/isaac-sim
+        - USER_HOME=/root
     image: rover-lab-base
     container_name: rover-lab-base
-    env_file:
-      - .env
     environment: *default-isaac-lab-environment
     volumes: *default-isaac-lab-volumes
     network_mode: host
     deploy: *default-isaac-lab-deploy
-    entrypoint: bash -c "${DOCKER_ISAAC_SIM_PATH}/python.sh -m pip install -e ${RLROVERLAB_PATH} && bash"
+    entrypoint: bash -c "/isaac-sim/python.sh -m pip install -e /workspace/isaac_rover/ && bash"
     stdin_open: true
     tty: true
 
   rover-lab-ros2:
     env_file:
-      - .env
       - .env.ros2
     build:
       context: ../
       dockerfile: docker/Dockerfile.ros2
       args:
-        - ROS2_APT_PACKAGE=${ROS2_APT_PACKAGE:-NONE}
-        - USER_HOME=${DOCKER_USER_HOME}
+        - ROS2_APT_PACKAGE=ros-base
+        - USER_HOME=/root
     image: rover-lab-ros2
     container_name: rover-lab-ros2
     environment: *default-isaac-lab-environment
     volumes: *default-isaac-lab-volumes
     network_mode: host
     deploy: *default-isaac-lab-deploy
-    entrypoint: bash -c "${DOCKER_ISAAC_SIM_PATH}/python.sh -m pip install -e ${RLROVERLAB_PATH} && bash"
+    entrypoint: bash -c "/isaac-sim/python.sh -m pip install -e /workspace/isaac_rover/ && bash"
     stdin_open: true
     tty: true
 

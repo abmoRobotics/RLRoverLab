@@ -1,15 +1,15 @@
 ## Native Installation
 If you prefer to install the suite natively without using Docker, follow these steps:
-1. **Install Isaac Sim 4.5** According to the [Official Documentation](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html).
+1. **Install Isaac Sim 5.0** According to the [Official Documentation](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html).
 
-    First [Download the Isaac Sim 4.5](https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone%404.5.0-rc.36%2Brelease.19112.f59b3005.gl.linux-x86_64.release.zip) to the `~/Downloads` directory.
+    First [Download the Isaac Sim 5.0](https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone-5.0.0-linux-x86_64.zip) to the `~/Downloads` directory.
 
     Then run the following commands:
 
     ```bash
     mkdir ~/isaacsim
     cd ~/Downloads
-    unzip "isaac-sim-standalone@4.5.0-rc.36+release.19112.f59b3005.gl.linux-x86_64.release.zip" -d ~/isaacsim
+    unzip "isaac-sim-standalone@5.0.0-linux-x86_64.zip" -d ~/isaacsim
     cd ~/isaacsim
     ./post_install.sh
     ./isaac-sim.selector.sh

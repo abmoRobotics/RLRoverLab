@@ -129,7 +129,7 @@ def collision_penalty(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, thresh
     return torch.where(forces_active, 1.0, 0.0)
 
 
-def far_from_target_reward(env: ManagerBasedRLEnv, command_name: str, threshold: float) -> torch.Tensor:
+def far_from_target_reward(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     """
     Gives a penalty if the rover is too far from the target.
     """
@@ -138,6 +138,8 @@ def far_from_target_reward(env: ManagerBasedRLEnv, command_name: str, threshold:
     target_position = target[:, :2]
 
     distance = torch.norm(target_position, p=2, dim=-1)
+
+    threshold = env.scene.terrain.target_distance + 3
 
     return torch.where(distance > threshold, 1.0, 0.0)
 

@@ -39,6 +39,19 @@ gym.register(
 )
 
 gym.register(
+    id="AAURoverEnvDict-v0",
+    entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": env_cfg.AAURoverEnvDictCfg,
+        "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_heightmap.pt",
+        "skrl_cfgs": {
+            "PPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_ppo_dict.yaml",
+        },
+    }
+)
+
+gym.register(
     id="AAURoverEnvCamera-v0",
     entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
     disable_env_checker=True,
@@ -61,5 +74,31 @@ gym.register(
             "PPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_ppo_camera_cosmos.yaml",
         },
         "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_camera_cosmos.pt",
+    }
+)
+
+gym.register(
+    id="AAURoverEnvRGBDRaw-v0",
+    entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": env_cfg.AAURoverRGBDRawEnvCfg,
+        "skrl_cfgs": {
+            "PPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_ppo_dict.yaml",
+        },
+        "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_heightmap.pt",
+    }
+)
+
+gym.register(
+    id="AAURoverEnvRGBDRawTemp-v0",
+    entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": env_cfg.AAURoverRGBDRawTempEnvCfg,
+        "skrl_cfgs": {
+            "PPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_ppo_dict.yaml",
+        },
+        "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_heightmap.pt",
     }
 )

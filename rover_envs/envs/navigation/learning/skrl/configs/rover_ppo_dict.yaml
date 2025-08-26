@@ -1,0 +1,61 @@
+seed: 42
+
+# Models are instantiated using skrl's model instantiator utility
+# https://skrl.readthedocs.io/en/develop/modules/skrl.utils.model_instantiators.html
+models:
+  separate: False
+  policy:
+    type: "GaussianPolicyConvDict"
+    params:
+      mlp_input_size: 5
+      mlp_layers: [256, 160, 128]
+      mlp_activation: "leaky_relu"
+      encoder_layers: [8, 16, 32, 64]
+      encoder_activation: "leaky_relu"
+      encoder_input_size: 10201
+  value:
+    type: "ValueNetworkConvDict"
+    params:
+      mlp_input_size: 5
+      mlp_layers: [256, 160, 128]
+      mlp_activation: "leaky_relu"
+      encoder_layers: [8, 16, 32, 64]
+      encoder_activation: "leaky_relu"
+      encoder_input_size: 10201
+
+
+#   learning_rate_scheduler: "KLAdaptiveRL"
+agent:
+  rollouts: 60
+  learning_epochs: 4
+  mini_batches: 60
+  discount_factor: 0.99
+  lambda: 0.95
+  learning_rate: 1.e-4
+
+  #learning_rate_scheduler: "None"
+  #learning_rate_scheduler_kwargs: null
+  #state_preprocessor: "None"
+  #state_preprocessor_kwargs: null
+  #value_preprocessor: "None"
+  #value_preprocessor_kwargs: null
+  random_timesteps: 0
+  learning_starts: 0
+  grad_norm_clip: 0.5 #1.0
+  ratio_clip: 0.2
+  value_clip: 0.2
+  clip_predicted_values: True
+  entropy_loss_scale: 0.0
+  value_loss_scale: 1.0
+  kl_threshold: 0.008
+  #rewards_shaper_scale: null
+  # logging and checkpoint
+  experiment:
+    directory: "rover"
+    experiment_name: ""
+    write_interval: 40
+    checkpoint_interval: 400
+    wandb: True             # whether to use Weights & Biases
+
+trainer:
+  timesteps: 1000000
