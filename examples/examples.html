@@ -38,11 +38,23 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
     </head>
     <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
     <div id="body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
@@ -83,10 +95,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -120,7 +135,7 @@
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
                         </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
                             <i class="fa fa-search"></i>
                         </button>
                     </div>
@@ -137,7 +152,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -161,19 +181,19 @@
 <h2 id="training-a-new-agent"><a class="header" href="#training-a-new-agent">Training a new agent</a></h2>
 <p>In the example we show how to train a new agent using the suite:</p>
 <pre><code class="language-bash"># Run training script or evaluate pre-trained policy
-cd examples/02_train/train.py
+cd examples/02_training/train.py
 python train.py --task="AAURoverEnv-v0" --num_envs=128
 python train.py --task="AAURoverEnvSimple-v0" --num_envs=128
 </code></pre>
 <h2 id="using-pre-trained-agent"><a class="header" href="#using-pre-trained-agent">Using pre-trained agent</a></h2>
 <pre><code class="language-bash"># Run training script or evaluate pre-trained policy
-cd examples/03_inference_pretrained
+cd examples/03_inference
 python eval.py --task="AAURoverEnv-v0" --num_envs=32
 python eval.py --task="AAURoverEnvSimple-v0" --num_envs=32
 </code></pre>
 <h2 id="recording-data"><a class="header" href="#recording-data">Recording data</a></h2>
 <pre><code class="language-bash"># Run training script or evaluate pre-trained policy
-cd examples/03_inference_pretrained
+cd examples/03_inference
 python eval.py --task="AAURoverEnv-v0" --num_envs=32 --dataset_name="dataset_name" --dataset_dir="../../datasets"
 python eval.py --task="AAURoverEnvSimple-v0" --num_envs=32 --dataset_name="dataset_name" --dataset_dir="../../datasets"
 </code></pre>
@@ -182,7 +202,7 @@ python eval.py --task="AAURoverEnvSimple-v0" --num_envs=32 --dataset_name="datas
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../installation/native.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../getting_started/quick_start.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
@@ -196,7 +216,7 @@ python eval.py --task="AAURoverEnvSimple-v0" --num_envs=32 --dataset_name="datas
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../installation/native.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../getting_started/quick_start.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
@@ -224,6 +244,7 @@ python eval.py --task="AAURoverEnvSimple-v0" --num_envs=32 --dataset_name="datas
         <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
+
 
 
     </div>

@@ -39,11 +39,23 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc.js"></script>
     </head>
     <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
     <div id="body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
@@ -84,10 +96,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -121,7 +136,7 @@
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
                         </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
                             <i class="fa fa-search"></i>
                         </button>
                     </div>
@@ -138,7 +153,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -262,12 +282,12 @@ To train an agent, use the following command inside the Docker container:
 <p>If you prefer to install the suite natively without using Docker, follow these steps:</p>
 <ol>
 <li>
-<p><strong>Install Isaac Sim 4.5</strong> According to the <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html">Official Documentation</a>.</p>
-<p>First <a href="https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone%404.5.0-rc.36%2Brelease.19112.f59b3005.gl.linux-x86_64.release.zip">Download the Isaac Sim 4.5</a> to the <code>~/Downloads</code> directory.</p>
+<p><strong>Install Isaac Sim 5.0</strong> According to the <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html">Official Documentation</a>.</p>
+<p>First <a href="https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone-5.0.0-linux-x86_64.zip">Download the Isaac Sim 5.0</a> to the <code>~/Downloads</code> directory.</p>
 <p>Then run the following commands:</p>
 <pre><code class="language-bash">mkdir ~/isaacsim
 cd ~/Downloads
-unzip "isaac-sim-standalone@4.5.0-rc.36+release.19112.f59b3005.gl.linux-x86_64.release.zip" -d ~/isaacsim
+unzip "isaac-sim-standalone@5.0.0-linux-x86_64.zip" -d ~/isaacsim
 cd ~/isaacsim
 ./post_install.sh
 ./isaac-sim.selector.sh
@@ -324,23 +344,93 @@ python eval.py
 </code></pre>
 </li>
 </ol>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="quick-start-guide"><a class="header" href="#quick-start-guide">Quick Start Guide</a></h1>
+<p>This guide will help you get started with RLRoverLab quickly. Follow these steps to set up the environment and run your first training or evaluation.</p>
+<h2 id="prerequisites-2"><a class="header" href="#prerequisites-2">Prerequisites</a></h2>
+<p>Before starting, ensure you have:</p>
+<ul>
+<li>NVIDIA GPU with at least 8GB VRAM</li>
+<li>Ubuntu 20.04 or 22.04</li>
+<li>Docker and NVIDIA Container Toolkit installed (see <a href="getting_started/../installation/docker.html">Docker Installation</a>)</li>
+</ul>
+<h2 id="quick-setup-with-docker"><a class="header" href="#quick-setup-with-docker">Quick Setup with Docker</a></h2>
+<ol>
+<li>
+<p><strong>Clone the repository</strong>:</p>
+<pre><code class="language-bash">git clone https://github.com/abmoRobotics/RLRoverLab
+cd RLRoverLab
+</code></pre>
+</li>
+<li>
+<p><strong>Download terrain assets</strong>:</p>
+<pre><code class="language-bash">pip3 install gdown
+python3 download_usd.py
+</code></pre>
+</li>
+<li>
+<p><strong>Start the Docker container</strong>:</p>
+<pre><code class="language-bash">cd docker
+./run.sh
+docker exec -it rover-lab-base bash
+</code></pre>
+</li>
+</ol>
+<h2 id="running-your-first-example"><a class="header" href="#running-your-first-example">Running Your First Example</a></h2>
+<h3 id="1-train-a-simple-agent"><a class="header" href="#1-train-a-simple-agent">1. Train a Simple Agent</a></h3>
+<p>Train a PPO agent on the simple AAU rover environment:</p>
+<pre><code class="language-bash">cd examples/02_training
+/workspace/isaac_lab/isaaclab.sh -p train.py --task="AAURoverEnvSimple-v0" --num_envs=128
+</code></pre>
+<h3 id="2-evaluate-a-pre-trained-model"><a class="header" href="#2-evaluate-a-pre-trained-model">2. Evaluate a Pre-trained Model</a></h3>
+<p>If you have a trained model, evaluate it:</p>
+<pre><code class="language-bash">cd examples/03_inference
+/workspace/isaac_lab/isaaclab.sh -p eval.py --task="AAURoverEnvSimple-v0" --num_envs=32 --checkpoint=path/to/your/model.pt
+</code></pre>
+<h3 id="3-demo-with-zero-agent"><a class="header" href="#3-demo-with-zero-agent">3. Demo with Zero Agent</a></h3>
+<p>Run a basic demo to see the environment:</p>
+<pre><code class="language-bash">cd examples/01_demos
+/workspace/isaac_lab/isaaclab.sh -p 01_zero_agent.py
+</code></pre>
+<h2 id="available-environments"><a class="header" href="#available-environments">Available Environments</a></h2>
+<p>The suite provides several pre-configured environments:</p>
+<div class="table-wrapper"><table><thead><tr><th>Environment ID</th><th>Robot</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>AAURoverEnvSimple-v0</code></td><td>AAU Rover (Simple)</td><td>Simplified rover with basic sensors</td></tr>
+<tr><td><code>AAURoverEnv-v0</code></td><td>AAU Rover</td><td>Full rover with advanced sensors</td></tr>
+<tr><td><code>ExomyEnv-v0</code></td><td>Exomy</td><td>ESA's Exomy rover</td></tr>
+</tbody></table>
+</div>
+<h2 id="whats-next"><a class="header" href="#whats-next">What's Next?</a></h2>
+<ul>
+<li><a href="getting_started/../examples/examples.html">Explore more examples</a></li>
+<li><a href="getting_started/../tasks/environment_overview.html">Learn about available environments</a></li>
+<li><a href="getting_started/../training/training.html">Understand the training process</a></li>
+<li><a href="getting_started/../development/adding_new_robots_or_assets.html">Add your own robot</a></li>
+</ul>
+<h2 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h2>
+<h3 id="common-issues"><a class="header" href="#common-issues">Common Issues</a></h3>
+<ol>
+<li><strong>GPU Memory Issues</strong>: Reduce <code>--num_envs</code> parameter</li>
+<li><strong>Docker Permission Issues</strong>: Ensure your user is in the docker group</li>
+<li><strong>Display Issues</strong>: Run <code>xhost +local:docker</code> before starting the container</li>
+</ol>
+<p>For more detailed troubleshooting, see the <a href="getting_started/../installation/installation.html">Installation Guide</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><p>We provide a number of examples on how to use the suite, these can be found in the examples directory. Below we show how to run the files.</p>
 <h2 id="training-a-new-agent"><a class="header" href="#training-a-new-agent">Training a new agent</a></h2>
 <p>In the example we show how to train a new agent using the suite:</p>
 <pre><code class="language-bash"># Run training script or evaluate pre-trained policy
-cd examples/02_train/train.py
+cd examples/02_training/train.py
 python train.py --task="AAURoverEnv-v0" --num_envs=128
 python train.py --task="AAURoverEnvSimple-v0" --num_envs=128
 </code></pre>
 <h2 id="using-pre-trained-agent"><a class="header" href="#using-pre-trained-agent">Using pre-trained agent</a></h2>
 <pre><code class="language-bash"># Run training script or evaluate pre-trained policy
-cd examples/03_inference_pretrained
+cd examples/03_inference
 python eval.py --task="AAURoverEnv-v0" --num_envs=32
 python eval.py --task="AAURoverEnvSimple-v0" --num_envs=32
 </code></pre>
 <h2 id="recording-data"><a class="header" href="#recording-data">Recording data</a></h2>
 <pre><code class="language-bash"># Run training script or evaluate pre-trained policy
-cd examples/03_inference_pretrained
+cd examples/03_inference
 python eval.py --task="AAURoverEnv-v0" --num_envs=32 --dataset_name="dataset_name" --dataset_dir="../../datasets"
 python eval.py --task="AAURoverEnvSimple-v0" --num_envs=32 --dataset_name="dataset_name" --dataset_dir="../../datasets"
 </code></pre>
@@ -547,6 +637,7 @@ python train.py --task="TASK_NAME-v0" --num_envs=128
             });
         });
         </script>
+
 
     </div>
     </body>

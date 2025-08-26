@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Installation - RLRoverLab Documentation</title>
+        <title>Quick Start Guide - RLRoverLab Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -177,38 +177,86 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="installation-guide"><a class="header" href="#installation-guide">Installation Guide</a></h1>
-<p>This guide provides detailed instructions for setting up the RL-suite using Docker, which simplifies the installation process of Isaac Sim, Isaac Lab, and our suite. Additionally, we provide steps for native installation.</p>
+                        <h1 id="quick-start-guide"><a class="header" href="#quick-start-guide">Quick Start Guide</a></h1>
+<p>This guide will help you get started with RLRoverLab quickly. Follow these steps to set up the environment and run your first training or evaluation.</p>
 <h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
-<p>Before you begin, ensure your system meets the following requirements:</p>
-<h3 id="hardware-requirements"><a class="header" href="#hardware-requirements">Hardware Requirements</a></h3>
+<p>Before starting, ensure you have:</p>
 <ul>
-<li><strong>GPU</strong>: RTX GPU with at least 8 GB VRAM (Tested on NVIDIA RTX 3090 and NVIDIA RTX A6000)</li>
-<li><strong>CPU</strong>: Intel i5/i7 or equivalent</li>
-<li><strong>RAM</strong>: 32GB or more</li>
+<li>NVIDIA GPU with at least 8GB VRAM</li>
+<li>Ubuntu 20.04 or 22.04</li>
+<li>Docker and NVIDIA Container Toolkit installed (see <a href="../installation/docker.html">Docker Installation</a>)</li>
 </ul>
-<h3 id="software-requirements"><a class="header" href="#software-requirements">Software Requirements</a></h3>
+<h2 id="quick-setup-with-docker"><a class="header" href="#quick-setup-with-docker">Quick Setup with Docker</a></h2>
+<ol>
+<li>
+<p><strong>Clone the repository</strong>:</p>
+<pre><code class="language-bash">git clone https://github.com/abmoRobotics/RLRoverLab
+cd RLRoverLab
+</code></pre>
+</li>
+<li>
+<p><strong>Download terrain assets</strong>:</p>
+<pre><code class="language-bash">pip3 install gdown
+python3 download_usd.py
+</code></pre>
+</li>
+<li>
+<p><strong>Start the Docker container</strong>:</p>
+<pre><code class="language-bash">cd docker
+./run.sh
+docker exec -it rover-lab-base bash
+</code></pre>
+</li>
+</ol>
+<h2 id="running-your-first-example"><a class="header" href="#running-your-first-example">Running Your First Example</a></h2>
+<h3 id="1-train-a-simple-agent"><a class="header" href="#1-train-a-simple-agent">1. Train a Simple Agent</a></h3>
+<p>Train a PPO agent on the simple AAU rover environment:</p>
+<pre><code class="language-bash">cd examples/02_training
+/workspace/isaac_lab/isaaclab.sh -p train.py --task="AAURoverEnvSimple-v0" --num_envs=128
+</code></pre>
+<h3 id="2-evaluate-a-pre-trained-model"><a class="header" href="#2-evaluate-a-pre-trained-model">2. Evaluate a Pre-trained Model</a></h3>
+<p>If you have a trained model, evaluate it:</p>
+<pre><code class="language-bash">cd examples/03_inference
+/workspace/isaac_lab/isaaclab.sh -p eval.py --task="AAURoverEnvSimple-v0" --num_envs=32 --checkpoint=path/to/your/model.pt
+</code></pre>
+<h3 id="3-demo-with-zero-agent"><a class="header" href="#3-demo-with-zero-agent">3. Demo with Zero Agent</a></h3>
+<p>Run a basic demo to see the environment:</p>
+<pre><code class="language-bash">cd examples/01_demos
+/workspace/isaac_lab/isaaclab.sh -p 01_zero_agent.py
+</code></pre>
+<h2 id="available-environments"><a class="header" href="#available-environments">Available Environments</a></h2>
+<p>The suite provides several pre-configured environments:</p>
+<div class="table-wrapper"><table><thead><tr><th>Environment ID</th><th>Robot</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>AAURoverEnvSimple-v0</code></td><td>AAU Rover (Simple)</td><td>Simplified rover with basic sensors</td></tr>
+<tr><td><code>AAURoverEnv-v0</code></td><td>AAU Rover</td><td>Full rover with advanced sensors</td></tr>
+<tr><td><code>ExomyEnv-v0</code></td><td>Exomy</td><td>ESA's Exomy rover</td></tr>
+</tbody></table>
+</div>
+<h2 id="whats-next"><a class="header" href="#whats-next">What's Next?</a></h2>
 <ul>
-<li><strong>Operating System</strong>: Ubuntu 20.04 or 22.04</li>
-<li><strong>Packages</strong>: Docker and Nvidia Container Toolkit</li>
+<li><a href="../examples/examples.html">Explore more examples</a></li>
+<li><a href="../tasks/environment_overview.html">Learn about available environments</a></li>
+<li><a href="../training/training.html">Understand the training process</a></li>
+<li><a href="../development/adding_new_robots_or_assets.html">Add your own robot</a></li>
 </ul>
-<h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
-<p>There are two ways to install the RL-suite: using Docker or natively.</p>
-<p>The steps for each method are outlined in the following pages:</p>
-<ul>
-<li><a href="./docker.html">Installation Using Docker</a></li>
-<li><a href="./native.html">Native Installation</a></li>
-</ul>
+<h2 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h2>
+<h3 id="common-issues"><a class="header" href="#common-issues">Common Issues</a></h3>
+<ol>
+<li><strong>GPU Memory Issues</strong>: Reduce <code>--num_envs</code> parameter</li>
+<li><strong>Docker Permission Issues</strong>: Ensure your user is in the docker group</li>
+<li><strong>Display Issues</strong>: Run <code>xhost +local:docker</code> before starting the container</li>
+</ol>
+<p>For more detailed troubleshooting, see the <a href="../installation/installation.html">Installation Guide</a>.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../introduction.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../installation/native.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../installation/docker.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../examples/examples.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -218,11 +266,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../introduction.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../installation/native.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../installation/docker.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../examples/examples.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
