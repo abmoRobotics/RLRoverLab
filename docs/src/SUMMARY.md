@@ -5,6 +5,7 @@
 - [Installation](<./installation/installation.md>)
   - [Docker](<./installation/docker.md>)
   - [Native](<./installation/native.md>)
+- [Quick Start Guide](<./getting_started/quick_start.md>)
 - [Examples](<./examples/examples.md>)
 
 # Tasks
@@ -21,6 +22,6 @@
 # Benchmarks
 - [Benchmarks](<./benchmarks/benchmarks.md>)
 
-# Contributing
-- [Contributing Guidelines](<>)
-- [License](<>)
+<!-- # Contributing
+- [Contributing Guidelines](<./contributing/contributing.md>)
+- [License](<./contributing/license.md>) -->
