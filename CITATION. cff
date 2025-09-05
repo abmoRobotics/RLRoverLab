@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite our paper:"
+authors:
+  - family-names: "Mortensen"
+    given-names: "Anton Bjørndahl"
+  - family-names: "Bøgh"
+    given-names: "Simon"
+title: "RLRoverLAB: An Advanced Reinforcement Learning Suite for Planetary Rover Simulation and Training"
+year: 2024
+doi: "10.1109/iSpaRo60631.2024.10687686"
+conference:
+  name: "2024 International Conference on Space Robotics (iSpaRo)"
+  pages: "273-277"
+  organization: "IEEE"
+url: "https://github.com/username/RLRoverLAB"
