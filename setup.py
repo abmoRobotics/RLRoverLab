@@ -5,7 +5,8 @@ from setuptools import find_packages, setup  # noqa: F401
 INSTALL_REQUIRES = [
     # generic
     "numpy",
-    "torch",
+    "torch==2.7.0",
+    "torchvision==0.22.0",
     "prettytable==3.3.0",
     "pymeshlab",
     "open3d",
@@ -13,10 +14,11 @@ INSTALL_REQUIRES = [
     "termcolor",
     # devices
     "hidapi",
-    "skrl==1.4.1",
     "wandb",
     "opencv-python",
+    "skrl",
     "isaaclab==2.2.0",
+    "isaacsim[all,extscache]==5.0.0",
     "cosmos-tokenizer@git+https://github.com/NVIDIA/Cosmos-Tokenizer.git"
 ]
 
