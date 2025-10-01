@@ -52,6 +52,13 @@
 4. **Training an Agent Inside the Docker Container**
    To train an agent, use the following command inside the Docker container:
    ```bash
-   cd examples/02_train
-   /workspace/isaac_lab/isaaclab.sh -p train.py --task="AAURoverEnv-v0" --num_envs=256
+   cd examples/02_training
+   python3 train.py --task="AAURoverEnv-v0" --num_envs=256
+   ```
+
+5. **Evaluating a Pre-trained Policy Inside the Docker Container**
+   To evaluate a pre-trained policy, use the following command inside the Docker container:
+   ```bash
+   cd examples/03_inference
+   python3 eval.py --task="AAURoverEnv-v0" --num_envs=32
    ```

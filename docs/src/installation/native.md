@@ -57,12 +57,12 @@ If you prefer to install the suite natively without using Docker, follow these s
 
    **To train a model**, navigate to the training script and run:
    ```bash
-   cd examples/02_train/train.py
-   python train.py
+   cd examples/02_training
+   python train.py --task="AAURoverEnv-v0" --num_envs=256
    ```
 
    **To evaluate a pre-trained policy**, navigate to the inference script and run:
    ```bash
-   cd examples/03_inference_pretrained/eval.py
-   python eval.py
+   cd examples/03_inference
+   python eval.py --task="AAURoverEnv-v0" --num_envs=32
    ```
