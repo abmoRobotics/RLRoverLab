@@ -9,7 +9,7 @@ If you prefer to install the suite natively without using Docker, follow these s
     ```bash
     mkdir ~/isaacsim
     cd ~/Downloads
-    unzip "isaac-sim-standalone@5.0.0-linux-x86_64.zip" -d ~/isaacsim
+    unzip "isaac-sim-standalone-5.0.0-linux-x86_64.zip" -d ~/isaacsim
     cd ~/isaacsim
     ./post_install.sh
     ./isaac-sim.selector.sh
@@ -17,7 +17,7 @@ If you prefer to install the suite natively without using Docker, follow these s
 2. **Install Isaac Lab**
    ```bash
    git clone https://github.com/isaac-sim/IsaacLab
-   cd isaac_lab
+   cd IsaacLab
 
    # create aliases
    export ISAACSIM_PATH="${HOME}/isaacsim"
