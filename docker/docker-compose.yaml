@@ -89,7 +89,7 @@ services:
     volumes: *default-isaac-lab-volumes
     network_mode: host
     deploy: *default-isaac-lab-deploy
-    entrypoint: bash -c "/isaac-sim/python.sh -m pip install -e /workspace/isaac_rover/ && bash"
+    entrypoint: bash -c "export SKIP_ISAAC_SIM_INSTALL=true && /isaac-sim/python.sh -m pip install -e /workspace/isaac_rover/ && bash"
     stdin_open: true
     tty: true
 
@@ -108,7 +108,7 @@ services:
     volumes: *default-isaac-lab-volumes
     network_mode: host
     deploy: *default-isaac-lab-deploy
-    entrypoint: bash -c "/isaac-sim/python.sh -m pip install -e /workspace/isaac_rover/ && bash"
+    entrypoint: bash -c "export NATIVE_INSTALL=false && /isaac-sim/python.sh -m pip install -e /workspace/isaac_rover/ && bash"
     stdin_open: true
     tty: true
 

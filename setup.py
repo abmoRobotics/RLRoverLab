@@ -1,31 +1,35 @@
 import itertools
+import os
 
 from setuptools import find_packages, setup  # noqa: F401
 
-INSTALL_REQUIRES = [
-    # generic
-    "numpy",
-    "torch==2.7.0",
-    "torchvision==0.22.0",
-    "prettytable==3.3.0",
-    "pymeshlab",
-    "open3d",
-    "gdown",
-    "termcolor",
-    # devices
-    "hidapi",
-    "wandb",
-    "opencv-python",
-    "skrl",
-    "isaaclab==2.2.0",
-    "isaacsim[all,extscache]==5.0.0",
-    "cosmos-tokenizer@git+https://github.com/NVIDIA/Cosmos-Tokenizer.git"
-]
+# Check if this is a native install (default: true)
+# Set NATIVE_INSTALL=false in Docker to skip Isaac Sim installation
+SKIP_ISAAC_SIM = os.getenv("SKIP_ISAAC_SIM_INSTALL", "false").lower() == "true"
 
-# url=EXTENSION_TOML_DATA["package"]["repository"], # add later
-# version=EXTENSION_TOML_DATA["package"]["version"],
-# description=EXTENSION_TOML_DATA["package"]["description"],
-# keywords=EXTENSION_TOML_DATA["package"]["keywords"],
+INSTALL_REQUIRES = []
+
+# Only install Isaac Sim packages for native installations
+if not SKIP_ISAAC_SIM:
+    INSTALL_REQUIRES.extend([
+        "cosmos-tokenizer@git+https://github.com/NVIDIA/Cosmos-Tokenizer.git",
+        "numpy",
+        "torch==2.7.0",
+        "torchvision==0.22.0",
+        "prettytable==3.3.0",
+        "pymeshlab",
+        "open3d",
+        "gdown",
+        "termcolor",
+        # devices
+        "hidapi",
+        "wandb",
+        "opencv-python",
+        "skrl",
+        "isaaclab==2.2.0",
+        "isaacsim[all,extscache]==5.0.0",
+    ])
+    
 EXTRAS_REQUIRE = {
     "rsl_rl": ["rsl_rl@git+https://github.com/leggedrobotics/rsl_rl.git"],
     #"cosmos": ["cosmos-tokenizer@git+https://github.com/NVIDIA/Cosmos-Tokenizer.git"],
