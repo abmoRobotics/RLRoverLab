@@ -71,16 +71,6 @@ def train():
     set_seed(args_cli_seed if args_cli_seed is not None else experiment_cfg["seed"])
 
     # Get the observation and action spaces
-    num_obs = env.unwrapped.observation_manager.group_obs_dim["policy"][0]
-    num_actions = env.unwrapped.action_manager.action_term_dim[0]
-    observation_space = gym.spaces.Box(low=-math.inf, high=math.inf, shape=(num_obs,))
-    action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(num_actions,))
-    print(f'Observation space: {observation_space.shape}')
-    print(f'Action space: {action_space.shape}')
-    print(f'num envs: {env.num_envs}')
-    print(f'env obs space: {env.observation_space}')
-    print(f'env action space: {env.action_space}')
-    # exit()
     trainer_cfg = experiment_cfg["trainer"]
 
     agent: Agent = create_agent(args_cli.agent, env, experiment_cfg)
