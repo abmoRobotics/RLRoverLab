@@ -3,10 +3,32 @@ import os
 from datetime import datetime
 import gymnasium as gym
 from isaaclab.utils.dict import print_dict
-from isaaclab.utils.io import dump_pickle, dump_yaml
+from isaaclab.utils.io import dump_yaml
 from isaaclab.envs import ManagerBasedRLEnv
 from isaaclab.managers import DatasetExportMode # noqa: E402
 from rover_envs.mdp.recorders.recorders_cfg import ReinforcementLearningRecorderManagerCfg, ImitationLearningRecorderManagerCfg # noqa: E402
+import pickle
+from typing import Any
+
+def dump_pickle(filename: str, data: Any):
+    """Saves data into a pickle file safely.
+
+    Note:
+        The function creates any missing directory along the file's path.
+
+    Args:
+        filename: The path to save the file at.
+        data: The data to save.
+    """
+    # check ending
+    if not filename.endswith("pkl"):
+        filename += ".pkl"
+    # create directory
+    if not os.path.exists(os.path.dirname(filename)):
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+    # save data
+    with open(filename, "wb") as f:
+        pickle.dump(data, f)
 
 def video_record(
         env: ManagerBasedRLEnv, log_dir: str, video: bool, video_length: int, video_interval: int
