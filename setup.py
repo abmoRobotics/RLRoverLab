@@ -4,30 +4,32 @@ import os
 from setuptools import find_packages, setup  # noqa: F401
 
 # Check if this is a native install (default: true)
-# Set NATIVE_INSTALL=false in Docker to skip Isaac Sim installation
+# Set SKIP_ISAAC_SIM_INSTALL=true in Docker to skip Isaac Sim/Lab packages
 SKIP_ISAAC_SIM = os.getenv("SKIP_ISAAC_SIM_INSTALL", "false").lower() == "true"
 
-INSTALL_REQUIRES = []
+# Packages needed regardless of environment
+INSTALL_REQUIRES = [
+    "cosmos-tokenizer@git+https://github.com/NVIDIA/Cosmos-Tokenizer.git",
+    "prettytable==3.3.0",
+    "pymeshlab",
+    "open3d",
+    "gdown",
+    "termcolor",
+    "hidapi",
+    "wandb",
+    "opencv-python",
+    "skrl",
+]
 
-# Only install Isaac Sim packages for native installations
+# Only install Isaac Sim/Lab packages for native installations
+# These are already present in the Isaac Sim Docker base image
 if not SKIP_ISAAC_SIM:
     INSTALL_REQUIRES.extend([
-        "cosmos-tokenizer@git+https://github.com/NVIDIA/Cosmos-Tokenizer.git",
         "numpy",
-        "torch==2.7.0",
-        "torchvision==0.22.0",
-        "prettytable==3.3.0",
-        "pymeshlab",
-        "open3d",
-        "gdown",
-        "termcolor",
-        # devices
-        "hidapi",
-        "wandb",
-        "opencv-python",
-        "skrl",
-        "isaaclab==2.2.0",
-        "isaacsim[all,extscache]==5.0.0",
+        "torch",
+        "torchvision",
+        "isaaclab==2.3.0",
+        "isaacsim[all,extscache]==5.1.0",
     ])
     
 EXTRAS_REQUIRE = {
@@ -44,10 +46,10 @@ setup(
     maintainer_email="abmoRobotics@gmail.com",
     license="BSD-3-Clause",
     include_package_data=True,
-    python_requires=">=3.10",
+    python_requires="==3.11.*",
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRE,
     packages=["rover_envs"],
-    classifiers=["Natural Language :: English", "Programming Language :: Python :: 3.10"],
+    classifiers=["Natural Language :: English", "Programming Language :: Python :: 3.11"],
     zip_safe=False,
 )

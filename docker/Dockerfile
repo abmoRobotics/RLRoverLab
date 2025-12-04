@@ -12,8 +12,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV ISAAC_LAB_PATH=/workspace/isaac_lab
 ENV ROVER_LAB_PATH=/workspace/isaac_rover
 
-# Install dependencies and remove cache (run as root, then switch back)
+# Switch to root for package installation
 USER root
+
+# Install dependencies and remove cache
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
@@ -27,18 +29,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt -y autoremove && apt clean autoclean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install this Isaac Lab and SKRL
-RUN ${ISAAC_SIM_PATH}/python.sh -m pip install isaaclab==${ISAAC_LAB_VERSION} skrl gym torch torchvision numpy pymeshlab open3d gdown termcolor prettytable hidapi opencv-python wandb
+# Install Isaac Lab (other dependencies will be installed from setup.py)
+RUN ${ISAAC_SIM_PATH}/python.sh -m pip install --user isaaclab==${ISAAC_LAB_VERSION}
 
-# RUN rm -rf ${ISAAC_SIM_PATH}/exts/omni.isaac.core_archive/pip_prebundle/osqp* && \
+# Install dependencies from setup.py (without installing the package itself)
+# Copy as root then change ownership to isaac-sim user
+COPY --chown=isaac-sim:isaac-sim setup.py pyproject.toml /tmp/rover_deps/
+RUN mkdir -p /tmp/rover_deps/rover_envs && touch /tmp/rover_deps/rover_envs/__init__.py && \
+    cd /tmp/rover_deps && \
+    SKIP_ISAAC_SIM_INSTALL=true ${ISAAC_SIM_PATH}/python.sh -m pip install --user --no-cache-dir . && \
+    rm -rf /tmp/rover_deps
+
+# RUN rm -rf ${ISAAC_SIM_PATH}/exts/omni.isaac.core_archive/pip_prebundle/osqp* && \\
 #     ${ISAAC_SIM_PATH}/python.sh -m pip uninstall -y osqp && \
 #     ${ISAAC_SIM_PATH}/python.sh -m pip install --no-cache-dir --no-binary :all: osqp
 
-
-RUN git clone https://github.com/NVIDIA/Cosmos-Tokenizer.git \
-    && cd Cosmos-Tokenizer \
-    && git lfs pull \
-    && ${ISAAC_SIM_PATH}/python.sh -m pip install .
 
 RUN echo "alias isaaclab=${ISAAC_LAB_PATH}/isaaclab.sh" >> ${HOME}/.bashrc && \
     echo "alias python=${ISAAC_SIM_PATH}/python.sh" >> ${HOME}/.bashrc && \
