@@ -19,6 +19,7 @@ INSTALL_REQUIRES = [
     "wandb",
     "opencv-python",
     "skrl",
+    "rsl-rl-lib"
 ]
 
 # Only install Isaac Sim/Lab packages for native installations
