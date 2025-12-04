@@ -151,8 +151,8 @@ class RoverZed2iWVGAEnvCfg(RoverSceneCfg):
             vertical_aperture=3.008, #2.484,
             clipping_range=(0.1, 100),
         ),
-        width=224,
-        height=224,
+        width=160,
+        height=90,
     )
 
 @configclass

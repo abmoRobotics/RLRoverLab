@@ -114,7 +114,10 @@ class AAURoverRGBDRawEnvCfg(RoverRGBDRawEnvCfg):
 
     def __post_init__(self):
         super().__post_init__()
-        self.scene.robot = AAU_ROVER_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        # Make robot invisible to its own sensors and other robots
+        robot_cfg = AAU_ROVER_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        robot_cfg.spawn.visible = True
+        self.scene.robot = robot_cfg
         self.actions.actions = mdp.AckermannActionCfg(
             asset_name="robot",
             wheelbase_length=0.849,
@@ -126,6 +129,8 @@ class AAURoverRGBDRawEnvCfg(RoverRGBDRawEnvCfg):
             drive_joint_names=[".*Drive_Continuous"],
             offset=-0.0135
         )
+        self.sim.dt = 1 / 45
+        self.decimation = 9
 
 @configclass
 class AAURoverRGBDRawTempEnvCfg(RoverRGBDRawTempEnvCfg):

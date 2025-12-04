@@ -70,6 +70,7 @@ x-default-isaac-lab-enviroment:
     FASTRTPS_DEFAULT_PROFILES_FILE: /root/.ros/fastdds.xml
     CYCLONEDDS_URI: /root/.ros/cyclonedds.xml
     RLROVERLAB_PATH: /workspace/isaac_rover/
+    PYTHONPATH: /workspace/isaac_rover:${PYTHONPATH}
 
 
 
@@ -79,8 +80,8 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
       args:
-        - ISAAC_SIM_VERSION=5.0.0
-        - ISAAC_LAB_VERSION=2.2.0
+        - ISAAC_SIM_VERSION=5.1.0
+        - ISAAC_LAB_VERSION=2.3.0
         - ISAAC_SIM_PATH=/isaac-sim
         - USER_HOME=/root
     image: rover-lab-base
@@ -89,7 +90,7 @@ services:
     volumes: *default-isaac-lab-volumes
     network_mode: host
     deploy: *default-isaac-lab-deploy
-    entrypoint: bash -c "export SKIP_ISAAC_SIM_INSTALL=true && /isaac-sim/python.sh -m pip install -e /workspace/isaac_rover/ && bash"
+    entrypoint: bash
     stdin_open: true
     tty: true
 
@@ -100,15 +101,15 @@ services:
       context: ../
       dockerfile: docker/Dockerfile.ros2
       args:
-        - ROS2_APT_PACKAGE=ros-base
         - USER_HOME=/root
+        - ISAAC_SIM_PATH=/isaac-sim
     image: rover-lab-ros2
     container_name: rover-lab-ros2
     environment: *default-isaac-lab-environment
     volumes: *default-isaac-lab-volumes
     network_mode: host
     deploy: *default-isaac-lab-deploy
-    entrypoint: bash -c "export NATIVE_INSTALL=false && /isaac-sim/python.sh -m pip install -e /workspace/isaac_rover/ && bash"
+    entrypoint: bash
     stdin_open: true
     tty: true
 
