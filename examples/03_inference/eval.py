@@ -21,6 +21,17 @@ parser.add_argument("--checkpoint", type=str, default=None, help="Path to model 
 parser.add_argument("--dataset_dir", type=str, default="./datasets", help="Path to the dataset directory.")
 parser.add_argument("--dataset_name", type=str, default=None, help="Name of the dataset.")
 parser.add_argument("--dataset_type", type=str, default="RL", choices=["IL", "RL"], help="Type of dataset to use. Options: IL or RL.")
+parser.add_argument("--terrain", type=str, default=None, help="Terrain type to use (e.g., 'mars', 'debug'). Use --list-terrains to see available options.")
+parser.add_argument("--list-terrains", action="store_true", default=False, help="List available terrain types and exit.")
+
+# Handle --list-terrains before AppLauncher to avoid starting simulation
+if "--list-terrains" in sys.argv:
+    from rover_envs.assets.terrains import list_terrains, get_terrain
+    print("\nAvailable terrains:")
+    for name in list_terrains():
+        terrain = get_terrain(name)
+        print(f"  - {name}: {terrain.description}")
+    sys.exit(0)
 
 AppLauncher.add_app_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
@@ -61,6 +72,10 @@ from rover_envs.utils.logging_utils import configure_datarecorder, log_setup, vi
 def main():
     args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
     env_cfg = parse_env_cfg(args_cli.task, device="cuda:0" if not args_cli.cpu else "cpu", num_envs=args_cli.num_envs)
+
+    # Set terrain if specified via command line
+    if args_cli.terrain is not None:
+        env_cfg.scene.set_terrain(args_cli.terrain)
 
     if args_cli.dataset_name is not None:
         env_cfg = configure_datarecorder(env_cfg, args_cli.dataset_dir, args_cli.dataset_name, args_cli.dataset_type)

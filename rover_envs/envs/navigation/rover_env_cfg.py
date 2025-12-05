@@ -29,24 +29,32 @@ from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise  # noqa: F401
 ##
 import rover_envs
 import rover_envs.envs.navigation.mdp as mdp
-from rover_envs.assets.terrains.debug.debug_terrains import DebugTerrainSceneCfg  # noqa: F401
-from rover_envs.assets.terrains.mars import MarsTerrainSceneCfg  # noqa: F401
+from rover_envs.assets.terrains import (
+    get_terrain,
+    create_hidden_terrain_cfg,
+    create_obstacles_cfg,
+    create_terrain_importer_cfg,
+)
 from rover_envs.envs.navigation.utils.terrains.commands_cfg import TerrainBasedPositionCommandCfg  # noqa: F401
-# from rover_envs.envs.navigation.utils.terrains.terrain_importer import TerrainBasedPositionCommandCustom  # noqa: F401
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import RoverTerrainImporter  # noqa: F401
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import TerrainBasedPositionCommand  # noqa: F401
 from rover_envs.mdp.recorders.recorders_cfg import ReinforcementLearningRecorderManagerCfg
 
 
+# Default terrain type - can be overridden at runtime
+_DEFAULT_TERRAIN = "mars"
+
+
 @configclass
-class RoverSceneCfg(MarsTerrainSceneCfg):
+class RoverSceneCfg(InteractiveSceneCfg):
     """
     Rover Scene Configuration
-
-    Note:
-        Terrains can be changed by changing the parent class e.g.
-        RoverSceneCfg(MarsTerrainSceneCfg) -> RoverSceneCfg(DebugTerrainSceneCfg)
-
+    
+    Terrain can be configured by:
+    1. Using the `set_terrain()` method after instantiation
+    2. Via command line with --terrain argument
+    
+    Available terrains can be listed with `list_terrains()` from rover_envs.assets.terrains
     """
 
     dome_light = AssetBaseCfg(
@@ -75,14 +83,11 @@ class RoverSceneCfg(MarsTerrainSceneCfg):
     )
 
     robot: ArticulationCfg = MISSING
-    # AAU_ROVER_SIMPLE_CFG.replace(
-    #     prim_path="{ENV_REGEX_NS}/Robot")
 
     contact_sensor = ContactSensorCfg(
         prim_path="{ENV_REGEX_NS}/Robot/.*_(Drive|Steer|Boogie|Body|Rocker)",
         filter_prim_paths_expr=["/World/terrain/obstacles/obstacles"],
     )
-    # contact_sensor = None
 
     height_scanner = RayCasterCfg(
         prim_path="{ENV_REGEX_NS}/Robot/Body",
@@ -95,6 +100,28 @@ class RoverSceneCfg(MarsTerrainSceneCfg):
     )
 
     tiled_camera: TiledCameraCfg | None = None
+    
+    # Terrain assets - initialized in __post_init__ with default terrain
+    hidden_terrain: AssetBaseCfg = None
+    obstacles: AssetBaseCfg = None
+    terrain: TerrainImporterCfg = None
+    
+    def __post_init__(self):
+        """Initialize terrain with default."""
+        
+        if self.terrain is None:
+            self.set_terrain(_DEFAULT_TERRAIN)
+    
+    def set_terrain(self, terrain_name: str) -> None:
+        """Set the terrain configuration.
+        
+        Args:
+            terrain_name: Name of the registered terrain (e.g., "mars", "debug")
+        """
+        terrain_config = get_terrain(terrain_name)
+        self.hidden_terrain = create_hidden_terrain_cfg(terrain_config)
+        self.obstacles = create_obstacles_cfg(terrain_config)
+        self.terrain = create_terrain_importer_cfg(terrain_config)
 
 
 

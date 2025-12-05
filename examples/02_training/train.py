@@ -18,6 +18,17 @@ parser.add_argument("--task", type=str, default="AAURoverEnvSimple-v0", help="Na
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
 parser.add_argument("--agent", type=str, default="PPO", help="Name of the agent.")
 parser.add_argument("--checkpoint", type=str, default=None, help="Path to model checkpoint to resume training.")
+parser.add_argument("--terrain", type=str, default=None, help="Terrain type to use (e.g., 'mars', 'debug'). Use --list-terrains to see available options.")
+parser.add_argument("--list-terrains", action="store_true", default=False, help="List available terrain types and exit.")
+
+# Handle --list-terrains before AppLauncher to avoid starting simulation
+if "--list-terrains" in sys.argv:
+    from rover_envs.assets.terrains import list_terrains, get_terrain
+    print("\nAvailable terrains:")
+    for name in list_terrains():
+        terrain = get_terrain(name)
+        print(f"  - {name}: {terrain.description}")
+    sys.exit(0)
 
 AppLauncher.add_app_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
@@ -52,6 +63,11 @@ from rover_envs.utils.logging_utils import log_setup, video_record  # noqa: E402
 def train():
     args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
     env_cfg = parse_env_cfg(args_cli.task, device="cuda:0" if not args_cli.cpu else "cpu", num_envs=args_cli.num_envs)
+    
+    # Set terrain if specified via command line
+    if args_cli.terrain is not None:
+        env_cfg.scene.set_terrain(args_cli.terrain)
+    
     # key = agent name, value = path to config file
     experiment_cfg_file = gym.spec(args_cli.task).kwargs.get("skrl_cfgs")[args_cli.agent.upper()]
     experiment_cfg = parse_skrl_cfg(experiment_cfg_file)
