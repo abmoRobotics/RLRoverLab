@@ -110,6 +110,28 @@ def get_terrain_choices() -> list[str]:
     return list(_TERRAIN_REGISTRY.keys())
 
 
+def discover_generated_terrains() -> None:
+    """Auto-discover and register terrains in the 'generated' folder."""
+    generated_dir = os.path.join(_TERRAINS_BASE_PATH, "generated")
+    if not os.path.exists(generated_dir):
+        return
+    
+    for name in os.listdir(generated_dir):
+        terrain_path = os.path.join(generated_dir, name)
+        if not os.path.isdir(terrain_path):
+            continue
+        
+        # Check if required files exist
+        required_files = ["terrain_only.usd", "terrain_merged.usd", "rocks_merged.usd"]
+        if all(os.path.exists(os.path.join(terrain_path, f)) for f in required_files):
+            if name not in _TERRAIN_REGISTRY:
+                register_terrain_from_folder(
+                    name=name,
+                    folder=f"generated/{name}",
+                    description=f"Generated terrain: {name}",
+                )
+
+
 # ============================================================================
 # Helper functions to create scene components from terrain config
 # These functions use lazy imports to avoid SimulationApp import order issues
@@ -181,3 +203,6 @@ register_terrain_from_folder(
     folder="debug/debug1",
     description="Simple debug terrain for testing",
 )
+
+# Auto-discover generated terrains
+discover_generated_terrains()
