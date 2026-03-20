@@ -5,7 +5,7 @@ from setuptools import find_packages, setup  # noqa: F401
 
 # Check if this is a native install (default: true)
 # Set SKIP_ISAAC_SIM_INSTALL=true in Docker to skip Isaac Sim/Lab packages
-SKIP_ISAAC_SIM = os.getenv("SKIP_ISAAC_SIM_INSTALL", "false").lower() == "true"
+# SKIP_ISAAC_SIM = os.getenv("SKIP_ISAAC_SIM_INSTALL", "false").lower() == "true"
 
 # Packages needed regardless of environment
 INSTALL_REQUIRES = [
@@ -24,14 +24,14 @@ INSTALL_REQUIRES = [
 
 # Only install Isaac Sim/Lab packages for native installations
 # These are already present in the Isaac Sim Docker base image
-if not SKIP_ISAAC_SIM:
-    INSTALL_REQUIRES.extend([
-        "numpy",
-        "torch",
-        "torchvision",
-        "isaaclab==2.3.0",
-        "isaacsim[all,extscache]==5.1.0",
-    ])
+# if not SKIP_ISAAC_SIM:
+#     INSTALL_REQUIRES.extend([
+#         "numpy",
+#         "torch",
+#         "torchvision",
+#         "isaaclab==2.3.0",
+#         "isaacsim[all,extscache]==5.1.0",
+#     ])
     
 EXTRAS_REQUIRE = {
     "rsl_rl": ["rsl_rl@git+https://github.com/leggedrobotics/rsl_rl.git"],
@@ -47,10 +47,14 @@ setup(
     maintainer_email="abmoRobotics@gmail.com",
     license="BSD-3-Clause",
     include_package_data=True,
-    python_requires="==3.11.*",
+    python_requires=">=3.11,<3.13",
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRE,
     packages=["rover_envs"],
-    classifiers=["Natural Language :: English", "Programming Language :: Python :: 3.11"],
+    classifiers=[
+        "Natural Language :: English",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+    ],
     zip_safe=False,
 )

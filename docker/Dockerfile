@@ -1,11 +1,12 @@
-ARG ISAAC_SIM_VERSION=5.1.0
+ARG ISAAC_SIM_VERSION=6.0.0-dev2
 FROM nvcr.io/nvidia/isaac-sim:${ISAAC_SIM_VERSION}
 
 # Set default RUN shell to bash
 SHELL ["/bin/bash", "-c"]
 
 ARG ISAAC_SIM_PATH
-ARG ISAAC_LAB_VERSION
+ARG ISAAC_LAB_GIT_URL=https://github.com/isaac-sim/IsaacLab.git
+ARG ISAAC_LAB_GIT_REF=a4a7602
 # Set environment variables
 ENV LANG=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
@@ -29,8 +30,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt -y autoremove && apt clean autoclean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Isaac Lab (other dependencies will be installed from setup.py)
-RUN ${ISAAC_SIM_PATH}/python.sh -m pip install --user isaaclab==${ISAAC_LAB_VERSION}
+# Install Isaac Lab from source.
+# The ref can be either a tag (e.g. v3.0.0-beta) or a commit SHA (e.g. a4a7602).
+RUN git clone ${ISAAC_LAB_GIT_URL} ${ISAAC_LAB_PATH} && \
+    cd ${ISAAC_LAB_PATH} && \
+    git checkout ${ISAAC_LAB_GIT_REF} && \
+    ln -sfn ${ISAAC_SIM_PATH} _isaac_sim && \
+    ./isaaclab.sh --install assets,contrib,mimic,newton,ov,physx,rl[rl_games,rsl_rl,sb3,skrl,robomimic],tasks,teleop,visualizers
 
 # Install dependencies from setup.py (without installing the package itself)
 # Copy as root then change ownership to isaac-sim user

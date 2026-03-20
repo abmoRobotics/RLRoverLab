@@ -72,8 +72,9 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
       args:
-        - ISAAC_SIM_VERSION=5.1.0
-        - ISAAC_LAB_VERSION=2.3.0
+        - ISAAC_SIM_VERSION=${ISAAC_SIM_VERSION:-6.0.0-dev2}
+        - ISAAC_LAB_GIT_URL=${ISAAC_LAB_GIT_URL:-https://github.com/isaac-sim/IsaacLab.git}
+        - ISAAC_LAB_GIT_REF=${ISAAC_LAB_GIT_REF:-a4a7602}
         - ISAAC_SIM_PATH=/isaac-sim
         - USER_HOME=/root
     image: rover-lab-base
