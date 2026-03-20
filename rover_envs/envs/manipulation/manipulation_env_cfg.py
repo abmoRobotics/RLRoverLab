@@ -18,13 +18,13 @@ from isaaclab.managers import TerminationTermCfg as DoneTerm  # noqa: F401
 from isaaclab.scene import InteractiveSceneCfg  # noqa: F401
 from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, patterns  # noqa: F401
 from isaaclab.sensors.frame_transformer.frame_transformer_cfg import FrameTransformerCfg
-from isaaclab.sim import PhysxCfg
 from isaaclab.sim import SimulationCfg as SimCfg
 from isaaclab.sim.spawners.from_files.from_files_cfg import GroundPlaneCfg
 from isaaclab.terrains import TerrainImporter, TerrainImporterCfg  # noqa: F401
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR  # noqa: F401
-from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise  # noqa: F401
+from isaaclab.utils.noise import UniformNoiseCfg as Unoise  # noqa: F401
+from isaaclab_physx.physics import PhysxCfg
 
 import rover_envs
 import rover_envs.envs.manipulation.mdp as mdp  # noqa: F401
@@ -246,7 +246,7 @@ class ManipulatorEnvCfg(ManagerBasedRLEnvCfg):
         num_envs=4096, env_spacing=2.5, replicate_physics=False)
     # Setup PhysX Settings
     sim: SimCfg = SimCfg(
-        physx=PhysxCfg(
+        physics=PhysxCfg(
             enable_stabilization=True,
             gpu_max_rigid_contact_count=8388608,
             gpu_max_rigid_patch_count=262144,
