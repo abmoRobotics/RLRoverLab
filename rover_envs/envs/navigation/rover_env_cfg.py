@@ -18,11 +18,11 @@ from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg  # noqa: F401
 from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, patterns
 from isaaclab.sensors.camera.tiled_camera_cfg import TiledCameraCfg
-from isaaclab.sim import PhysxCfg
 from isaaclab.sim import SimulationCfg as SimCfg
+from isaaclab_physx.physics import PhysxCfg
 from isaaclab.terrains import TerrainImporter, TerrainImporterCfg  # noqa: F401
 from isaaclab.utils import configclass
-from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise  # noqa: F401
+from isaaclab.utils.noise import UniformNoiseCfg as Unoise  # noqa: F401
 
 ##
 # Scene Description
@@ -84,6 +84,7 @@ class RoverSceneCfg(InteractiveSceneCfg):
 
     robot: ArticulationCfg = MISSING
 
+    
     contact_sensor = ContactSensorCfg(
         prim_path="{ENV_REGEX_NS}/Robot/.*_(Drive|Steer|Boogie|Body|Rocker)",
         filter_prim_paths_expr=["/World/terrain/obstacles/obstacles"],
@@ -287,7 +288,7 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
 
     # Setup PhysX Settings
     sim: SimCfg = SimCfg(
-        physx=PhysxCfg(
+        physics=PhysxCfg(
             enable_stabilization=True,
             gpu_max_rigid_contact_count=8388608,
             gpu_max_rigid_patch_count=262144,
@@ -323,6 +324,8 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         self.sim.dt = 1 / 30.0
         self.decimation = 6
+        # Default to rendering every sim step for smoother GUI playback.
+        self.sim.render_interval = 1
         self.episode_length_s = 150
         self.viewer.eye = (-6.0, -6.0, 3.5)
 
