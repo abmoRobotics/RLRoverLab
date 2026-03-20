@@ -33,6 +33,8 @@ if "--list-terrains" in sys.argv:
     sys.exit(0)
 
 AppLauncher.add_app_launcher_args(parser)
+# Default to Kit GUI unless caller explicitly overrides --viz/--visualizer.
+parser.set_defaults(visualizer="kit")
 args_cli, hydra_args = parser.parse_known_args()
 
 # always enable cameras to record video
