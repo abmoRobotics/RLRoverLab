@@ -71,7 +71,7 @@ python eval.py --task="AAURoverEnv-v0" --num_envs=32
 
 ### Development Workflow
 
-The Docker setup bind-mounts the repository to `/workspace/isaac_rover/`, so any changes you make to the code on your host machine are immediately reflected inside the container. This makes it ideal for development:
+The Docker setup bind-mounts the repository to `/workspace/rlroverlab/`, so any changes you make to the code on your host machine are immediately reflected inside the container. This makes it ideal for development:
 
 1. Edit code on your host machine using your preferred editor
 2. Run/test inside the container

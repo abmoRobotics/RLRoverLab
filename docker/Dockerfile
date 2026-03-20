@@ -11,7 +11,7 @@ ARG ISAAC_LAB_GIT_REF=a4a7602
 ENV LANG=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
 ENV ISAAC_LAB_PATH=/workspace/isaac_lab
-ENV ROVER_LAB_PATH=/workspace/isaac_rover
+ENV ROVER_LAB_PATH=/workspace/rlroverlab
 
 # Switch to root for package installation
 USER root
@@ -59,8 +59,8 @@ RUN echo "alias isaaclab=${ISAAC_LAB_PATH}/isaaclab.sh" >> ${HOME}/.bashrc && \
     echo "alias tensorboard='${ISAAC_SIM_PATH}/python.sh ${ISAAC_SIM_PATH}/tensorboard'" >> ${HOME}/.bashrc && \
     echo "export TZ=$(date +%Z)" >> ${HOME}/.bashrc
 
-# Configure /workspace/isaac_rover as a safe directory, so that Weights & Biases can be used.
-RUN git config --global --add safe.directory /workspace/isaac_rover
+# Configure /workspace/rlroverlab as a safe directory, so that Weights & Biases can be used.
+RUN git config --global --add safe.directory /workspace/rlroverlab
 
 # Set working directory
 WORKDIR ${ROVER_LAB_PATH}

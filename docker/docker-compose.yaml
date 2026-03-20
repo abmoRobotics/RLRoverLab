@@ -39,7 +39,7 @@ x-default-isaac-lab-volumes:
       target: /home/isaac-sim/.Xauthority
     - type: bind
       source: ../
-      target: /workspace/isaac_rover/
+      target: /workspace/rlroverlab/
 
 
 x-default-isaac-lab-deploy:
@@ -61,8 +61,8 @@ x-default-isaac-lab-enviroment:
     RMW_IMPLEMENTATION: rmw_fastrtps_cpp
     FASTRTPS_DEFAULT_PROFILES_FILE: /root/.ros/fastdds.xml
     CYCLONEDDS_URI: /root/.ros/cyclonedds.xml
-    RLROVERLAB_PATH: /workspace/isaac_rover/
-    PYTHONPATH: /workspace/isaac_rover:${PYTHONPATH}
+    RLROVERLAB_PATH: /workspace/rlroverlab/
+    PYTHONPATH: /workspace/rlroverlab:${PYTHONPATH}
 
 
 
@@ -83,7 +83,7 @@ services:
     volumes: *default-isaac-lab-volumes
     network_mode: host
     deploy: *default-isaac-lab-deploy
-    entrypoint: /workspace/isaac_rover/docker/entrypoint.sh
+    entrypoint: /workspace/rlroverlab/docker/entrypoint.sh
     command: bash
     stdin_open: true
     tty: true
@@ -103,7 +103,7 @@ services:
     volumes: *default-isaac-lab-volumes
     network_mode: host
     deploy: *default-isaac-lab-deploy
-    entrypoint: /workspace/isaac_rover/docker/entrypoint.sh
+    entrypoint: /workspace/rlroverlab/docker/entrypoint.sh
     command: bash
     stdin_open: true
     tty: true
