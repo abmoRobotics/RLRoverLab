@@ -4,11 +4,11 @@ from typing import Any, Dict, Optional
 
 from gymnasium.spaces.box import Box
 from isaaclab.envs import ManagerBasedRLEnv
-from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
-from skrl.agents.torch.rpo import RPO, RPO_DEFAULT_CONFIG
-from skrl.agents.torch.sac import SAC, SAC_DEFAULT_CONFIG
-from skrl.agents.torch.td3 import TD3, TD3_DEFAULT_CONFIG
-from skrl.agents.torch.trpo import TRPO, TRPO_DEFAULT_CONFIG
+from skrl.agents.torch.ppo import PPO, PPO_CFG
+from skrl.agents.torch.rpo import RPO, RPO_CFG
+from skrl.agents.torch.sac import SAC, SAC_CFG
+from skrl.agents.torch.td3 import TD3, TD3_CFG
+from skrl.agents.torch.trpo import TRPO, TRPO_CFG
 from skrl.memories.torch import RandomMemory
 
 from ...utils.config import convert_skrl_cfg
@@ -28,7 +28,7 @@ def PPO_agent(experiment_cfg, observation_space: Box, action_space: Box, env: Ma
         models = ModelFactory.create_models(env, observation_space, action_space, experiment_cfg["models"])
 
     # Agent cfg
-    agent_cfg = PPO_DEFAULT_CONFIG.copy()
+    agent_cfg = PPO_CFG.copy()
     agent_cfg.update(convert_skrl_cfg(experiment_cfg["agent"]))
 
     # Create the agent
@@ -55,7 +55,7 @@ def TRPO_agent(experiment_cfg, observation_space: Box, action_space: Box, env: M
         models = ModelFactory.create_models(env, observation_space, action_space, experiment_cfg["models"])
 
     # Agent cfg
-    agent_cfg = TRPO_DEFAULT_CONFIG.copy()
+    agent_cfg = TRPO_CFG.copy()
     agent_cfg.update(convert_skrl_cfg(experiment_cfg["agent"]))
 
     # Create the agent
@@ -82,7 +82,7 @@ def RPO_agent(experiment_cfg, observation_space: Box, action_space: Box, env: Ma
         models = ModelFactory.create_models(env, observation_space, action_space, experiment_cfg["models"])
 
     # Agent cfg
-    agent_cfg = RPO_DEFAULT_CONFIG.copy()
+    agent_cfg = RPO_CFG.copy()
     agent_cfg.update(convert_skrl_cfg(experiment_cfg["agent"]))
 
     # Create the agent
@@ -109,7 +109,7 @@ def SAC_agent(experiment_cfg, observation_space: Box, action_space: Box, env: Ma
         models = ModelFactory.create_models(env, observation_space, action_space, experiment_cfg["models"])
 
     # Agent cfg
-    agent_cfg = SAC_DEFAULT_CONFIG.copy()
+    agent_cfg = SAC_CFG.copy()
     agent_cfg.update(convert_skrl_cfg(experiment_cfg["agent"]))
 
     # Create the agent
@@ -136,7 +136,7 @@ def TD3_agent(experiment_cfg, observation_space: Box, action_space: Box, env: Ma
         models = ModelFactory.create_models(env, observation_space, action_space, experiment_cfg["models"])
 
     # Agent cfg
-    agent_cfg = TD3_DEFAULT_CONFIG.copy()
+    agent_cfg = TD3_CFG.copy()
     agent_cfg.update(convert_skrl_cfg(experiment_cfg["agent"]))
 
     # Create the agent
