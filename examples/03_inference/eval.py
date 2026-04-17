@@ -21,6 +21,7 @@ parser.add_argument("--checkpoint", type=str, default=None, help="Path to model 
 parser.add_argument("--dataset_dir", type=str, default="./datasets", help="Path to the dataset directory.")
 parser.add_argument("--dataset_name", type=str, default=None, help="Name of the dataset.")
 parser.add_argument("--dataset_type", type=str, default="RL", choices=["IL", "RL"], help="Type of dataset to use. Options: IL or RL.")
+parser.add_argument("--wandb", action="store_true", default=False, help="Enable Weights & Biases logging during evaluation.")
 parser.add_argument("--terrain", type=str, default=None, help="Terrain type: 'mars', 'debug', 'random', or other registered terrain.")
 parser.add_argument("--terrain-seed", type=int, default=None, help="Seed for random terrain generation (only used with --terrain random).")
 parser.add_argument("--keep-terrain", action="store_true", default=False, help="Keep generated random terrain after use.")
@@ -36,6 +37,8 @@ if "--list-terrains" in sys.argv:
     sys.exit(0)
 
 AppLauncher.add_app_launcher_args(parser)
+# Default to Kit GUI unless caller explicitly overrides --viz/--visualizer.
+parser.set_defaults(visualizer="kit")
 args_cli, hydra_args = parser.parse_known_args()
 
 # always enable cameras to record video
@@ -92,6 +95,7 @@ def main():
     # key = agent name, value = path to config file
     experiment_cfg_file = gym.spec(args_cli.task).kwargs.get("skrl_cfgs")[args_cli.agent.upper()]
     experiment_cfg = parse_skrl_cfg(experiment_cfg_file)
+    experiment_cfg.setdefault("agent", {}).setdefault("experiment", {})["wandb"] = bool(args_cli.wandb)
 
     log_dir = log_setup(experiment_cfg, env_cfg, args_cli.agent)
 

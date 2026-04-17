@@ -2,6 +2,7 @@ from typing import Sequence
 
 import isaaclab.sim as sim_utils
 import torch
+import warp as wp
 from isaaclab.assets import Articulation
 from isaaclab.envs import ManagerBasedEnv
 from isaaclab.managers import CommandTerm
@@ -90,27 +91,33 @@ class TerrainBasedPositionCommand(CommandTerm):
         # sample new position targets from the terrain
         self.pos_command_w[env_ids] = self.terrain.sample_new_targets(env_ids)
         # offset the position command by the current root position
-        self.pos_command_w[env_ids,
-                           2] += self.robot.data.default_root_state[env_ids, 2]
+        # Use config init-state z offset (constant across envs) to avoid backend-specific state buffer indexing.
+        root_z_offset = float(self.robot.cfg.init_state.pos[2])
+        self.pos_command_w[env_ids, 2] += root_z_offset
         # random heading command
         r = torch.empty(len(env_ids), device=self.device)
         self.heading_command_w[env_ids] = r.uniform_(*self.cfg.ranges.heading)
 
     def _update_command(self):
         """Re-target the position command to the current root position and heading."""
-        target_vec = self.pos_command_w - \
-            self.robot.data.root_link_pos_w[:, :3]
+        root_link_pos_w = wp.to_torch(self.robot.data.root_link_pos_w)
+        root_link_quat_w = wp.to_torch(self.robot.data.root_link_quat_w)
+        heading_w = wp.to_torch(self.robot.data.heading_w)
+
+        target_vec = self.pos_command_w - root_link_pos_w[:, :3]
         self.pos_command_b[:] = quat_apply_inverse(
-            yaw_quat(self.robot.data.root_link_quat_w), target_vec)
+            yaw_quat(root_link_quat_w), target_vec)
         self.heading_command_b[:] = wrap_to_pi(
-            self.heading_command_w - self.robot.data.heading_w)
+            self.heading_command_w - heading_w)
 
     def _update_metrics(self):
         # logs data
+        root_link_pos_w = wp.to_torch(self.robot.data.root_link_pos_w)
+        heading_w = wp.to_torch(self.robot.data.heading_w)
         self.metrics["error_pos"] = torch.norm(
-            self.pos_command_w - self.robot.data.root_link_pos_w[:, :3], dim=1)
+            self.pos_command_w - root_link_pos_w[:, :3], dim=1)
         self.metrics["error_heading"] = torch.abs(wrap_to_pi(
-            self.heading_command_w - self.robot.data.heading_w))
+            self.heading_command_w - heading_w))
 
     def _set_debug_vis_impl(self, debug_vis: bool):
 

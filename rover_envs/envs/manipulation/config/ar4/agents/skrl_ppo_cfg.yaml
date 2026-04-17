@@ -25,14 +25,14 @@ models:
     output_scale: 1.0
 
 
-# PPO agent configuration (field names are from PPO_DEFAULT_CONFIG)
+# PPO agent configuration (field names are from PPO_CFG)
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html
 agent:
   rollouts: 24
   learning_epochs: 8
   mini_batches: 24
   discount_factor: 0.99
-  lambda: 0.95
+  gae_lambda: 0.95
   learning_rate: 1.e-4
   state_preprocessor: "RunningStandardScaler"
   state_preprocessor_kwargs: null
@@ -43,11 +43,9 @@ agent:
   grad_norm_clip: 1.0
   ratio_clip: 0.2
   value_clip: 0.2
-  clip_predicted_values: True
   entropy_loss_scale: 0.0
   value_loss_scale: 2.0
   kl_threshold: 0.008
-  rewards_shaper_scale: 0.01
   # logging and checkpoint
   experiment:
     directory: "lift"

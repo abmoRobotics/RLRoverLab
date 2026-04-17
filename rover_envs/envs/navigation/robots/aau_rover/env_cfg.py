@@ -46,7 +46,7 @@ class AAURoverEnvCfg(RoverEnvCfg):
         )
         self.sim.dt = 1 / 30
         self.decimation = 6
-        self.sim.physx.solver_type = 0  # 0: PGS, 1: TGS
+        self.sim.physics.solver_type = 0  # 0: PGS, 1: TGS
 
 @configclass
 class AAURoverEnvDictCfg(RoverEnvDictCfg):
@@ -68,7 +68,7 @@ class AAURoverEnvDictCfg(RoverEnvDictCfg):
         )
         self.sim.dt = 1 / 30
         self.decimation = 6
-        self.sim.physx.solver_type = 0  # 0: PGS, 1: TGS
+        self.sim.physics.solver_type = 0  # 0: PGS, 1: TGS
 
 @configclass
 class AAURoverRGBResnetEnvCfg(RoverRGBResnetEnvCfg):
