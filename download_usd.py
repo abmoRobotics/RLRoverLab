@@ -13,7 +13,7 @@ def main():
     zip_path = os.path.join(script_dir, zip_filename)
 
     # Download the zip file
-    gdown.download(url, output=zip_path, quiet=False, fuzzy=True)
+    gdown.download(url, output=zip_path, quiet=False)
 
     # Unzip to repo root
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
