@@ -1,4 +1,4 @@
-from terrain_importer import RoverTerrainImporter
+from roverlab.source.rover_envs.envs.navigation.utils.terrains.terrain_importer import RoverTerrainImporter
 from isaaclab.utils import configclass
 from isaaclab.terrains import TerrainImporterCfg
 

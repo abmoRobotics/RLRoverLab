@@ -50,11 +50,11 @@ import pymeshlab
 import torch
 from termcolor import colored
 
-from rover_envs.envs.navigation.utils.terrains.usd_utils import get_triangles_and_vertices_from_prim_standalone, isaacsim_available
+from roverlab.source.rover_envs.envs.navigation.utils.terrains.usd_utils import get_triangles_and_vertices_from_prim_standalone, isaacsim_available
 # Try to import Isaac Sim dependencies for runtime, fallback for debugging
 
 if isaacsim_available():
-    from rover_envs.envs.navigation.utils.terrains.usd_utils import get_triangles_and_vertices_from_prim
+    from roverlab.source.rover_envs.envs.navigation.utils.terrains.usd_utils import get_triangles_and_vertices_from_prim
 
 
 
@@ -396,7 +396,7 @@ class TerrainManager:
         # First check if rock prim exists (when using Isaac Sim)
         rocks_available = True
         if isaacsim_available():
-            from rover_envs.envs.navigation.utils.terrains.usd_utils import check_prim_exists
+            from roverlab.source.rover_envs.envs.navigation.utils.terrains.usd_utils import check_prim_exists
             if not check_prim_exists(self.meshes["rock"]):
                 self.log(f"No rock obstacles found at {self.meshes['rock']} - using terrain-only mode", level='warning', block=False)
                 rocks_available = False
