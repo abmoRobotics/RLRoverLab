@@ -5,7 +5,14 @@ import random
 import sys
 from datetime import datetime
 
-import gymnasium as gym
+# Temporary work around for --viz=none
+# NumPy's OpenBLAS runtime is already loaded. Keep BLAS single-threaded before
+# any Isaac Lab imports to avoid OpenBLAS atfork crashes in --viz none.
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+
 from isaaclab.app import AppLauncher
 
 # add argparse arguments
@@ -37,8 +44,6 @@ if "--list-terrains" in sys.argv:
     sys.exit(0)
 
 AppLauncher.add_app_launcher_args(parser)
-# Default to Kit GUI unless caller explicitly overrides --viz/--visualizer.
-parser.set_defaults(visualizer="kit")
 args_cli, hydra_args = parser.parse_known_args()
 
 # always enable cameras to record video
@@ -52,6 +57,7 @@ sys.argv = [sys.argv[0]] + hydra_args
 
 app_launcher = AppLauncher(args_cli)
 
+import gymnasium as gym  # noqa: E402
 from isaaclab_rl.skrl import SkrlVecEnvWrapper  # noqa: E402
 
 simulation_app = app_launcher.app
