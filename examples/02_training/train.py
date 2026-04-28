@@ -23,6 +23,7 @@ parser.add_argument("--task", type=str, default="AAURoverEnvSimple-v0", help="Na
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
 parser.add_argument("--agent", type=str, default="PPO", help="Name of the agent.")
 parser.add_argument("--checkpoint", type=str, default=None, help="Path to model checkpoint to resume training.")
+parser.add_argument("--wandb", action="store_true", default=False, help="Enable Weights & Biases logging during training.")
 parser.add_argument("--terrain", type=str, default=None, help="Terrain type: 'mars', 'debug', 'random', or other registered terrain.")
 parser.add_argument("--terrain-seed", type=int, default=None, help="Seed for random terrain generation (only used with --terrain random).")
 parser.add_argument("--keep-terrain", action="store_true", default=False, help="Keep generated random terrain after use.")
