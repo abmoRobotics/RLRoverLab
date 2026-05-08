@@ -78,6 +78,7 @@ from rover_envs.learning.agents import create_agent  # noqa: E402
 #import rover_envs.envs.navigation.learning.skrl.agents  # noqa: E402, F401
 from rover_envs.utils.config import parse_skrl_cfg  # noqa: E402
 from rover_envs.utils.logging_utils import configure_datarecorder, log_setup, video_record  # noqa: E402
+from rover_envs.utils.skrl_wandb import patch_skrl_summary_writer_for_wandb  # noqa: E402
 from rover_envs.utils.terrain_utils import handle_terrain_config, cleanup_terrain  # noqa: E402
 
 
@@ -102,6 +103,8 @@ def main():
     experiment_cfg_file = gym.spec(args_cli.task).kwargs.get("skrl_cfgs")[args_cli.agent.upper()]
     experiment_cfg = parse_skrl_cfg(experiment_cfg_file)
     experiment_cfg.setdefault("agent", {}).setdefault("experiment", {})["wandb"] = bool(args_cli.wandb)
+    if args_cli.wandb:
+        patch_skrl_summary_writer_for_wandb()
 
     log_dir = log_setup(experiment_cfg, env_cfg, args_cli.agent)
 

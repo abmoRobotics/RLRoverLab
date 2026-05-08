@@ -57,4 +57,5 @@ agent:
     wandb: True             # whether to use Weights & Biases
 
 trainer:
+  environment_info: log
   timesteps: 100000

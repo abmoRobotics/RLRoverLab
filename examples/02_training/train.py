@@ -23,7 +23,7 @@ parser.add_argument("--task", type=str, default="AAURoverEnvSimple-v0", help="Na
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
 parser.add_argument("--agent", type=str, default="PPO", help="Name of the agent.")
 parser.add_argument("--checkpoint", type=str, default=None, help="Path to model checkpoint to resume training.")
-parser.add_argument("--wandb", action="store_true", default=False, help="Enable Weights & Biases logging during training.")
+parser.add_argument("--wandb", action="store_true", default=True, help="Enable Weights & Biases logging during training.")
 parser.add_argument("--terrain", type=str, default=None, help="Terrain type: 'mars', 'debug', 'random', or other registered terrain.")
 parser.add_argument("--terrain-seed", type=int, default=None, help="Seed for random terrain generation (only used with --terrain random).")
 parser.add_argument("--keep-terrain", action="store_true", default=False, help="Keep generated random terrain after use.")
@@ -67,6 +67,7 @@ import rover_envs.envs.navigation.robots  # noqa: E402, F401
 from rover_envs.learning.agents import create_agent  # noqa: E402
 from rover_envs.utils.config import parse_skrl_cfg  # noqa: E402
 from rover_envs.utils.logging_utils import log_setup, video_record  # noqa: E402
+from rover_envs.utils.skrl_wandb import patch_skrl_summary_writer_for_wandb  # noqa: E402
 from rover_envs.utils.terrain_utils import handle_terrain_config, cleanup_terrain  # noqa: E402
 
 
@@ -87,6 +88,8 @@ def train():
     experiment_cfg_file = gym.spec(args_cli.task).kwargs.get("skrl_cfgs")[args_cli.agent.upper()]
     experiment_cfg = parse_skrl_cfg(experiment_cfg_file)
     experiment_cfg.setdefault("agent", {}).setdefault("experiment", {})["wandb"] = bool(args_cli.wandb)
+    if args_cli.wandb:
+        patch_skrl_summary_writer_for_wandb()
 
     log_dir = log_setup(experiment_cfg, env_cfg, args_cli.agent)
 
