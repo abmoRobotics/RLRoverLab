@@ -142,7 +142,8 @@ class RoverZed2iWVGAEnvCfg(RoverSceneCfg):
     tiled_camera: TiledCameraCfg = TiledCameraCfg(
         prim_path="{ENV_REGEX_NS}/Robot/Body/Zed2iWVGA_camera",
         #offset=TiledCameraCfg.OffsetCfg(pos=(0.27, -0.26, 0.4), rot=(0.9896, -0.13028, 0.06053, -0.00797),convention="opengl"),
-        offset=TiledCameraCfg.OffsetCfg(pos=(0.26294, -0.20045, 0.40189), rot=(0.58622, 0.4639, -0.39541, -0.53366),convention="opengl"),
+        # Includes a 180-degree optical-axis roll so rendered frames are upright.
+        offset=TiledCameraCfg.OffsetCfg(pos=(0.26294, -0.20045, 0.40189), rot=(0.53366, -0.39541, -0.4639, 0.58622),convention="opengl"),
         data_types=["rgb",  "depth"],
         # Zed 2i - WVGA - 672x376
         spawn=sim_utils.PinholeCameraCfg(
@@ -163,7 +164,8 @@ class RoverZed2iWVGAEnvCfgTEMP(RoverZed2iWVGAEnvCfg):
         prim_path="{ENV_REGEX_NS}/Robot/Body/Camera",
         offset=TiledCameraCfg.OffsetCfg(
             pos=(-0.151, 0, 0.73428),
-            rot=(0.64086, 0.29884, -0.29884, -0.64086),
+            # Includes a 180-degree optical-axis roll so rendered frames are upright.
+            rot=(0.64086, -0.29884, -0.29884, 0.64086),
             convention="opengl",
         ),
         data_types=["rgb", "depth"],
@@ -225,6 +227,4 @@ class RoverRGBDRawTempEnvCfg(RoverEnvCfg):
     observations: RoverRGBDRawObservationsCfg = RoverRGBDRawObservationsCfg()
     scene: RoverZed2iWVGAEnvCfgTEMP = RoverZed2iWVGAEnvCfgTEMP(num_envs=8, env_spacing=4.0, replicate_physics=False)
     commands: CommandsNoVizCfg = CommandsNoVizCfg()
-
-
 

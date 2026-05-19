@@ -19,7 +19,8 @@ INSTALL_REQUIRES = [
     "wandb",
     "opencv-python",
     "skrl",
-    "rsl-rl-lib"
+    "rsl-rl-lib",
+    "tqdm",
 ]
 
 # Only install Isaac Sim/Lab packages for native installations
@@ -50,7 +51,7 @@ setup(
     python_requires=">=3.11,<3.13",
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRE,
-    packages=["rover_envs"],
+    packages=find_packages(include=["rover_envs", "rover_envs.*"]),
     classifiers=[
         "Natural Language :: English",
         "Programming Language :: Python :: 3.11",
