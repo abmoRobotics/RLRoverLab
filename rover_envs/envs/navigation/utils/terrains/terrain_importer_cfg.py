@@ -19,7 +19,7 @@ class RoverTerrainImporterCfg(TerrainImporterCfg):
     num_spawn_locations: int = 4096
     """The number of spawn locations to generate."""
 
-    target_distance_to_boundary: float = 7
+    target_distance_to_boundary: float = 15.0
     """The minimum distance in meters from the boundary of the terrain to the spawn locations."""
 
     spawn_distance_to_boundary: float = 15.0

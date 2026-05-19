@@ -56,4 +56,4 @@ agent:
 
 trainer:
   environment_info: log
-  timesteps: 100000
+  timesteps: 1000000
