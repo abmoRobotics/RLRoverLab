@@ -43,7 +43,7 @@ AAU_ROVER_SIMPLE_CFG = ArticulationCfg(
             effort_limit_sim=12,
             stiffness=8000.0,
             damping=1000.0,
-            armature=0.2,
+            armature=0.02,
 
         ),
         "base_drive": ImplicitActuatorCfg(
@@ -52,7 +52,7 @@ AAU_ROVER_SIMPLE_CFG = ArticulationCfg(
             effort_limit_sim=12,
             stiffness=100.0,
             damping=4000.0,
-            armature=0.2,
+            armature=0.02,
         ),
         "passive_joints": ImplicitActuatorCfg(
             joint_names_expr=[".*Boogie_Revolute"],
@@ -60,7 +60,7 @@ AAU_ROVER_SIMPLE_CFG = ArticulationCfg(
             effort_limit_sim=0,
             stiffness=0.0,
             damping=0.0,
-            armature=0.2,
+            armature=0.02,
         ),
     },
 )
