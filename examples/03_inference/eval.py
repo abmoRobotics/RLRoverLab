@@ -25,6 +25,7 @@ parser.add_argument("--task", type=str, default="AAURoverEnv-v0", help="Name of 
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
 parser.add_argument("--agent", type=str, default="PPO", help="Name of the agent.")
 parser.add_argument("--checkpoint", type=str, default=None, help="Path to model checkpoint to resume training.")
+parser.add_argument("--steps", type=int, default=1000000, help="Number of evaluation steps to run.")
 parser.add_argument("--dataset_dir", type=str, default="./datasets", help="Path to the dataset directory.")
 parser.add_argument("--dataset_name", type=str, default=None, help="Name of the dataset.")
 parser.add_argument("--dataset_type", type=str, default="RL", choices=["IL", "RL"], help="Type of dataset to use. Options: IL or RL.")
@@ -102,6 +103,8 @@ def main():
     # key = agent name, value = path to config file
     experiment_cfg_file = gym.spec(args_cli.task).kwargs.get("skrl_cfgs")[args_cli.agent.upper()]
     experiment_cfg = parse_skrl_cfg(experiment_cfg_file)
+    # Evaluation does not train, so keep SKRL memory small. This matters for HD images in dict observations.
+    experiment_cfg["agent"]["rollouts"] = 1
     experiment_cfg.setdefault("agent", {}).setdefault("experiment", {})["wandb"] = bool(args_cli.wandb)
     if args_cli.wandb:
         patch_skrl_summary_writer_for_wandb()
@@ -124,13 +127,13 @@ def main():
     #action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(num_actions,))
 
     trainer_cfg = experiment_cfg["trainer"]
-    trainer_cfg["timesteps"] = 1000000
+    trainer_cfg["timesteps"] = args_cli.steps
 
     agent: Agent = create_agent(args_cli.agent, env, experiment_cfg)
 
     # Get the checkpoint path from the experiment configuration
     print(f'args_cli.task: {args_cli.task}')
-    agent_policy_path = gym.spec(args_cli.task).kwargs.pop("best_model_path")
+    agent_policy_path = args_cli.checkpoint or gym.spec(args_cli.task).kwargs.pop("best_model_path")
 
     agent.load(agent_policy_path)
     trainer_cfg = experiment_cfg["trainer"]

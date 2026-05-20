@@ -37,15 +37,31 @@ Use the existing RLRoverLab inference path and Isaac Lab recorder:
 ```bash
 cd /workspace/rlroverlab
 python examples/03_inference/eval.py \
-  --task AAURoverEnvRGBDRaw-v0 \
-  --num_envs 64 \
+  --task AAURoverEnvRGBDRawHD720-v0 \
+  --num_envs 1 \
+  --steps 1000 \
+  --enable_cameras \
   --dataset_dir ./datasets \
-  --dataset_name rover_rgbd_expert \
+  --dataset_name rover_rgbd_hd720_expert_1000 \
   --dataset_type RL
 ```
 
 This produces an Isaac Lab HDF5 dataset that CloneLab can read through its
 `HDF5DictDatasetRandom` and sequence datasets.
+
+To record the same dataset with the ZED2i WVGA mode, use:
+
+```bash
+cd /workspace/rlroverlab
+python examples/03_inference/eval.py \
+  --task AAURoverEnvRGBDRawWVGA-v0 \
+  --num_envs 1 \
+  --steps 1000 \
+  --enable_cameras \
+  --dataset_dir ./datasets \
+  --dataset_name rover_rgbd_wvga_expert_1000 \
+  --dataset_type RL
+```
 
 ## Train Offline
 

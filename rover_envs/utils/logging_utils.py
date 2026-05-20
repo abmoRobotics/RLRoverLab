@@ -118,4 +118,5 @@ def configure_datarecorder(env_cfg, dataset_dir, dataset_name, dataset_type):
         env_cfg.recorders.dataset_export_mode = DatasetExportMode.EXPORT_ALL
         env_cfg.recorders.dataset_export_dir_path = dataset_dir
         env_cfg.recorders.dataset_filename = dataset_name + ".hdf5"
+        env_cfg.recorders.export_in_close = True
     return env_cfg

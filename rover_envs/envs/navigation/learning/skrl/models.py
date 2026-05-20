@@ -3,6 +3,7 @@ import torch.nn as nn
 from skrl.models.torch.base import Model as BaseModel
 from skrl.models.torch.deterministic import DeterministicMixin
 from skrl.models.torch.gaussian import GaussianMixin
+from skrl.utils.spaces.torch import unflatten_tensorized_space
 
 # Import general model utilities
 from rover_envs.learning.models import MODEL_REGISTRY, get_activation, register_model
@@ -515,7 +516,7 @@ class GaussianPolicyConvDict(GaussianMixin, BaseModel):
 
     def compute(self, states, role="actor"):
 
-        states = self.tensor_to_space(states["observations"], self.observation_space)
+        states = unflatten_tensorized_space(self.observation_space, states["observations"])
         encoder_output = self.encoder(states["height_scan"])
         x = torch.cat([states["actions"], states["distance"], states["heading"], states["angle_diff"], encoder_output], dim=1)
 
@@ -574,7 +575,7 @@ class ValueNetworkConvDict(DeterministicMixin, BaseModel):
 
     def compute(self, states, role="actor"):
         
-        states = self.tensor_to_space(states["observations"], self.observation_space)
+        states = unflatten_tensorized_space(self.observation_space, states["observations"])
         encoder_output = self.encoder(states["height_scan"])
         x = torch.cat([states["actions"], states["distance"], states["heading"], states["angle_diff"], encoder_output], dim=1)
 
