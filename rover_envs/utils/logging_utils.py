@@ -6,7 +6,11 @@ from isaaclab.utils.dict import print_dict
 from isaaclab.utils.io import dump_yaml
 from isaaclab.envs import ManagerBasedRLEnv
 from isaaclab.managers import DatasetExportMode # noqa: E402
-from rover_envs.mdp.recorders.recorders_cfg import ReinforcementLearningRecorderManagerCfg, ImitationLearningRecorderManagerCfg # noqa: E402
+from rover_envs.mdp.recorders.recorders_cfg import (  # noqa: E402
+    CompressedRGBDReinforcementLearningRecorderManagerCfg,
+    ImitationLearningRecorderManagerCfg,
+    ReinforcementLearningRecorderManagerCfg,
+)
 import pickle
 from typing import Any
 
@@ -115,6 +119,10 @@ def configure_datarecorder(env_cfg, dataset_dir, dataset_name, dataset_type):
             env_cfg.recorders = ImitationLearningRecorderManagerCfg()
         elif dataset_type == "RL":
             env_cfg.recorders = ReinforcementLearningRecorderManagerCfg()
+        elif dataset_type == "RL_COMPRESSED":
+            env_cfg.recorders = CompressedRGBDReinforcementLearningRecorderManagerCfg()
+        else:
+            raise ValueError(f"Unsupported dataset_type '{dataset_type}'. Expected IL, RL, or RL_COMPRESSED.")
         env_cfg.recorders.dataset_export_mode = DatasetExportMode.EXPORT_ALL
         env_cfg.recorders.dataset_export_dir_path = dataset_dir
         env_cfg.recorders.dataset_filename = dataset_name + ".hdf5"

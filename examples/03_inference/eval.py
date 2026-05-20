@@ -26,9 +26,21 @@ parser.add_argument("--seed", type=int, default=None, help="Seed used for the en
 parser.add_argument("--agent", type=str, default="PPO", help="Name of the agent.")
 parser.add_argument("--checkpoint", type=str, default=None, help="Path to model checkpoint to resume training.")
 parser.add_argument("--steps", type=int, default=1000000, help="Number of evaluation steps to run.")
+parser.add_argument(
+    "--episode_length_s",
+    type=float,
+    default=None,
+    help="Optional episode length override in seconds. Useful for bounding legacy recorder export memory.",
+)
 parser.add_argument("--dataset_dir", type=str, default="./datasets", help="Path to the dataset directory.")
 parser.add_argument("--dataset_name", type=str, default=None, help="Name of the dataset.")
-parser.add_argument("--dataset_type", type=str, default="RL", choices=["IL", "RL"], help="Type of dataset to use. Options: IL or RL.")
+parser.add_argument(
+    "--dataset_type",
+    type=str,
+    default="RL",
+    choices=["IL", "RL", "RL_COMPRESSED"],
+    help="Type of dataset to use. Options: IL, RL, or RL_COMPRESSED.",
+)
 parser.add_argument("--wandb", action="store_true", default=False, help="Enable Weights & Biases logging during evaluation.")
 parser.add_argument("--terrain", type=str, default=None, help="Terrain type: 'mars', 'debug', 'random', or other registered terrain.")
 parser.add_argument("--terrain-seed", type=int, default=None, help="Seed for random terrain generation (only used with --terrain random).")
@@ -86,6 +98,8 @@ from rover_envs.utils.terrain_utils import handle_terrain_config, cleanup_terrai
 def main():
     args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
     env_cfg = parse_env_cfg(args_cli.task, device="cuda:0" if not args_cli.cpu else "cpu", num_envs=args_cli.num_envs)
+    if args_cli.episode_length_s is not None:
+        env_cfg.episode_length_s = args_cli.episode_length_s
 
     # Handle terrain configuration (including random generation)
     terrain_name, terrain_cleanup_path = handle_terrain_config(
