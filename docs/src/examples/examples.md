@@ -21,3 +21,7 @@ python eval.py --task="AAURoverEnvSimple-v0" --num_envs=32
 cd examples/03_inference
 python eval.py --task="AAURoverEnv-v0" --num_envs=32 --dataset_name="dataset_name" --dataset_dir="../../datasets"
 python eval.py --task="AAURoverEnvSimple-v0" --num_envs=32 --dataset_name="dataset_name" --dataset_dir="../../datasets"
+```
+
+See [Dataset Recordings](../dataset_recordings.md) for the legacy
+robomimic-style HDF5 format and the optimized RGB-D format.
