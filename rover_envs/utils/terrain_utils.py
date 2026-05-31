@@ -149,8 +149,7 @@ def generate_random_terrain(
             name=terrain_name,
             files=TerrainFiles(
                 terrain_only=os.path.join(output_dir, "terrain_only.usd"),
-                terrain_merged=os.path.join(output_dir, "terrain_merged.usd"),
-                rocks_merged=os.path.join(output_dir, "rocks_merged.usd"),
+                rocks=os.path.join(output_dir, "rocks_merged.usd"),
             ),
             description=f"Temporary random terrain (seed={seed})",
         )

@@ -363,7 +363,7 @@ class TerrainManager:
         
         if isaacsim_available() and not debug_mode:
             # Isaac Sim runtime mode - use default terrain paths
-            terrain_path = "/World/terrain/terrain/ground"
+            terrain_path = "/World/terrain/terrain"
             rock_mesh_path = "/World/terrain/obstacles/obstacles"
         else:
             # Debug mode - use provided USD paths or default assets

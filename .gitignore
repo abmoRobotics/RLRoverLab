@@ -345,3 +345,4 @@ rover_envs/assets/terrains/debug/__pycache__/*
 
 *.svgdocker/.env
 *.svg
+*.exr
