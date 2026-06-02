@@ -30,10 +30,11 @@ from isaaclab.utils.noise import UniformNoiseCfg as Unoise  # noqa: F401
 import rover_envs
 import rover_envs.envs.navigation.mdp as mdp
 from rover_envs.assets.terrains import (
-    get_terrain,
+    create_lethal_collision_cfg,
     create_lighting_cfg,
     create_obstacles_cfg,
     create_terrain_importer_cfg,
+    get_terrain,
 )
 from rover_envs.envs.navigation.utils.terrains.commands_cfg import TerrainBasedPositionCommandCfg  # noqa: F401
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import RoverTerrainImporter  # noqa: F401
@@ -119,6 +120,7 @@ class RoverSceneCfg(InteractiveSceneCfg):
     sphere_light: AssetBaseCfg | None = None
     terrain_lighting: AssetBaseCfg | None = None
     obstacles: AssetBaseCfg | None = None
+    lethal_collision: AssetBaseCfg | None = None
     terrain: TerrainImporterCfg | None = None
     
     def __post_init__(self):
@@ -134,7 +136,15 @@ class RoverSceneCfg(InteractiveSceneCfg):
             terrain_name: Name of the registered terrain (e.g., "mars", "debug")
         """
         terrain_config = get_terrain(terrain_name)
+        if terrain_config.obstacle_mesh_prim_path is None:
+            raise ValueError(
+                f"Terrain '{terrain_name}' has no merged obstacle mesh for rover obstacle contacts. "
+                "Add a lethal_collision.usd file or register an explicit obstacle_mesh_prim_path."
+            )
         self.obstacles = create_obstacles_cfg(terrain_config)
+        self.lethal_collision = create_lethal_collision_cfg(terrain_config)
+        self.contact_sensor.filter_prim_paths_expr = [terrain_config.obstacle_mesh_prim_path]
+        self.height_scanner.mesh_prim_paths = list(terrain_config.height_scanner_mesh_prim_paths)
         self.terrain_lighting = create_lighting_cfg(terrain_config)
         self.dome_light, self.sphere_light = _create_temporary_default_light_cfgs(
             terrain_name,
@@ -344,6 +354,8 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
         self.sim.render_interval = 1
         self.episode_length_s = 150
         self.viewer.eye = (-6.0, -6.0, 3.5)
+        self.viewer.origin_type = "asset_root"
+        self.viewer.asset_name = "robot"
 
         # update sensor periods
         if self.scene.height_scanner is not None:
