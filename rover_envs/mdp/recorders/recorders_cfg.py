@@ -1,6 +1,7 @@
 from isaaclab.managers.recorder_manager import RecorderManagerBaseCfg, RecorderTerm, RecorderTermCfg
 from isaaclab.utils import configclass
 
+from .compressed_rgbd_hdf5 import CompressedRGBDHDF5DatasetFileHandler
 from . import recorders
 
 
@@ -21,6 +22,18 @@ class DoneRecorderCfg(RecorderTermCfg):
     class_type: type[RecorderTerm] = recorders.DoneRecorder
 
 @configclass
+class TerminalRecorderCfg(RecorderTermCfg):
+    class_type: type[RecorderTerm] = recorders.TerminalRecorder
+
+@configclass
+class TimeoutRecorderCfg(RecorderTermCfg):
+    class_type: type[RecorderTerm] = recorders.TimeoutRecorder
+
+@configclass
+class TimelineObservationRecorderCfg(RecorderTermCfg):
+    class_type: type[RecorderTerm] = recorders.TimelineObservationRecorder
+
+@configclass
 class NextObservationRecorderCfg(RecorderTermCfg):
     class_type: type[RecorderTerm] = recorders.NextObservationRecorder
 
@@ -36,3 +49,14 @@ class ReinforcementLearningRecorderManagerCfg(RecorderManagerBaseCfg):
 class ImitationLearningRecorderManagerCfg(RecorderManagerBaseCfg):
     record_actions: ActionRecorderCfg = ActionRecorderCfg()
     record_observations: ObservationRecorderCfg = ObservationRecorderCfg()
+
+@configclass
+class CompressedRGBDReinforcementLearningRecorderManagerCfg(RecorderManagerBaseCfg):
+    dataset_file_handler_class_type: type = CompressedRGBDHDF5DatasetFileHandler
+
+    record_actions: ActionRecorderCfg = ActionRecorderCfg()
+    record_observation_timeline: TimelineObservationRecorderCfg = TimelineObservationRecorderCfg()
+    record_rewards: RewardRecorderCfg = RewardRecorderCfg()
+    record_dones: DoneRecorderCfg = DoneRecorderCfg()
+    record_terminals: TerminalRecorderCfg = TerminalRecorderCfg()
+    record_timeouts: TimeoutRecorderCfg = TimeoutRecorderCfg()
