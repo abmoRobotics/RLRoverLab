@@ -30,7 +30,7 @@ agent:
   learning_epochs: 4
   mini_batches: 60
   discount_factor: 0.99
-  gae_lambda: 0.95
+  lambda: 0.95
   learning_rate: 1.e-4
 
   #learning_rate_scheduler: "None"
@@ -44,6 +44,7 @@ agent:
   grad_norm_clip: 0.5 #1.0
   ratio_clip: 0.2
   value_clip: 0.2
+  clip_predicted_values: True
   entropy_loss_scale: 0.0
   value_loss_scale: 1.0
   kl_threshold: 0.008
@@ -57,5 +58,4 @@ agent:
     wandb: True             # whether to use Weights & Biases
 
 trainer:
-  environment_info: log
-  timesteps: 100000
+  timesteps: 1000000

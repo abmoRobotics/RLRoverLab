@@ -8,6 +8,8 @@ from isaaclab.envs.mdp.actions.actions_cfg import DifferentialInverseKinematicsA
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_ORBIT_NUCLEUS_DIR
 
+from rover_envs.envs.navigation.utils.articulation.articulation import FrankaArticulation
+
 from . import joint_pos_env_cfg
 
 ##
@@ -25,6 +27,7 @@ class FrankaCubeLiftEnvCfg(joint_pos_env_cfg.FrankaCubeLiftEnvCfg):
         # Set Franka as robot
         # We switch here to a stiffer PD controller for IK tracking to be better.
         self.scene.robot = FRANKA_PANDA_HIGH_PD_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.robot.class_type = FrankaArticulation
         self.scene.robot.spawn = sim_utils.UsdFileCfg(
             usd_path=f"{ISAAC_ORBIT_NUCLEUS_DIR}/Robots/FrankaEmika/panda_instanceable.usd",
             activate_contact_sensors=True,

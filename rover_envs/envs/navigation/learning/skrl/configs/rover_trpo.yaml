@@ -5,7 +5,7 @@ seed: 42
 models:
   separate: False
   policy:
-    type: "GaussianPolicyConv"
+    type: "GaussianNeuralNetworkConv"
     params:
       mlp_input_size: 5
       mlp_layers: [256, 160, 128]
@@ -13,7 +13,7 @@ models:
       encoder_layers: [8, 16, 32, 64]
       encoder_activation: "leaky_relu"
   value:
-    type: "ValueNetworkConv"
+    type: "DeterministicNeuralNetworkConv"
     params:
       mlp_input_size: 5
       mlp_layers: [256, 160, 128]
@@ -28,7 +28,7 @@ agent:
   learning_epochs: 4
   mini_batches: 60
   discount_factor: 0.99
-  gae_lambda: 0.95
+  lambda: 0.95
   learning_rate: 1.e-4
 
   #learning_rate_scheduler: "None"
@@ -56,5 +56,4 @@ agent:
     wandb: True             # whether to use Weights & Biases
 
 trainer:
-  environment_info: log
   timesteps: 200000

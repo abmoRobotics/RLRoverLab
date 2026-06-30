@@ -1,8 +1,12 @@
+# import isaacsim.core.utils.prims as prim_utils
 import numpy as np
+# # import isaaclab.utils.kit as kit_utils
+# from isaacsim.core.api.materials import PhysicsMaterial
+# from isaacsim.core.prims import XFormPrim
 from typing import Tuple
 from functools import lru_cache
 
-from pxr import Usd, UsdGeom
+from pxr import Usd, UsdPhysics, UsdGeom
 
 
 @lru_cache(maxsize=1) # Cache the result to avoid repeated imports.
@@ -16,122 +20,134 @@ def isaacsim_available():
     
 
 def get_triangles_and_vertices_from_prim(prim_path):
-    """Get triangles and vertices from a mesh prim or mesh-containing prim tree."""
     from isaacsim.core.utils.stage import get_current_stage
-
+    """ Get triangles and vertices from prim """
     stage: Usd.Stage = get_current_stage()
-    root_prim = stage.GetPrimAtPath(prim_path)
-    if not root_prim or not root_prim.IsValid():
+    mesh_prim = stage.GetPrimAtPath(prim_path)
+
+    # Validate prim exists and is valid
+    if not mesh_prim or not mesh_prim.IsValid():
         raise RuntimeError(f"Invalid or null prim at path: {prim_path}")
+    
+    # Check if it's a mesh prim
+    if not mesh_prim.IsA(UsdGeom.Mesh):
+        raise RuntimeError(f"Prim at path {prim_path} is not a mesh")
 
-    return _get_triangles_and_vertices_from_mesh_tree(root_prim)
+    # Get mesh attributes with validation
+    points_attr = mesh_prim.GetAttribute("points")
+    face_vertex_indices_attr = mesh_prim.GetAttribute("faceVertexIndices")
+    
+    if not points_attr:
+        raise RuntimeError(f"Mesh at {prim_path} has no points attribute")
+    if not face_vertex_indices_attr:
+        raise RuntimeError(f"Mesh at {prim_path} has no face vertex indices attribute")
 
+    points = points_attr.Get()
+    face_vertex_indices = face_vertex_indices_attr.Get()
+    
+    if points is None:
+        raise RuntimeError(f"Failed to get points data from mesh at {prim_path}")
+    if face_vertex_indices is None:
+        raise RuntimeError(f"Failed to get face indices data from mesh at {prim_path}")
 
-def get_triangles_and_vertices_from_prim_standalone(
-    usd_file_path: str,
-    prim_path: str = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+    # Convert points to numpy array and extract xyz coordinates efficiently
+    vertices_array = np.array(points, dtype=np.float32)
+    if vertices_array.ndim == 2 and vertices_array.shape[1] >= 3:
+        # Take only x, y, z coordinates if there are more than 3 components
+        vertices = vertices_array[:, :3]
+    else:
+        vertices = vertices_array
+    
+    # Convert face indices to numpy array and reshape to triangles
+    face_indices_array = np.array(face_vertex_indices, dtype=np.int32)
+    faces = face_indices_array.reshape(-1, 3)
+
+    return faces, vertices
+
+def get_triangles_and_vertices_from_prim_standalone(usd_file_path: str, prim_path: str = None) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Standalone USD loader that doesn't require Isaac Sim runtime.
-
+    Standalone USD loader that doesn't require Isaac Sim runtime
+    
     Args:
-        usd_file_path: Path to the USD file.
-        prim_path: Specific prim path to load. If None, uses the default prim when available,
-            otherwise scans the full stage.
-
+        usd_file_path: Path to the USD file
+        prim_path: Specific prim path to load (if None, finds first mesh)
+        
     Returns:
-        Tuple of (faces, vertices) as numpy arrays (note order matches Isaac Sim function).
+        Tuple of (faces, vertices) as numpy arrays (note order matches Isaac Sim function)
     """
+    
+    # Open the USD stage
     stage = Usd.Stage.Open(usd_file_path)
     if not stage:
         raise RuntimeError(f"Failed to open USD file: {usd_file_path}")
-
+    
+    # Find mesh primitive
+    mesh_prim = None
     if prim_path:
-        root_prim = stage.GetPrimAtPath(prim_path)
-        if not root_prim or not root_prim.IsValid():
-            raise RuntimeError(f"No valid prim found at path: {prim_path}")
+        mesh_prim = stage.GetPrimAtPath(prim_path)
+        if not mesh_prim or not mesh_prim.IsA(UsdGeom.Mesh):
+            raise RuntimeError(f"No valid mesh found at path: {prim_path}")
     else:
-        root_prim = stage.GetDefaultPrim()
-        if not root_prim or not root_prim.IsValid():
-            root_prim = stage.GetPseudoRoot()
-
-    return _get_triangles_and_vertices_from_mesh_tree(root_prim)
-
-
-def _get_triangles_and_vertices_from_mesh_tree(root_prim: Usd.Prim) -> Tuple[np.ndarray, np.ndarray]:
-    mesh_prims = [prim for prim in Usd.PrimRange(root_prim) if prim.IsA(UsdGeom.Mesh)]
-    if not mesh_prims:
-        raise RuntimeError(f"No mesh prims found under path: {root_prim.GetPath()}")
-
-    xform_cache = UsdGeom.XformCache()
-    vertices_by_mesh = []
-    faces_by_mesh = []
-    vertex_offset = 0
-
-    for mesh_prim in mesh_prims:
-        faces, vertices = _read_mesh_prim(mesh_prim)
-        if vertices.size == 0 or faces.size == 0:
-            continue
-
-        vertices = _transform_vertices(vertices, xform_cache.GetLocalToWorldTransform(mesh_prim))
-        vertices_by_mesh.append(vertices)
-        faces_by_mesh.append(faces + vertex_offset)
-        vertex_offset += len(vertices)
-
-    if not vertices_by_mesh:
-        raise RuntimeError(f"No triangle mesh data found under path: {root_prim.GetPath()}")
-
-    return np.vstack(faces_by_mesh).astype(np.int32), np.vstack(vertices_by_mesh).astype(np.float32)
-
-
-def _read_mesh_prim(mesh_prim: Usd.Prim) -> Tuple[np.ndarray, np.ndarray]:
+        # Find first mesh in the stage
+        for prim in stage.Traverse():
+            if prim.IsA(UsdGeom.Mesh):
+                mesh_prim = prim
+                print(f"Found mesh at path: {prim.GetPath()}")
+                break
+    
+    if not mesh_prim:
+        raise RuntimeError("No mesh found in USD file")
+    
+    # Get mesh data
     mesh = UsdGeom.Mesh(mesh_prim)
-    points = mesh.GetPointsAttr().Get()
-    face_vertex_indices = mesh.GetFaceVertexIndicesAttr().Get()
-    face_vertex_counts = mesh.GetFaceVertexCountsAttr().Get()
-
-    if points is None:
-        raise RuntimeError(f"Mesh at {mesh_prim.GetPath()} has no points data")
-    if face_vertex_indices is None:
-        raise RuntimeError(f"Mesh at {mesh_prim.GetPath()} has no face vertex indices")
-
-    vertices = np.asarray(points, dtype=np.float32)
-    if vertices.ndim == 2 and vertices.shape[1] > 3:
-        vertices = vertices[:, :3]
-
-    faces = _triangulate_face_indices(
-        np.asarray(face_vertex_indices, dtype=np.int32),
-        np.asarray(face_vertex_counts, dtype=np.int32) if face_vertex_counts is not None else None,
-    )
+    
+    # Get points (vertices)
+    points_attr = mesh.GetPointsAttr()
+    if not points_attr:
+        raise RuntimeError("Mesh has no points attribute")
+    points = points_attr.Get()
+    
+    # Get face vertex indices
+    face_vertex_indices_attr = mesh.GetFaceVertexIndicesAttr()
+    if not face_vertex_indices_attr:
+        raise RuntimeError("Mesh has no face vertex indices")
+    face_vertex_indices = face_vertex_indices_attr.Get()
+    
+    # Get face vertex counts (usually 3 for triangles)
+    face_vertex_counts_attr = mesh.GetFaceVertexCountsAttr()
+    face_vertex_counts = face_vertex_counts_attr.Get() if face_vertex_counts_attr else None
+    
+    # Convert to numpy arrays
+    vertices = np.array(points, dtype=np.float32)
+    if vertices.ndim == 2 and vertices.shape[1] >= 3:
+        vertices = vertices[:, :3]  # Take only x, y, z coordinates
+    
+    # Convert faces to triangles
+    face_indices = np.array(face_vertex_indices, dtype=np.int32)
+    
+    if face_vertex_counts is not None:
+        # Handle polygons with different vertex counts
+        faces = []
+        start_idx = 0
+        for count in face_vertex_counts:
+            if count == 3:
+                # Triangle - add directly
+                faces.append(face_indices[start_idx:start_idx + 3])
+            elif count > 3:
+                # Polygon - triangulate by fan triangulation
+                for i in range(1, count - 1):
+                    faces.append([
+                        face_indices[start_idx],
+                        face_indices[start_idx + i],
+                        face_indices[start_idx + i + 1]
+                    ])
+            start_idx += count
+        faces = np.array(faces, dtype=np.int32)
+    else:
+        # Assume all triangles
+        faces = face_indices.reshape(-1, 3)
+    
     return faces, vertices
-
-
-def _triangulate_face_indices(face_vertex_indices: np.ndarray, face_vertex_counts: np.ndarray | None) -> np.ndarray:
-    if face_vertex_counts is None:
-        return face_vertex_indices.reshape(-1, 3).astype(np.int32)
-
-    triangles = []
-    index = 0
-    for count in face_vertex_counts:
-        face = face_vertex_indices[index:index + count]
-        if count == 3:
-            triangles.append(face)
-        elif count > 3:
-            for i in range(1, count - 1):
-                triangles.append([face[0], face[i], face[i + 1]])
-        index += count
-
-    if not triangles:
-        return np.empty((0, 3), dtype=np.int32)
-    return np.asarray(triangles, dtype=np.int32)
-
-
-def _transform_vertices(vertices: np.ndarray, transform) -> np.ndarray:
-    matrix = np.asarray(transform, dtype=np.float64)
-    homogeneous = np.ones((len(vertices), 4), dtype=np.float64)
-    homogeneous[:, :3] = vertices
-    return (homogeneous @ matrix)[:, :3].astype(np.float32)
-
 
 def check_prim_exists(prim_path):
     """

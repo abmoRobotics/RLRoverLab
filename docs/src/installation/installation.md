@@ -14,7 +14,7 @@ Before you begin, ensure your system meets the following requirements:
 
 ### Software Requirements
 
-- **Operating System**: Ubuntu 22.04 or 24.04
+- **Operating System**: Ubuntu 20.04 or 22.04
 - **Packages**: Docker and Nvidia Container Toolkit
 
 ## Installation

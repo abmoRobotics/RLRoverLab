@@ -343,6 +343,4 @@ rover_envs/assets/terrains/debug/__pycache__/*
 ./vscode*
 *.hdf5
 
-*.svgdocker/.env
 *.svg
-*.exr

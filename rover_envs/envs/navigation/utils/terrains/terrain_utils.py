@@ -140,7 +140,7 @@ class HeightmapManager:
                 
         Note:
             A border margin of 1.0 meter is applied to prevent edge effects.
-            Grid cells without mesh coverage are initialized to negative infinity.
+            Grid cells without mesh coverage are initialized to -99.0 meters.
         """
         # Apply border margin to prevent edge effects
         border_margin = 1.0
@@ -157,8 +157,8 @@ class HeightmapManager:
         grid_width = int(grid_size_x + 1)
         grid_height = int(grid_size_y + 1)
 
-        # Initialize below every valid elevation so negative-altitude terrain can populate the heightmap.
-        heightmap = np.full((grid_height, grid_width), -np.inf, dtype=np.float32)
+        # Initialize heightmap with sentinel value for uncovered areas
+        heightmap = np.full((grid_height, grid_width), -99.0, dtype=np.float32)
 
         # Calculate cell sizes
         cell_size_x = (max_x - min_x) / grid_size_x
@@ -234,7 +234,11 @@ class HeightmapManager:
         if position.shape[-1] != 2:
             raise ValueError(f"Position tensor must have shape (..., 2), got {position.shape}")
         
-        grid_cell = self.world_to_grid(position)
+        # Transform world coordinates to grid coordinates
+        scaled_position = position / self.resolution_in_m + self.offset_tensor
+        
+        # Convert to integer grid indices
+        grid_cell = scaled_position.long()
 
         # Clamp indices to valid heightmap bounds
         grid_cell[:, 0] = torch.clamp(grid_cell[:, 0], 0, self.heightmap_tensor.shape[1] - 1)
@@ -242,10 +246,6 @@ class HeightmapManager:
 
         # Retrieve heights at the specified grid positions
         return self.heightmap_tensor[grid_cell[:, 1], grid_cell[:, 0]]
-
-    def world_to_grid(self, position: torch.Tensor) -> torch.Tensor:
-        """Convert world XY coordinates to integer heightmap indices."""
-        return ((position - self.offset_tensor) / self.resolution_in_m).long()
     
     def get_heightmap_bounds(self) -> Tuple[float, float, float, float]:
         """
@@ -314,9 +314,8 @@ class TerrainManager:
                  debug_mode: bool = False, 
                  terrain_usd_path: Optional[str] = None, 
                  rock_usd_path: Optional[str] = None,
-                 spawn_obstacle_mesh_prim_path: Optional[str] = None,
                  safety_margin: float = 2.0,
-                 num_spawn_locations: int = 4096,
+                 num_spawn_locations: int = 2000,
                  target_distance_to_boundary: float = 7.0,
                  spawn_distance_to_boundary: float = 10.0,
                  safety_margin_to_obstacles: float = 2.0,
@@ -332,7 +331,6 @@ class TerrainManager:
             debug_mode: Enable debug mode for standalone USD file loading.
             terrain_usd_path: Path to terrain USD file (debug mode only).
             rock_usd_path: Path to rock/obstacle USD file (debug mode only).
-            spawn_obstacle_mesh_prim_path: Runtime obstacle mesh prim used for spawn masks.
             safety_margin: Safety margin in meters around obstacles and steep terrain.
             
         Raises:
@@ -364,9 +362,9 @@ class TerrainManager:
         
         
         if isaacsim_available() and not debug_mode:
-            # Isaac Sim runtime mode - use configured runtime prim paths.
-            terrain_path = "/World/terrain/terrain"
-            rock_mesh_path = spawn_obstacle_mesh_prim_path
+            # Isaac Sim runtime mode - use default terrain paths
+            terrain_path = "/World/terrain/terrain/ground"
+            rock_mesh_path = "/World/terrain/obstacles/obstacles"
         else:
             # Debug mode - use provided USD paths or default assets
             if terrain_usd_path:
@@ -395,15 +393,13 @@ class TerrainManager:
         rock_vertices = None
         rock_faces = None
         
-        rocks_available = self.meshes["rock"] is not None
-        if rocks_available and isaacsim_available() and not debug_mode:
+        # First check if rock prim exists (when using Isaac Sim)
+        rocks_available = True
+        if isaacsim_available():
             from rover_envs.envs.navigation.utils.terrains.usd_utils import check_prim_exists
             if not check_prim_exists(self.meshes["rock"]):
-                raise RuntimeError(
-                    f"Configured spawn obstacle mesh prim does not exist: {self.meshes['rock']}"
-                )
-        elif rocks_available and not isaacsim_available() and not os.path.exists(self.meshes["rock"]):
-            raise FileNotFoundError(f"Configured spawn obstacle USD does not exist: {self.meshes['rock']}")
+                self.log(f"No rock obstacles found at {self.meshes['rock']} - using terrain-only mode", level='warning', block=False)
+                rocks_available = False
         
         if rocks_available:
             try:
@@ -430,9 +426,8 @@ class TerrainManager:
                 self.log("✓ Successfully loaded terrain and rock obstacles", level='success', block=False)
 
             except Exception as e:
-                raise RuntimeError(
-                    f"Could not load configured spawn obstacle mesh {self.meshes['rock']}: {e}"
-                ) from e
+                self.log(f"Warning: Could not load rock obstacles ({e}). Continuing with terrain-only mode.", level='warning', block=False)
+                rocks_available = False
         
         if not rocks_available:
             # Use terrain-only heightmap for everything
@@ -443,11 +438,7 @@ class TerrainManager:
         # Generate Rock Mask if rocks are available
         if rock_vertices is not None:
             self.log("Generating rock obstacle mask from mesh data", level='info', block=False)
-            self.rock_mask, self.safe_rock_mask = self.project_rocks_to_heightmap(
-                rock_vertices,
-                rock_faces,
-                safety_margin=self.safety_margin_to_obstacles,
-            )
+            self.rock_mask, self.safe_rock_mask = self.project_rocks_to_heightmap(rock_vertices, rock_faces)
         else:
             self.log("No rock obstacles present - using clear obstacle masks", level='warning', block=False)
             # Create empty rock masks
@@ -588,17 +579,20 @@ class TerrainManager:
         )
         
         # Check 2: Rock/obstacle safety constraints (targets allowed on steep terrain)
+        # Transform world coordinates to grid coordinates
+        scaled_position = target_positions[:, 0:2] / \
+            self._heightmap_manager.resolution_in_m + self._heightmap_manager.offset_tensor
+        
         # Convert to integer grid indices and clamp to valid bounds
-        grid_cell = self._heightmap_manager.world_to_grid(target_positions[:, 0:2])
+        grid_cell = scaled_position.long()
         grid_cell[:, 0] = torch.clamp(grid_cell[:, 0], 0, self._heightmap_manager.heightmap_tensor.shape[1] - 1)
         grid_cell[:, 1] = torch.clamp(grid_cell[:, 1], 0, self._heightmap_manager.heightmap_tensor.shape[0] - 1)
 
         # Check rock safety mask only (targets can be on steep terrain, just not on rocks): 1 indicates unsafe areas requiring reset
         safety_violations = torch.where(self.safe_rock_mask_tensor[grid_cell[:, 1], grid_cell[:, 0]] == 1, 1, 0).squeeze(-1)
-        terrain_violations = ~torch.isfinite(self._heightmap_manager.heightmap_tensor[grid_cell[:, 1], grid_cell[:, 0]])
         
-        # Combine checks: reset if the target is outside the map, on an obstacle, or over a heightmap gap.
-        combined_violations = boundary_violations | (safety_violations == 1) | terrain_violations
+        # Combine both violation checks: reset if either boundary or safety is violated
+        combined_violations = boundary_violations | (safety_violations == 1)
         env_ids_to_reset = env_ids[combined_violations]
         
         return env_ids_to_reset, len(env_ids_to_reset)
@@ -657,7 +651,10 @@ class TerrainManager:
         rock_mask = cv2.morphologyEx(rock_mask, cv2.MORPH_CLOSE, kernel_small)
         rock_mask = ndimage.binary_fill_holes(rock_mask).astype(np.uint8)
         
-        # Keep small components: minimum-diameter lethal rocks still need exclusion zones.
+        # Remove very small isolated regions
+        kernel_open = np.ones((5, 5), np.uint8)
+        rock_mask = cv2.morphologyEx(rock_mask, cv2.MORPH_OPEN, kernel_open)
+        
         # Dilate slightly to account for rock boundaries
         kernel_dilate = np.ones((7, 7), np.uint8)
         rock_mask = cv2.dilate(rock_mask, kernel_dilate, iterations=1)
@@ -693,12 +690,9 @@ class TerrainManager:
                             [0, 0, 0],
                             [1, 2, 1]])
 
-        valid_height_mask = np.isfinite(heightmap)
-        heightmap_for_gradient = np.where(valid_height_mask, heightmap, 0.0)
-
         # Compute the gradient components
-        grad_x = convolve2d(heightmap_for_gradient, sobel_x, mode='same', boundary='wrap')
-        grad_y = convolve2d(heightmap_for_gradient, sobel_y, mode='same', boundary='wrap')
+        grad_x = convolve2d(heightmap, sobel_x, mode='same', boundary='wrap')
+        grad_y = convolve2d(heightmap, sobel_y, mode='same', boundary='wrap')
 
         # Compute the overall gradient magnitude
         grad_magnitude = np.sqrt(grad_x**2 + grad_y**2)
@@ -706,7 +700,6 @@ class TerrainManager:
         # Create mask for steep areas
         gradient_mask = np.zeros_like(heightmap, dtype=np.int32)
         gradient_mask[grad_magnitude > threshold] = 1
-        gradient_mask[~valid_height_mask] = 1
         gradient_mask = gradient_mask.astype(np.uint8)
         
         # Apply morphological operations to clean up the mask
@@ -763,31 +756,46 @@ class TerrainManager:
             in world space.
             
         Raises:
-            ValueError: If the border offset is too large or no valid spawn cells are available.
+            AssertionError: If border_offset is too large for the heightmap dimensions.
+            
+        Note:
+            The method attempts up to 1000 iterations per spawn to find valid locations.
+            Failed spawns will generate a warning but won't halt the process.
         """
         if seed is not None:
             np.random.seed(seed)
 
         height, width = safe_mask.shape
-        border_cells = int(border_offset / self.resolution_in_m)
-        if height <= 2 * border_cells or width <= 2 * border_cells:
-            raise ValueError(
-                f"Border offset {border_offset}m is too large for heightmap shape {(height, width)} "
-                f"at {self.resolution_in_m}m resolution."
-            )
+        min_xy = int(border_offset / self.resolution_in_m)
+        max_xy = int(min(height, width) - min_xy)
 
-        valid_mask = (safe_mask == 0) & np.isfinite(heightmap)
-        interior_mask = np.zeros_like(valid_mask)
-        interior_mask[border_cells:height - border_cells, border_cells:width - border_cells] = True
-        valid_cells = np.argwhere(valid_mask & interior_mask)
-        if len(valid_cells) == 0:
-            raise ValueError("No valid rover spawn cells remain after terrain safety filtering.")
+        assert max_xy < width, f"Border offset too large: max_xy ({max_xy}) >= width ({width})"
+        assert max_xy < height, f"Border offset too large: max_xy ({max_xy}) >= height ({height})"
+        assert max_xy > min_xy, f"Invalid range: max_xy ({max_xy}) <= min_xy ({min_xy})"
 
-        sampled_cells = valid_cells[np.random.randint(0, len(valid_cells), size=n_spawns)]
-        spawn_locations = np.empty((n_spawns, 3), dtype=np.float32)
-        spawn_locations[:, 0] = sampled_cells[:, 1]
-        spawn_locations[:, 1] = sampled_cells[:, 0]
-        spawn_locations[:, 2] = heightmap[sampled_cells[:, 0], sampled_cells[:, 1]]
+        spawn_locations = np.zeros((n_spawns, 3), dtype=np.float32)
+
+        for i in range(n_spawns):
+            valid_location = False
+            attempts = 0
+            max_attempts = 1000
+            
+            while not valid_location and attempts < max_attempts:
+                # Generate random grid coordinates within safe bounds
+                x = np.random.randint(min_xy, max_xy)
+                y = np.random.randint(min_xy, max_xy)
+                
+                # Validate against safety mask
+                if safe_mask[y, x] == 0:  # 0 indicates safe area
+                    spawn_locations[i, 0] = x
+                    spawn_locations[i, 1] = y
+                    spawn_locations[i, 2] = heightmap[y, x]
+                    valid_location = True
+                
+                attempts += 1
+            
+            if attempts >= max_attempts:
+                print(f"Warning: Could not find valid location for spawn {i} after {max_attempts} attempts")
 
         # Convert grid coordinates to world coordinates
         spawn_locations[:, 0] = spawn_locations[:, 0] * self.resolution_in_m + self._heightmap_manager.min_x
@@ -805,7 +813,7 @@ class TerrainManager:
         target_max_y = reference_heightmap_manager.max_y
         
         # Initialize terrain-only heightmap with same dimensions and bounds
-        terrain_heightmap = np.full((target_height, target_width), -np.inf, dtype=np.float32)
+        terrain_heightmap = np.full((target_height, target_width), -99.0, dtype=np.float32)
         
         # Calculate cell size
         cell_size_x = (target_max_x - target_min_x) / (target_width - 1)
@@ -904,7 +912,9 @@ class TerrainManager:
         
         # Check 2: Rock/obstacle safety constraints (targets allowed on steep terrain)
         # Transform to grid coordinates
-        grid_cell = self._heightmap_manager.world_to_grid(target_positions[:, 0:2])
+        scaled_position = target_positions[:, 0:2] / \
+            self._heightmap_manager.resolution_in_m + self._heightmap_manager.offset_tensor
+        grid_cell = scaled_position.long()
         
         # Clamp to valid bounds
         grid_cell[:, 0] = torch.clamp(grid_cell[:, 0], 0, self._heightmap_manager.heightmap_tensor.shape[1] - 1)
@@ -912,8 +922,7 @@ class TerrainManager:
         
         # Filter safe positions (rock safe_mask == 0 means safe, targets can be on steep terrain)
         safe_mask_values = self.safe_rock_mask_tensor[grid_cell[:, 1], grid_cell[:, 0]].squeeze(-1)
-        terrain_heights = self._heightmap_manager.heightmap_tensor[grid_cell[:, 1], grid_cell[:, 0]]
-        safety_valid = (safe_mask_values == 0) & torch.isfinite(terrain_heights)
+        safety_valid = (safe_mask_values == 0)
         
         # Combine both constraints: valid if both boundary and safety checks pass
         combined_valid = boundary_valid & safety_valid
