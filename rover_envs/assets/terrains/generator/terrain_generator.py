@@ -2,10 +2,9 @@
 Procedural Terrain Generator for Rover Environments.
 
 This module provides tools to procedurally generate terrain meshes with rocks/obstacles
-for use in Isaac Lab rover simulations. It generates three USD files:
+for use in Isaac Lab rover simulations. It generates two USD files:
 - terrain_only.usd: Base terrain mesh (for physics collision)
 - rocks_merged.usd: Rock obstacles mesh (for collision detection)
-- terrain_merged.usd: Combined terrain + rocks (for raycasting)
 
 Based on terrain-generation6.py from RLRoverLab-extra-features.
 """
@@ -393,19 +392,6 @@ def generate_rock_mesh(
     return np.vstack(combined_rock_verts), np.vstack(combined_rock_faces)
 
 
-def combine_meshes(
-    verts1: np.ndarray, faces1: np.ndarray,
-    verts2: np.ndarray, faces2: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Combine two meshes into one."""
-    if len(verts2) == 0:
-        return verts1, faces1
-    combined_verts = np.vstack([verts1, verts2])
-    offset_faces2 = faces2 + len(verts1)
-    combined_faces = np.vstack([faces1, offset_faces2])
-    return combined_verts, combined_faces
-
-
 # =============================================================================
 # USD Export
 # =============================================================================
@@ -428,10 +414,9 @@ def save_to_usd(
     The USD structure follows IsaacLab's terrain import conventions:
     - terrain_only.usd: root="/ground", mesh="/ground/ground"
     - rocks_merged.usd: root="/obstacles", mesh="/obstacles/obstacles"
-    - terrain_merged.usd: root="/hidden_terrain", mesh="/hidden_terrain/terrain"
     
     When imported at prim_path "/World/terrain/terrain", the internal paths become:
-    - "/World/terrain/terrain/ground" (accessible as mesh)
+    - "/World/terrain/terrain/ground" for the visible terrain mesh
     
     Args:
         file_path: Output USD file path
@@ -666,12 +651,6 @@ def generate_and_save_terrain(
         embed_percentage=config.rock_config.embed_percentage,
     )
     
-    # Combine meshes
-    combined_verts, combined_faces = combine_meshes(
-        terrain_verts, terrain_faces,
-        rock_verts, rock_faces
-    )
-    
     # Save USD files
     print("\nSaving USD files...")
     
@@ -720,17 +699,6 @@ def generate_and_save_terrain(
             mesh_prim_name="obstacles",
             collision_approximation="sdf",
         )
-    
-    # terrain_merged.usd - combined terrain + rocks for raycasting (hidden terrain)
-    # Structure: /hidden_terrain/terrain (matches existing mars terrain)
-    # NOTE: No collision enabled - this is only used for raycasting, not physics
-    save_to_usd(
-        os.path.join(output_dir, "terrain_merged.usd"),
-        combined_verts, combined_faces,
-        root_prim_name="hidden_terrain",
-        mesh_prim_name="terrain",
-        enable_collision=False,  # Raycasting only, no physics
-    )
     
     print(f"\n✅ Terrain generated successfully: {output_dir}")
     return output_dir

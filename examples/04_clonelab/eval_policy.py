@@ -30,14 +30,7 @@ parser.add_argument(
     "--terrain",
     type=str,
     default=None,
-    help="Terrain type: mars, debug, random, or a registered terrain.",
-)
-parser.add_argument("--terrain-seed", type=int, default=None, help="Seed for random terrain generation.")
-parser.add_argument(
-    "--keep-terrain",
-    action="store_true",
-    default=False,
-    help="Keep generated random terrain after use.",
+    help="Registered terrain name, e.g. mars or debug.",
 )
 parser.add_argument(
     "--list-terrains",
@@ -122,7 +115,7 @@ from rover_envs.integrations.clonelab import (  # noqa: E402
     load_policy_config,
 )
 from rover_envs.utils.logging_utils import video_record  # noqa: E402
-from rover_envs.utils.terrain_utils import cleanup_terrain, handle_terrain_config  # noqa: E402
+from rover_envs.utils.terrain_utils import handle_terrain_config  # noqa: E402
 
 simulation_app = app_launcher.app
 
@@ -143,11 +136,7 @@ def main() -> None:
 
     env_cfg = parse_env_cfg(args_cli.task, device=device, num_envs=args_cli.num_envs)
     print("[INFO] Parsed RLRoverLab environment config.", flush=True)
-    terrain_name, terrain_cleanup_path = handle_terrain_config(
-        terrain_arg=args_cli.terrain,
-        terrain_seed=args_cli.terrain_seed,
-        keep_terrain=args_cli.keep_terrain,
-    )
+    terrain_name = handle_terrain_config(args_cli.terrain)
     if terrain_name is not None:
         env_cfg.scene.set_terrain(terrain_name)
 
@@ -295,7 +284,6 @@ def main() -> None:
     finally:
         if env is not None:
             env.close()
-        cleanup_terrain(terrain_cleanup_path if "terrain_cleanup_path" in locals() else None)
         simulation_app.close()
 
 
