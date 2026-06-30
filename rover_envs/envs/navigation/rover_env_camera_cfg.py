@@ -359,4 +359,7 @@ class RoverCDEnvCfg(RoverEnvCfg):
     scene: RoverCameraSceneCfg = RoverCDCameraEnvCfg(num_envs=8, env_spacing=4.0, replicate_physics=False)
     scene.height_scanner = None
 
+    def __post_init__(self):
+        super().__post_init__()
+        self.scene.tiled_camera.update_period = self.sim.dt
 
