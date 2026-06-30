@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 
 import torch
+import warp as wp
 from isaaclab.envs.manager_based_rl_env import ManagerBasedRLEnv
 from isaaclab.managers.recorder_manager import RecorderTerm
 # We define recorders for (o_t, a_t, r_t, o_t+1, d_t)
@@ -11,6 +12,24 @@ from isaaclab.managers.recorder_manager import RecorderTerm
 RGB_OBSERVATION_KEY = "rgb_image"
 DEPTH_OBSERVATION_KEY = "depth_image"
 CAMERA_SENSOR_NAME = "tiled_camera"
+
+
+def _to_torch(value) -> torch.Tensor:
+    if isinstance(value, torch.Tensor):
+        return value
+    return wp.to_torch(value)
+
+
+def _quat_xyzw_to_roll_pitch(quat_xyzw: torch.Tensor) -> torch.Tensor:
+    x = quat_xyzw[:, 0]
+    y = quat_xyzw[:, 1]
+    z = quat_xyzw[:, 2]
+    w = quat_xyzw[:, 3]
+
+    roll = torch.atan2(2.0 * (w * x + y * z), 1.0 - 2.0 * (x * x + y * y))
+    sin_pitch = torch.clamp(2.0 * (w * y - z * x), min=-1.0, max=1.0)
+    pitch = torch.asin(sin_pitch)
+    return torch.stack((roll, pitch), dim=-1).to(dtype=torch.float32)
 
 
 class ActionRecorder(RecorderTerm):
@@ -65,6 +84,37 @@ class TimeoutRecorder(RecorderTerm):
 
     def record_post_step(self):
         return "timeouts", self._env.reset_time_outs
+
+
+class RockDistanceRecorder(RecorderTerm):
+    """Records the robot distance in meters to the nearest projected rock at o_t."""
+
+    _env: ManagerBasedRLEnv
+
+    def record_pre_step(self):
+        asset = self._env.scene[self.cfg.asset_name]
+        root_pos_w = _to_torch(asset.data.root_link_pos_w)
+        xy = root_pos_w[:, :2]
+
+        terrain_manager = getattr(self._env.scene.terrain, "_terrainManager", None)
+        risk_map = getattr(terrain_manager, "obstacle_risk_map", None)
+        if risk_map is None:
+            distances = torch.full((xy.shape[0],), float("inf"), device=xy.device, dtype=torch.float32)
+        else:
+            distances = risk_map.distance_at_world_xy(xy).to(device=xy.device, dtype=torch.float32)
+
+        return "risk/min_distance_to_rock", distances
+
+
+class RoverAttitudeRecorder(RecorderTerm):
+    """Records rover roll and pitch in radians at o_t as [roll, pitch]."""
+
+    _env: ManagerBasedRLEnv
+
+    def record_pre_step(self):
+        asset = self._env.scene[self.cfg.asset_name]
+        root_quat_w = _to_torch(asset.data.root_link_quat_w)
+        return "robot/roll_pitch", _quat_xyzw_to_roll_pitch(root_quat_w)
 
 
 class TimelineObservationRecorder(RecorderTerm):

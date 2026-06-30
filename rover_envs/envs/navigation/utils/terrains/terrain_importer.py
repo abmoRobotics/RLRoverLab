@@ -160,7 +160,10 @@ class RoverTerrainImporter(TerrainImporter):
         super().__init__(cfg)
         self._cfg = cfg
         self._terrainManager = TerrainManager(
-            num_envs=self._cfg.num_envs, device=self.device)
+            num_envs=self._cfg.num_envs,
+            device=self.device,
+            obstacle_risk_cfg=getattr(self._cfg, "obstacle_risk_cfg", None),
+        )
         self.target_distance = 9.0
 
     def sample_new_targets(self, env_ids):
