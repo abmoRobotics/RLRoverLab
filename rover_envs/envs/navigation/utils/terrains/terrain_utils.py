@@ -50,6 +50,10 @@ import pymeshlab
 import torch
 from termcolor import colored
 
+from rover_envs.envs.navigation.utils.terrains.risk_map import (
+    ObstacleRiskMap,
+    ObstacleRiskMapCfg,
+)
 from rover_envs.envs.navigation.utils.terrains.usd_utils import get_triangles_and_vertices_from_prim_standalone, isaacsim_available
 # Try to import Isaac Sim dependencies for runtime, fallback for debugging
 
@@ -321,7 +325,8 @@ class TerrainManager:
                  spawn_distance_to_boundary: float = 10.0,
                  safety_margin_to_obstacles: float = 2.0,
                  resolution_in_m: float = 0.05,
-                 gradient_threshold: float = 0.35
+                 gradient_threshold: float = 0.35,
+                 obstacle_risk_cfg: Optional[ObstacleRiskMapCfg] = None,
                  ) -> None:
         """
         Initialize the TerrainManager with specified configuration.
@@ -349,6 +354,7 @@ class TerrainManager:
         self.rock_usd_path = rock_usd_path
         self.resolution_in_m = resolution_in_m # resolution for heightmap generation
         self.gradient_threshold = gradient_threshold  # threshold for steep terrain detection
+        self.obstacle_risk_cfg = obstacle_risk_cfg or ObstacleRiskMapCfg()
 
         # Initialize parameters - spawn generation configuration
         self.safety_margin = safety_margin
@@ -454,6 +460,8 @@ class TerrainManager:
             height, width = self._heightmap_manager.heightmap.shape
             self.rock_mask = np.zeros((height, width), dtype=np.int32)
             self.safe_rock_mask = np.zeros((height, width), dtype=np.int32)
+
+        self.obstacle_risk_map = self.create_obstacle_risk_map(rock_vertices, rock_faces)
 
         # Generate Gradient Mask using terrain-only heightmap
         self.log("Generating gradient mask from terrain-only heightmap", level='info', block=False)
@@ -602,6 +610,47 @@ class TerrainManager:
         env_ids_to_reset = env_ids[combined_violations]
         
         return env_ids_to_reset, len(env_ids_to_reset)
+
+    def create_obstacle_risk_map(
+            self,
+            rock_vertices: Optional[np.ndarray],
+            rock_faces: Optional[np.ndarray],
+    ) -> ObstacleRiskMap:
+        """Create the smooth obstacle risk map used by conservative teacher rewards."""
+        heightmap_manager = self._heightmap_manager
+        bounds = (
+            heightmap_manager.min_x,
+            heightmap_manager.min_y,
+            heightmap_manager.max_x,
+            heightmap_manager.max_y,
+        )
+
+        if rock_vertices is None or rock_faces is None:
+            risk_map = ObstacleRiskMap.empty(
+                heightmap_shape=heightmap_manager.heightmap.shape,
+                bounds=bounds,
+                device=self.device,
+                cfg=self.obstacle_risk_cfg,
+            )
+        else:
+            risk_map = ObstacleRiskMap.from_rock_mesh(
+                rock_vertices=rock_vertices,
+                rock_faces=rock_faces,
+                heightmap_shape=heightmap_manager.heightmap.shape,
+                bounds=bounds,
+                device=self.device,
+                cfg=self.obstacle_risk_cfg,
+            )
+
+        stats = risk_map.statistics()
+        self.log(
+            "Obstacle risk map created\n"
+            f"Obstacle cells: {stats['obstacle_cells']} ({stats['obstacle_percentage']:.2f}%)\n"
+            f"Cost range: [{stats['cost_min']:.4f}, {stats['cost_max']:.4f}]",
+            level='debug',
+            block=True,
+        )
+        return risk_map
 
     def project_rocks_to_heightmap(self, rock_vertices: np.ndarray, rock_faces: np.ndarray, safety_margin: float = 2.0):
         """Project rock mesh triangles onto XY plane to create rock masks"""
@@ -957,6 +1006,9 @@ class TerrainManager:
                 "safe_rock_cells": int(safe_rock_cells),
                 "safe_rock_percentage": float(safe_rock_cells / total_cells * 100)
             }
+
+        if hasattr(self, 'obstacle_risk_map'):
+            stats["obstacle_risk"] = self.obstacle_risk_map.statistics()
         
         if hasattr(self, 'gradient_mask'):
             gradient_cells = np.sum(self.gradient_mask)

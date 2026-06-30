@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import contextlib
 import importlib
 import json
+import os
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import torch
+import torch.nn.functional as F
 
 
 DEFAULT_ACTOR_CONFIG: dict[str, Any] = {
@@ -115,10 +119,18 @@ class CloneLabActorPolicy:
     trainers or environment launch code.
     """
 
-    def __init__(self, actor: torch.nn.Module, device: str | torch.device):
+    def __init__(
+        self,
+        actor: torch.nn.Module,
+        device: str | torch.device,
+        model_config: dict[str, Any] | None = None,
+    ):
+        model_config = model_config or {}
         self.actor = actor.to(device)
         self.actor.eval()
         self.device = device
+        self.proprioceptive_keys = tuple(model_config.get("proprioceptive_keys", ("angle_diff", "distance", "heading")))
+        self.online_adapter = self._build_online_adapter(model_config)
 
     @classmethod
     def from_checkpoint(
@@ -146,10 +158,12 @@ class CloneLabActorPolicy:
         actor = build_actor(factory_spec, model_config, device)
         loaded_path = load_actor_state(actor, checkpoint, checkpoint_name, device)
         print(f"[INFO] Loaded CloneLab actor checkpoint: {loaded_path}")
-        return cls(actor, device)
+        return cls(actor, device, model_config)
 
     def act(self, state: dict[str, torch.Tensor], deterministic: bool = True) -> torch.Tensor:
         state = {key: value.to(self.device) for key, value in state.items()}
+        if self.online_adapter is not None:
+            state = self.online_adapter.to_state(state)
         with torch.inference_mode():
             if hasattr(self.actor, "get_action"):
                 actions = self.actor.get_action(state, deterministic=deterministic)
@@ -158,22 +172,24 @@ class CloneLabActorPolicy:
                 actions = self._actions_from_output(output, deterministic)
         return actions.detach()
 
+    def _build_online_adapter(self, model_config: dict[str, Any]):
+        if not _is_dino_da_actor(self.actor):
+            return None
+        return OnlineDinoDAFeatureAdapter(model_config=model_config, device=self.device)
+
     def reset(self, batch_size: int) -> None:
         if hasattr(self.actor, "reset_hidden"):
             self.actor.reset_hidden(batch_size)
 
     def reset_done(self, done: torch.Tensor) -> None:
         hidden = getattr(self.actor, "hidden_val", None)
-        if hidden is None:
-            return
-
         done = done.to(self.device).bool().reshape(-1)
         if not done.any():
             return
 
         if isinstance(hidden, tuple):
             self.actor.hidden_val = tuple(self._reset_hidden_tensor(value, done) for value in hidden)
-        else:
+        elif hidden is not None:
             self.actor.hidden_val = self._reset_hidden_tensor(hidden, done)
 
     @staticmethod
@@ -192,3 +208,170 @@ class CloneLabActorPolicy:
                 return first.mean if deterministic else first.sample()
             return first
         return output
+
+
+class OnlineDinoDAFeatureAdapter:
+    """Convert live RLRoverLab RGB frames into cached-feature policy inputs.
+
+    The DINO/DA student was trained on precomputed tensors:
+
+    - dino_tokens: [B, 577, 384]
+    - da_depth:    [B, 1, H, W]
+
+    During live evaluation we compute those tensors online from RGB only. The
+    simulator depth observation is deliberately ignored for this policy.
+    """
+
+    def __init__(self, model_config: dict[str, Any], device: str | torch.device):
+        self.model_config = dict(model_config)
+        self.device = torch.device(device)
+        self.dino_model_id = self.model_config.get("dino_model", "facebook/dinov3-vits16-pretrain-lvd1689m")
+        self.da3_model_id = self.model_config.get("da3_model", "depth-anything/DA3-SMALL")
+        self.dino_size = (
+            int(self.model_config.get("dino_input_width", 512)),
+            int(self.model_config.get("dino_input_height", 288)),
+        )
+        self.da_depth_hw = (
+            int(self.model_config.get("depth_height", 72)),
+            int(self.model_config.get("depth_width", 128)),
+        )
+        self.da3_process_res = int(self.model_config.get("da3_process_res", 504))
+        self.da3_process_res_method = self.model_config.get("da3_process_res_method", "upper_bound_resize")
+        self.show_model_logs = bool(self.model_config.get("show_model_logs", False))
+
+        self.dino = self._load_dino()
+        self.da3 = self._load_da3()
+        self.mean = torch.tensor((0.485, 0.456, 0.406), dtype=torch.float32, device=self.device).view(1, 3, 1, 1)
+        self.std = torch.tensor((0.229, 0.224, 0.225), dtype=torch.float32, device=self.device).view(1, 3, 1, 1)
+
+    def to_state(self, state: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+        if "image" not in state:
+            raise KeyError("DINO/DA online evaluation requires state['image'] from RLRoverLab RGB observations.")
+
+        rgb = self._rgb_to_uint8_chw(state["image"])
+        dino_tokens = self._extract_dino(rgb)
+        da_depth = self._extract_da3(rgb)
+        return {
+            "dino_tokens": dino_tokens,
+            "da_depth": da_depth,
+            "proprioceptive": state["proprioceptive"].to(self.device, dtype=torch.float32),
+        }
+
+    def _load_dino(self) -> torch.nn.Module:
+        try:
+            from transformers import AutoModel
+        except ImportError as exc:
+            raise RuntimeError(
+                "DINO/DA online evaluation requires transformers. Install it in the RLRoverLab runtime with:\n"
+                "  /isaac-sim/python.sh -m pip install 'transformers>=4.56' huggingface_hub safetensors"
+            ) from exc
+
+        try:
+            model = AutoModel.from_pretrained(self.dino_model_id)
+        except OSError as exc:
+            raise RuntimeError(
+                f"Could not load DINO model {self.dino_model_id!r}. If the model is gated, request access "
+                "on Hugging Face and authenticate inside the RLRoverLab container with:\n"
+                "  /isaac-sim/python.sh -c 'from huggingface_hub import login; login()'"
+            ) from exc
+        return model.to(self.device).eval()
+
+    def _load_da3(self):
+        try:
+            from depth_anything_3.api import DepthAnything3
+        except ImportError as exc:
+            raise RuntimeError(
+                "DINO/DA online evaluation requires Depth Anything 3. Install it in the RLRoverLab runtime with:\n"
+                "  /isaac-sim/python.sh -m pip install git+https://github.com/ByteDance-Seed/Depth-Anything-3.git"
+            ) from exc
+
+        model = DepthAnything3.from_pretrained(self.da3_model_id)
+        return model.to(device=self.device).eval()
+
+    def _rgb_to_uint8_chw(self, image: torch.Tensor) -> torch.Tensor:
+        image = image.to(self.device)
+        if image.ndim != 4:
+            raise ValueError(f"Expected RGB image [B, C, H, W], got {tuple(image.shape)}")
+        if image.shape[1] < 3:
+            raise ValueError(f"Expected at least 3 RGB channels, got {tuple(image.shape)}")
+        image = image[:, :3].detach()
+        if image.dtype != torch.uint8:
+            max_value = float(image.max().item()) if image.numel() else 0.0
+            if max_value <= 1.5:
+                image = image * 255.0
+            image = image.clamp(0, 255).to(torch.uint8)
+        return image
+
+    @torch.inference_mode()
+    def _extract_dino(self, rgb_uint8: torch.Tensor) -> torch.Tensor:
+        pixels = rgb_uint8.float() / 255.0
+        pixels = F.interpolate(pixels, size=(self.dino_size[1], self.dino_size[0]), mode="bicubic", align_corners=False)
+        pixels = (pixels - self.mean) / self.std
+        with torch.autocast(device_type=self.device.type, dtype=torch.float16, enabled=self.device.type == "cuda"):
+            outputs = self.dino(pixel_values=pixels)
+        tokens = _strip_dino_register_tokens(outputs.last_hidden_state)
+        expected = (rgb_uint8.shape[0], 577, 384)
+        if tuple(tokens.shape) != expected:
+            raise RuntimeError(f"Expected online DINO tokens {expected}, got {tuple(tokens.shape)}.")
+        return tokens.float()
+
+    @torch.inference_mode()
+    def _extract_da3(self, rgb_uint8: torch.Tensor) -> torch.Tensor:
+        rgb_hwc = rgb_uint8.permute(0, 2, 3, 1).detach().cpu().numpy()
+        depths: list[torch.Tensor] = []
+        for image in rgb_hwc:
+            with _maybe_suppress_output(enabled=not self.show_model_logs):
+                prediction = self._run_da3_inference(image)
+            depth = torch.as_tensor(np.asarray(prediction.depth), dtype=torch.float32, device=self.device)
+            if depth.ndim == 2:
+                depth = depth.unsqueeze(0).unsqueeze(0)
+            elif depth.ndim == 3:
+                depth = depth.unsqueeze(1)
+            else:
+                raise RuntimeError(f"Expected DA3 depth [H, W] or [N, H, W], got {tuple(depth.shape)}.")
+            depth = torch.nan_to_num(depth, nan=0.0, posinf=0.0, neginf=0.0)
+            depth = F.interpolate(depth, size=self.da_depth_hw, mode="bilinear", align_corners=False)
+            depths.append(depth[0])
+        return torch.stack(depths, dim=0)
+
+    def _run_da3_inference(self, image: np.ndarray):
+        kwargs = {
+            "process_res": self.da3_process_res,
+            "process_res_method": self.da3_process_res_method,
+            "export_dir": None,
+            "export_format": "mini_npz",
+        }
+        try:
+            return self.da3.inference(image=[image], **kwargs)
+        except TypeError:
+            return self.da3.inference([image], **kwargs)
+
+
+def _is_dino_da_actor(actor: torch.nn.Module) -> bool:
+    return (
+        hasattr(actor, "dino_token_count")
+        and hasattr(actor, "depth_height")
+        and hasattr(actor, "depth_width")
+        and (
+            hasattr(actor, "encode_visual")
+            or hasattr(getattr(actor, "visual_encoder", None), "encode_visual")
+        )
+    )
+
+
+def _strip_dino_register_tokens(tokens: torch.Tensor) -> torch.Tensor:
+    if tokens.shape[1] == 577:
+        return tokens
+    if tokens.shape[1] == 581:
+        return torch.cat([tokens[:, :1], tokens[:, 5:]], dim=1)
+    return tokens
+
+
+@contextlib.contextmanager
+def _maybe_suppress_output(enabled: bool):
+    if not enabled:
+        yield
+        return
+    with open(os.devnull, "w", encoding="utf-8") as devnull:
+        with contextlib.redirect_stdout(devnull), contextlib.redirect_stderr(devnull):
+            yield

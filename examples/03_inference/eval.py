@@ -1,9 +1,11 @@
 import argparse
+import json
 import math
 import os
 import random
 import sys
 from datetime import datetime
+from pathlib import Path
 
 # Temporary work around for --viz=none
 # NumPy's OpenBLAS runtime is already loaded. Keep BLAS single-threaded before
@@ -84,6 +86,10 @@ from skrl.utils import set_seed  # noqa: E402, F401
 import rover_envs  # noqa: E402
 import rover_envs.envs.navigation.robots  # noqa: E402, F401
 # Import the general agent factory
+from rover_envs.integrations.clonelab.speed_risk_filter import (  # noqa: E402
+    SpeedRiskActionWrapper,
+    infer_speed_risk_filter_profile,
+)
 from rover_envs.learning.agents import create_agent  # noqa: E402
 # Import to ensure navigation agents are registered
 #import rover_envs.envs.navigation.learning.skrl.agents  # noqa: E402, F401
@@ -95,6 +101,11 @@ from rover_envs.utils.terrain_utils import handle_terrain_config  # noqa: E402
 
 def main():
     args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
+    speed_filter_profile = infer_speed_risk_filter_profile(
+        args_cli.dataset_name,
+        args_cli.checkpoint,
+        args_cli.task,
+    )
     env_cfg = parse_env_cfg(args_cli.task, device="cuda:0" if not args_cli.cpu else "cpu", num_envs=args_cli.num_envs)
     if args_cli.episode_length_s is not None:
         env_cfg.episode_length_s = args_cli.episode_length_s
@@ -124,6 +135,14 @@ def main():
     env = gym.make(args_cli.task, cfg=env_cfg, viewport=args_cli.video, render_mode=render_mode)
     # Check if video recording is enabled
     env = video_record(env, log_dir, args_cli.video, args_cli.video_length, args_cli.video_interval)
+    speed_filter_wrapper = None
+    if speed_filter_profile is not None:
+        print(
+            "[INFO] Applying policy-side speed-risk filter: "
+            f"{speed_filter_profile.name} (v_near={speed_filter_profile.v_near})"
+        )
+        speed_filter_wrapper = SpeedRiskActionWrapper(env, speed_filter_profile)
+        env = speed_filter_wrapper
     # Wrap the environment
     env = SkrlVecEnvWrapper(env, ml_framework="torch")
     set_seed(args_cli_seed if args_cli_seed is not None else experiment_cfg["seed"])
@@ -149,6 +168,18 @@ def main():
 
     trainer = SequentialTrainer(cfg=trainer_cfg, agents=agent, env=env)
     trainer.eval()
+
+    if speed_filter_wrapper is not None:
+        speed_filter_summary = speed_filter_wrapper.speed_filter_stats.summary()
+        print(f"[INFO] Speed-risk filter summary: {json.dumps(speed_filter_summary, sort_keys=True)}")
+        if args_cli.dataset_name is not None:
+            summary_path = Path(args_cli.dataset_dir) / f"{args_cli.dataset_name}_speed_filter_summary.json"
+            summary_path.parent.mkdir(parents=True, exist_ok=True)
+            summary_path.write_text(
+                json.dumps(speed_filter_summary, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            print(f"[INFO] Wrote speed-risk filter summary: {summary_path}")
 
     env.close()
     simulation_app.close()

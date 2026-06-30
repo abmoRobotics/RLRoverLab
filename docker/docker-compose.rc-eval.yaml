@@ -1,0 +1,14 @@
+# Optional runtime for RC-RIQL evaluation. It replaces only the image used by
+# the existing rover-lab-base service and adds the host Hugging Face cache.
+#
+# Use docker/run_rc_eval.sh to build and launch it. Running run_clonelab.sh
+# afterwards returns to the normal CloneLab-enabled RLRoverLab image.
+
+services:
+  rover-lab-base:
+    image: rover-lab-rc-eval:latest
+    build: null
+    volumes:
+      - type: bind
+        source: ${HF_CACHE_HOST_PATH}
+        target: /root/.cache/huggingface

@@ -164,6 +164,7 @@ class RoverTerrainImporter(TerrainImporter):
             num_envs=self._cfg.num_envs,
             device=self.device,
             spawn_obstacle_mesh_prim_path=self._cfg.spawn_obstacle_mesh_prim_path,
+            obstacle_risk_cfg=getattr(self._cfg, "obstacle_risk_cfg", None),
         )
         self.target_distance = 9.0
 

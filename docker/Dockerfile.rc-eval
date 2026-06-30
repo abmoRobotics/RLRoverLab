@@ -1,0 +1,8 @@
+ARG BASE_IMAGE=rover-lab-base:latest
+FROM ${BASE_IMAGE}
+
+# Keep DA3's dependency set isolated from the normal RLRoverLab image. The
+# upstream package currently pins NumPy below 2, which conflicts with Isaac
+# Lab's declared requirements but has been validated for this evaluator image.
+RUN /isaac-sim/python.sh -m pip install \
+    "git+https://github.com/ByteDance-Seed/Depth-Anything-3.git@41736238f5bced4debf3f2a12375d2466874866d"
