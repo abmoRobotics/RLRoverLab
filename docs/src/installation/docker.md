@@ -1,4 +1,7 @@
 ## Installation Using Docker
+
+Docker is the **recommended installation method** as it provides a consistent environment with all dependencies pre-installed.
+
 ### Prerequisites
 - **.Xauthority for graphical access:** Run the following command to verify or create .Xauthority.
    ```bash
@@ -35,23 +38,41 @@
 1. **Clone the repository and navigate to the docker directory**:
    ```bash
    git clone https://github.com/abmoRobotics/RLRoverLab
-   cd RLRoverLab/docker
+   cd RLRoverLab
    ```
 2. **Download terrain assets:**
    ```bash
    pip3 install gdown
    python3 download_usd.py
    ```
-   <!-- 1. Download from Google Drive: https://drive.google.com/file/d/1VXFTD2OgHcsQL_ifO81AzD2HDkA98h93/view?usp=sharing
-   1. Unzip files in root folder of the git repository -->
+
 3. **Build and start the Docker container**:
    ```bash
+   cd docker
    ./run.sh
    docker exec -it rover-lab-base bash
    ```
-4. **Training an Agent Inside the Docker Container**
-   To train an agent, use the following command inside the Docker container:
-   ```bash
-   cd examples/02_train
-   /workspace/isaac_lab/isaaclab.sh -p train.py --task="AAURoverEnv-v0" --num_envs=256
-   ```
+
+### Usage
+
+#### Training an Agent
+To train an agent, use the following command inside the Docker container:
+```bash
+cd examples/02_training
+python train.py --task="AAURoverEnv-v0" --num_envs=256
+```
+
+#### Evaluating a Pre-trained Policy
+To evaluate a pre-trained policy, use the following command inside the Docker container:
+```bash
+cd examples/03_inference
+python eval.py --task="AAURoverEnv-v0" --num_envs=32
+```
+
+### Development Workflow
+
+The Docker setup bind-mounts the repository to `/workspace/rlroverlab/`, so any changes you make to the code on your host machine are immediately reflected inside the container. This makes it ideal for development:
+
+1. Edit code on your host machine using your preferred editor
+2. Run/test inside the container
+3. No need to rebuild the container for code changes

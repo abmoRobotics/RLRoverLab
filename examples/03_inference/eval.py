@@ -5,7 +5,14 @@ import random
 import sys
 from datetime import datetime
 
-import gymnasium as gym
+# Temporary work around for --viz=none
+# NumPy's OpenBLAS runtime is already loaded. Keep BLAS single-threaded before
+# any Isaac Lab imports to avoid OpenBLAS atfork crashes in --viz none.
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+
 from isaaclab.app import AppLauncher
 
 # add argparse arguments
@@ -18,9 +25,22 @@ parser.add_argument("--task", type=str, default="AAURoverEnv-v0", help="Name of 
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
 parser.add_argument("--agent", type=str, default="PPO", help="Name of the agent.")
 parser.add_argument("--checkpoint", type=str, default=None, help="Path to model checkpoint to resume training.")
+parser.add_argument("--steps", type=int, default=1000000, help="Number of evaluation steps to run.")
 parser.add_argument("--dataset_dir", type=str, default="./datasets", help="Path to the dataset directory.")
 parser.add_argument("--dataset_name", type=str, default=None, help="Name of the dataset.")
 parser.add_argument("--dataset_type", type=str, default="RL", choices=["IL", "RL"], help="Type of dataset to use. Options: IL or RL.")
+parser.add_argument("--wandb", action="store_true", default=False, help="Enable Weights & Biases logging during evaluation.")
+parser.add_argument("--terrain", type=str, default=None, help="Registered terrain name, e.g. 'mars' or 'debug'.")
+parser.add_argument("--list-terrains", action="store_true", default=False, help="List available terrain types and exit.")
+
+# Handle --list-terrains before AppLauncher to avoid starting simulation
+if "--list-terrains" in sys.argv:
+    from rover_envs.assets.terrains import list_terrains, get_terrain
+    print("\nAvailable terrains:")
+    for name in list_terrains():
+        terrain = get_terrain(name)
+        print(f"  - {name}: {terrain.description}")
+    sys.exit(0)
 
 AppLauncher.add_app_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
@@ -36,6 +56,7 @@ sys.argv = [sys.argv[0]] + hydra_args
 
 app_launcher = AppLauncher(args_cli)
 
+import gymnasium as gym  # noqa: E402
 from isaaclab_rl.skrl import SkrlVecEnvWrapper  # noqa: E402
 
 simulation_app = app_launcher.app
@@ -43,7 +64,6 @@ simulation_app = app_launcher.app
 from isaaclab.envs import ManagerBasedRLEnv  # noqa: E402
 from isaaclab.managers import DatasetExportMode  # noqa: E402
 from isaaclab.utils.dict import print_dict  # noqa: E402
-from isaaclab.utils.io import dump_pickle, dump_yaml  # noqa: E402
 from isaaclab_tasks.utils import parse_env_cfg  # noqa: E402
 from skrl.agents.torch.base import Agent  # noqa: E402
 from skrl.trainers.torch import SequentialTrainer  # noqa: E402
@@ -57,11 +77,18 @@ from rover_envs.learning.agents import create_agent  # noqa: E402
 #import rover_envs.envs.navigation.learning.skrl.agents  # noqa: E402, F401
 from rover_envs.utils.config import parse_skrl_cfg  # noqa: E402
 from rover_envs.utils.logging_utils import configure_datarecorder, log_setup, video_record  # noqa: E402
+from rover_envs.utils.skrl_wandb import patch_skrl_summary_writer_for_wandb  # noqa: E402
+from rover_envs.utils.terrain_utils import handle_terrain_config  # noqa: E402
 
 
 def main():
     args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
     env_cfg = parse_env_cfg(args_cli.task, device="cuda:0" if not args_cli.cpu else "cpu", num_envs=args_cli.num_envs)
+
+    # Handle terrain configuration.
+    terrain_name = handle_terrain_config(args_cli.terrain)
+    if terrain_name is not None:
+        env_cfg.scene.set_terrain(terrain_name)
 
     if args_cli.dataset_name is not None:
         env_cfg = configure_datarecorder(env_cfg, args_cli.dataset_dir, args_cli.dataset_name, args_cli.dataset_type)
@@ -70,6 +97,11 @@ def main():
     # key = agent name, value = path to config file
     experiment_cfg_file = gym.spec(args_cli.task).kwargs.get("skrl_cfgs")[args_cli.agent.upper()]
     experiment_cfg = parse_skrl_cfg(experiment_cfg_file)
+    # Evaluation does not train, so keep SKRL memory small. This matters for HD images in dict observations.
+    experiment_cfg["agent"]["rollouts"] = 1
+    experiment_cfg.setdefault("agent", {}).setdefault("experiment", {})["wandb"] = bool(args_cli.wandb)
+    if args_cli.wandb:
+        patch_skrl_summary_writer_for_wandb()
 
     log_dir = log_setup(experiment_cfg, env_cfg, args_cli.agent)
 
@@ -89,13 +121,13 @@ def main():
     #action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(num_actions,))
 
     trainer_cfg = experiment_cfg["trainer"]
-    trainer_cfg["timesteps"] = 1000000
+    trainer_cfg["timesteps"] = args_cli.steps
 
     agent: Agent = create_agent(args_cli.agent, env, experiment_cfg)
 
     # Get the checkpoint path from the experiment configuration
     print(f'args_cli.task: {args_cli.task}')
-    agent_policy_path = gym.spec(args_cli.task).kwargs.pop("best_model_path")
+    agent_policy_path = args_cli.checkpoint or gym.spec(args_cli.task).kwargs.pop("best_model_path")
 
     agent.load(agent_policy_path)
     trainer_cfg = experiment_cfg["trainer"]

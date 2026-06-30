@@ -17,7 +17,6 @@ from isaaclab.utils.assets import ISAAC_ORBIT_NUCLEUS_DIR
 import rover_envs  # noqa: F401
 import rover_envs.envs.manipulation.mdp as mdp
 from rover_envs.envs.manipulation.manipulation_env_cfg import ManipulatorEnvCfg
-from rover_envs.envs.navigation.utils.articulation.articulation import FrankaArticulation
 
 ##
 # Pre-defined configs
@@ -34,7 +33,6 @@ class FrankaCubeLiftEnvCfg(ManipulatorEnvCfg):
 
         # Set Franka as robot
         self.scene.robot = FRANKA_PANDA_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-        self.scene.robot.class_type = FrankaArticulation
         self.scene.robot.spawn = sim_utils.UsdFileCfg(
             usd_path=f"{ISAAC_ORBIT_NUCLEUS_DIR}/Robots/FrankaEmika/panda_instanceable.usd",
             activate_contact_sensors=True,

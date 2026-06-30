@@ -11,21 +11,6 @@ from rover_envs.envs.navigation.utils.terrains.terrain_importer import RoverTerr
 
 @configclass
 class DebugTerrainSceneCfg(InteractiveSceneCfg):
-
-    # Hidden Terrain (merged terrain of ground and obstacles) for raycaster.
-    # This is done because the raycaster doesn't work with multiple meshes
-    hidden_terrain = AssetBaseCfg(
-        prim_path="/World/terrain/hidden_terrain",
-        spawn=sim_utils.UsdFileCfg(
-            visible=False,
-            usd_path=os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "debug1/terrain_merged.usd",
-            ),
-        ),
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
-    )
-
     # Ground Terrain
     terrain = TerrainImporterCfg(
         class_type=RoverTerrainImporter,

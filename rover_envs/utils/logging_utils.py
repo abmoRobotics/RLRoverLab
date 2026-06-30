@@ -3,10 +3,12 @@ import os
 from datetime import datetime
 import gymnasium as gym
 from isaaclab.utils.dict import print_dict
-from isaaclab.utils.io import dump_pickle, dump_yaml
+from isaaclab.utils.io import dump_yaml
 from isaaclab.envs import ManagerBasedRLEnv
 from isaaclab.managers import DatasetExportMode # noqa: E402
 from rover_envs.mdp.recorders.recorders_cfg import ReinforcementLearningRecorderManagerCfg, ImitationLearningRecorderManagerCfg # noqa: E402
+import pickle
+from typing import Any
 
 def video_record(
         env: ManagerBasedRLEnv, log_dir: str, video: bool, video_length: int, video_interval: int
@@ -71,8 +73,6 @@ def log_setup(experiment_cfg, env_cfg, agent):
     # dump the configuration into log-directory
     dump_yaml(os.path.join(log_dir, "params", "env.yaml"), env_cfg)
     dump_yaml(os.path.join(log_dir, "params", "agent.yaml"), experiment_cfg)
-    dump_pickle(os.path.join(log_dir, "params", "env.pkl"), env_cfg)
-    dump_pickle(os.path.join(log_dir, "params", "agent.pkl"), experiment_cfg)
     return log_dir
 
 
@@ -96,4 +96,5 @@ def configure_datarecorder(env_cfg, dataset_dir, dataset_name, dataset_type):
         env_cfg.recorders.dataset_export_mode = DatasetExportMode.EXPORT_ALL
         env_cfg.recorders.dataset_export_dir_path = dataset_dir
         env_cfg.recorders.dataset_filename = dataset_name + ".hdf5"
+        env_cfg.recorders.export_in_close = True
     return env_cfg
