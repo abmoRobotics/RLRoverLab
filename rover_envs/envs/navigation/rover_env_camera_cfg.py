@@ -9,6 +9,7 @@ from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import SceneEntityCfg
 import math
 from ...mdp.observations import extended_image_features as extended_image_features
+from rover_envs.envs.navigation.entrypoints.cd_frame_env import cd_image
 
 # ZED2i Camera Aperture Specifications:
 # Resolution   Size         Pixel Size  H_Aperture  V_Aperture
@@ -285,3 +286,77 @@ class RoverRGBDRawTempEnvCfg(RoverEnvCfg):
     observations: RoverRGBDRawObservationsCfg = RoverRGBDRawObservationsCfg()
     scene: RoverZed2iWVGAEnvCfgTEMP = RoverZed2iWVGAEnvCfgTEMP(num_envs=8, env_spacing=4.0, replicate_physics=False)
     commands: CommandsNoVizCfg = CommandsNoVizCfg()
+
+### CD ###
+
+@configclass
+class RoverCDObservationsCfg:
+    @configclass
+    class PolicyCfg(ObsGroup):
+        actions = ObsTerm(func=mdp.last_action)
+        distance = ObsTerm(
+            func=mdp.distance_to_target_euclidean,
+            params={"command_name": "target_pose"},
+            scale=0.11,
+        )
+        heading = ObsTerm(
+            func=mdp.angle_to_target_observation,
+            params={"command_name": "target_pose"},
+            scale=1 / math.pi,
+        )
+        angle_diff = ObsTerm(
+            func=mdp.angle_diff,
+            params={"command_name": "target_pose"},
+            scale=1 / math.pi,
+        )
+        rgb_image = ObsTerm(
+            func=cd_image,
+            params={
+                "sensor_cfg": SceneEntityCfg("tiled_camera"),
+                "data_type": "rgb",
+                "normalize": False,
+                "use_event_camera": True,
+                "event_enable_ui": False,
+                "event_view_mode": "tiled",
+            },
+        )
+
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = False
+
+    policy: PolicyCfg = PolicyCfg()
+
+
+@configclass
+class RoverCDCameraEnvCfg(RoverSceneCfg):
+    #belly_
+    tiled_camera: TiledCameraCfg = TiledCameraCfg(
+        prim_path="{ENV_REGEX_NS}/Robot/Body/Zed2iWVGA_camera",
+        #offset=TiledCameraCfg.OffsetCfg(pos=(0.27, -0.26, 0.4), rot=(0.9896, -0.13028, 0.06053, -0.00797),convention="opengl"),
+        # Includes a 180-degree optical-axis roll so rendered frames are upright.
+        offset=TiledCameraCfg.OffsetCfg(
+            pos=(0.26294, -0.20045, 0.40189),
+            rot=(0.53366, -0.39541, -0.4639, 0.58622),
+            convention="opengl",
+        ),
+        data_types=["rgb"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=2.12,
+            horizontal_aperture=5.120,
+            vertical_aperture=2.880,
+            clipping_range=(0.1, 100),
+        ),
+        width=320,
+        height=180,
+    )
+
+@configclass
+class RoverCDEnvCfg(RoverEnvCfg):
+    """Configuration for the rover environment with raw NIGHTRIDER CD-frame observations."""
+
+    observations: RoverCDObservationsCfg = RoverCDObservationsCfg()
+    scene: RoverCameraSceneCfg = RoverCDCameraEnvCfg(num_envs=8, env_spacing=4.0, replicate_physics=False)
+    scene.height_scanner = None
+
+

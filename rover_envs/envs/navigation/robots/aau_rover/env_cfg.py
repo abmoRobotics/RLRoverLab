@@ -12,6 +12,7 @@ from rover_envs.envs.navigation.rover_env_camera_cfg import (
     RoverRGBDRawTempEnvCfg,
     RoverRGBDRawWVGAEnvCfg,
     RoverRGBResnetEnvCfg,
+    RoverCDEnvCfg,
 )
 from rover_envs.envs.navigation.rover_env_cfg import RoverEnvDictCfg
 @configclass
@@ -206,3 +207,27 @@ class AAURoverRGBDRawTempEnvCfg(RoverRGBDRawTempEnvCfg):
             offset=-0.0135
         )
         
+### CD ###
+
+@configclass
+class AAURoverCDEnvCfg(RoverCDEnvCfg):
+    """Configuration for the AAU rover CD-frame environment."""
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.scene.robot = AAU_ROVER_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.actions.actions = mdp.AckermannActionCfg(
+            asset_name="robot",
+            wheelbase_length=0.849,
+            middle_wheel_distance=0.894,
+            rear_and_front_wheel_distance=0.77,
+            wheel_radius=0.1,
+            min_steering_radius=0.8,
+            steering_joint_names=[".*Steer_Revolute"],
+            drive_joint_names=[".*Drive_Continuous"],
+            offset=-0.0135
+        )
+        self.sim.dt = 1 / 30
+        self.decimation = 6
+        self.sim.physics.solver_type = 0  # 0: PGS, 1: TGS
+        self.sim.physics.enable_external_forces_every_iteration = 0
