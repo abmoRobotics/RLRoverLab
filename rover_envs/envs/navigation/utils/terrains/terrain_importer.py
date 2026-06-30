@@ -12,9 +12,10 @@ from isaaclab.markers import VisualizationMarkers
 # from isaaclab.envs.mdp.commands.position_command import TerrainBasedPositionCommand
 from isaaclab.markers.config import GREEN_ARROW_X_MARKER_CFG
 from isaaclab.markers.visualization_markers import VisualizationMarkersCfg
-from isaaclab.terrains import TerrainImporter, TerrainImporterCfg
+from isaaclab.terrains import TerrainImporter
 from isaaclab.utils.math import quat_from_euler_xyz, quat_apply_inverse, wrap_to_pi, yaw_quat
 
+from .terrain_importer_cfg import RoverTerrainImporterCfg
 from .terrain_utils import TerrainManager
 
 SPHERE_MARKER_CFG = VisualizationMarkersCfg(
@@ -156,12 +157,13 @@ class TerrainBasedPositionCommand(CommandTerm):
 
 
 class RoverTerrainImporter(TerrainImporter):
-    def __init__(self, cfg: TerrainImporterCfg):
+    def __init__(self, cfg: RoverTerrainImporterCfg):
         super().__init__(cfg)
         self._cfg = cfg
         self._terrainManager = TerrainManager(
             num_envs=self._cfg.num_envs,
             device=self.device,
+            spawn_obstacle_mesh_prim_path=self._cfg.spawn_obstacle_mesh_prim_path,
             obstacle_risk_cfg=getattr(self._cfg, "obstacle_risk_cfg", None),
         )
         self.target_distance = 9.0

@@ -1,13 +1,17 @@
 import re
+from typing import Sequence
 
 from isaacsim.core.utils.stage import get_current_stage
 from pxr import PhysxSchema, Sdf, Usd, UsdGeom
 
 
-def prepare_rover_contact_sensors() -> None:
+def prepare_rover_contact_sensors(report_targets: Sequence[str]) -> None:
     """Attach rover contact report pairs for all matching prims in the stage."""
+    if not report_targets:
+        raise ValueError("At least one rover contact report target is required.")
+
     stage = get_current_stage()
-    pattern = "/World/envs/env_.*/Robot/.*(Drive|Steer|Boogie|Bogie|Body)$"
+    pattern = "/World/envs/env_.*/Robot/.*_(Drive|Steer|Boogie|Bogie|Body|Rocker)$"
     matching_prims = []
     prim: Usd.Prim
     for prim in stage.Traverse():
@@ -18,7 +22,8 @@ def prepare_rover_contact_sensors() -> None:
 
     for prim in matching_prims:
         contact_api: PhysxSchema.PhysxContactReportAPI = PhysxSchema.PhysxContactReportAPI.Get(stage, prim)
-        contact_api.CreateReportPairsRel().AddTarget("/World/terrain/obstacles/obstacles")
+        for report_target in report_targets:
+            contact_api.CreateReportPairsRel().AddTarget(report_target)
 
 
 def prepare_franka_contact_sensors() -> None:

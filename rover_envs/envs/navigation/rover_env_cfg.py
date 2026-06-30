@@ -16,7 +16,7 @@ from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg  # noqa: F401
-from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, patterns
+from isaaclab.sensors import ContactSensorCfg, MultiMeshRayCasterCfg, patterns
 from isaaclab.sensors.camera.tiled_camera_cfg import TiledCameraCfg
 from isaaclab.sim import SimulationCfg as SimCfg
 from isaaclab_physx.physics import PhysxCfg
@@ -30,10 +30,11 @@ from isaaclab.utils.noise import UniformNoiseCfg as Unoise  # noqa: F401
 import rover_envs
 import rover_envs.envs.navigation.mdp as mdp
 from rover_envs.assets.terrains import (
-    get_terrain,
-    create_hidden_terrain_cfg,
+    create_lethal_collision_cfg,
+    create_lighting_cfg,
     create_obstacles_cfg,
     create_terrain_importer_cfg,
+    get_terrain,
 )
 from rover_envs.envs.navigation.utils.terrains.commands_cfg import TerrainBasedPositionCommandCfg  # noqa: F401
 from rover_envs.envs.navigation.utils.terrains.terrain_importer import RoverTerrainImporter  # noqa: F401
@@ -43,6 +44,43 @@ from rover_envs.mdp.recorders.recorders_cfg import ReinforcementLearningRecorder
 
 # Default terrain type - can be overridden at runtime
 _DEFAULT_TERRAIN = "mars"
+_TEMPORARY_DEFAULT_LIGHT_TERRAINS = {"mars", "debug"}
+
+
+def _create_temporary_default_light_cfgs(
+    terrain_name: str,
+    terrain_lighting: AssetBaseCfg | None,
+) -> tuple[AssetBaseCfg | None, AssetBaseCfg | None]:
+    # TODO: Remove this fallback once mars/debug provide terrain-owned lighting.usd files.
+    if terrain_lighting is not None or terrain_name not in _TEMPORARY_DEFAULT_LIGHT_TERRAINS:
+        return None, None
+
+    dome_light = AssetBaseCfg(
+        prim_path="/World/DomeLight",
+        spawn=sim_utils.DomeLightCfg(
+            color_temperature=4500.0,
+            intensity=100,
+            enable_color_temperature=True,
+            texture_file=os.path.join(
+                rover_envs.__path__[0],
+                "assets",
+                "textures",
+                "background.png",
+            ),
+            texture_format="latlong",
+        ),
+    )
+    sphere_light = AssetBaseCfg(
+        prim_path="/World/SphereLight",
+        spawn=sim_utils.SphereLightCfg(
+            intensity=30000.0,
+            radius=50,
+            color_temperature=5500,
+            enable_color_temperature=True,
+        ),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, -180.0, 80.0)),
+    )
+    return dome_light, sphere_light
 
 
 @configclass
@@ -57,31 +95,6 @@ class RoverSceneCfg(InteractiveSceneCfg):
     Available terrains can be listed with `list_terrains()` from rover_envs.assets.terrains
     """
 
-    dome_light = AssetBaseCfg(
-        prim_path="/World/DomeLight",
-        spawn=sim_utils.DomeLightCfg(
-            color_temperature=4500.0,
-            intensity=100,
-            enable_color_temperature=True,
-            texture_file=os.path.join(
-                os.path.dirname(os.path.abspath(rover_envs.__path__[0])),
-                "rover_envs",
-                "assets",
-                "textures",
-                "background.png",
-            ),
-            texture_format="latlong",
-        ),
-    )
-
-    sphere_light = AssetBaseCfg(
-        prim_path="/World/SphereLight",
-        spawn=sim_utils.SphereLightCfg(
-            intensity=30000.0, radius=50, color_temperature=5500, enable_color_temperature=True
-        ),
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, -180.0, 80.0)),
-    )
-
     robot: ArticulationCfg = MISSING
 
     
@@ -90,22 +103,25 @@ class RoverSceneCfg(InteractiveSceneCfg):
         filter_prim_paths_expr=["/World/terrain/obstacles/obstacles"],
     )
 
-    height_scanner = RayCasterCfg(
+    height_scanner = MultiMeshRayCasterCfg(
         prim_path="{ENV_REGEX_NS}/Robot/Body",
-        offset=RayCasterCfg.OffsetCfg(pos=[0.0, 0.0, 10.0]),
+        offset=MultiMeshRayCasterCfg.OffsetCfg(pos=[0.0, 0.0, 10.0]),
         ray_alignment="yaw",
         pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[5.0, 5.0]),
         debug_vis=False,
-        mesh_prim_paths=["/World/terrain/hidden_terrain"],
+        mesh_prim_paths=["/World/terrain/terrain"],
         max_distance=100.0,
     )
 
     tiled_camera: TiledCameraCfg | None = None
     
     # Terrain assets - initialized in __post_init__ with default terrain
-    hidden_terrain: AssetBaseCfg = None
-    obstacles: AssetBaseCfg = None
-    terrain: TerrainImporterCfg = None
+    dome_light: AssetBaseCfg | None = None
+    sphere_light: AssetBaseCfg | None = None
+    terrain_lighting: AssetBaseCfg | None = None
+    obstacles: AssetBaseCfg | None = None
+    lethal_collision: AssetBaseCfg | None = None
+    terrain: TerrainImporterCfg | None = None
     
     def __post_init__(self):
         """Initialize terrain with default."""
@@ -120,11 +136,22 @@ class RoverSceneCfg(InteractiveSceneCfg):
             terrain_name: Name of the registered terrain (e.g., "mars", "debug")
         """
         terrain_config = get_terrain(terrain_name)
-        self.hidden_terrain = create_hidden_terrain_cfg(terrain_config)
+        if terrain_config.obstacle_mesh_prim_path is None:
+            raise ValueError(
+                f"Terrain '{terrain_name}' has no merged obstacle mesh for rover obstacle contacts. "
+                "Add a lethal_collision.usd file or register an explicit obstacle_mesh_prim_path."
+            )
         self.obstacles = create_obstacles_cfg(terrain_config)
+        self.lethal_collision = create_lethal_collision_cfg(terrain_config)
+        self.contact_sensor.filter_prim_paths_expr = [terrain_config.obstacle_mesh_prim_path]
+        if self.height_scanner is not None:
+            self.height_scanner.mesh_prim_paths = list(terrain_config.height_scanner_mesh_prim_paths)
+        self.terrain_lighting = create_lighting_cfg(terrain_config)
+        self.dome_light, self.sphere_light = _create_temporary_default_light_cfgs(
+            terrain_name,
+            self.terrain_lighting,
+        )
         self.terrain = create_terrain_importer_cfg(terrain_config)
-
-
 
 
 @configclass
@@ -328,6 +355,8 @@ class RoverEnvCfg(ManagerBasedRLEnvCfg):
         self.sim.render_interval = 1
         self.episode_length_s = 150
         self.viewer.eye = (-6.0, -6.0, 3.5)
+        self.viewer.origin_type = "asset_root"
+        self.viewer.asset_name = "robot"
 
         # update sensor periods
         if self.scene.height_scanner is not None:

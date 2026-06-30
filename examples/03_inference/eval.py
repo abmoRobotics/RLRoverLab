@@ -44,9 +44,7 @@ parser.add_argument(
     help="Type of dataset to use. Options: IL, RL, or RL_COMPRESSED.",
 )
 parser.add_argument("--wandb", action="store_true", default=False, help="Enable Weights & Biases logging during evaluation.")
-parser.add_argument("--terrain", type=str, default=None, help="Terrain type: 'mars', 'debug', 'random', or other registered terrain.")
-parser.add_argument("--terrain-seed", type=int, default=None, help="Seed for random terrain generation (only used with --terrain random).")
-parser.add_argument("--keep-terrain", action="store_true", default=False, help="Keep generated random terrain after use.")
+parser.add_argument("--terrain", type=str, default=None, help="Registered terrain name, e.g. 'mars' or 'debug'.")
 parser.add_argument("--list-terrains", action="store_true", default=False, help="List available terrain types and exit.")
 
 # Handle --list-terrains before AppLauncher to avoid starting simulation
@@ -98,7 +96,7 @@ from rover_envs.learning.agents import create_agent  # noqa: E402
 from rover_envs.utils.config import parse_skrl_cfg  # noqa: E402
 from rover_envs.utils.logging_utils import configure_datarecorder, log_setup, video_record  # noqa: E402
 from rover_envs.utils.skrl_wandb import patch_skrl_summary_writer_for_wandb  # noqa: E402
-from rover_envs.utils.terrain_utils import handle_terrain_config, cleanup_terrain  # noqa: E402
+from rover_envs.utils.terrain_utils import handle_terrain_config  # noqa: E402
 
 
 def main():
@@ -112,12 +110,8 @@ def main():
     if args_cli.episode_length_s is not None:
         env_cfg.episode_length_s = args_cli.episode_length_s
 
-    # Handle terrain configuration (including random generation)
-    terrain_name, terrain_cleanup_path = handle_terrain_config(
-        terrain_arg=args_cli.terrain,
-        terrain_seed=args_cli.terrain_seed,
-        keep_terrain=args_cli.keep_terrain,
-    )
+    # Handle terrain configuration.
+    terrain_name = handle_terrain_config(args_cli.terrain)
     if terrain_name is not None:
         env_cfg.scene.set_terrain(terrain_name)
 
@@ -189,9 +183,6 @@ def main():
 
     env.close()
     simulation_app.close()
-    
-    # Cleanup temporary terrain if needed
-    cleanup_terrain(terrain_cleanup_path)
 
 
 if __name__ == "__main__":
