@@ -71,11 +71,11 @@ class ConvHeightmapEncoder(nn.Module):
 
     def forward(self, x):
         # x is a flattened heightmap, reshape it to 2D
-        x = x.view(-1, 1, self.heightmap_size, self.heightmap_size)
+        x = x.reshape(-1, 1, self.heightmap_size, self.heightmap_size)
         for layer in self.encoder_layers:
             x = layer(x)
 
-        x = x.view(-1, self.conv_out_features)
+        x = x.reshape(-1, self.conv_out_features)
         for layer in self.mlps:
             x = layer(x)
         return x
@@ -699,7 +699,7 @@ class ConvCDmapEncoder(nn.Module):
         for layer in self.encoder_layers:
             x = layer(x)
 
-        x = x.view(-1, self.conv_out_features)
+        x = x.reshape(-1, self.conv_out_features)
         for layer in self.mlps:
             x = layer(x)
         return x
