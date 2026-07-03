@@ -12,7 +12,7 @@ class CloneLabObservationConfig:
 
     policy_group: str = "policy"
     image_key: str = "rgb_image"
-    depth_key: str = "depth_image"
+    depth_key: str | None = "depth_image"
     proprioceptive_keys: tuple[str, ...] = ("angle_diff", "distance", "heading")
     normalize_image: bool = False
     depth_nan_value: float = 6.0
@@ -41,30 +41,35 @@ class RoverToCloneLabObservation:
         if self.cfg.normalize_image:
             image = image / 255.0
 
-        depth = self._channel_first(self._required_tensor(policy_obs, self.cfg.depth_key)).float()
-        depth = torch.nan_to_num(
-            depth,
-            nan=self.cfg.depth_nan_value,
-            posinf=self.cfg.depth_nan_value,
-            neginf=self.cfg.depth_min,
-        )
-        depth = torch.clamp(depth, min=self.cfg.depth_min, max=self.cfg.depth_max)
-
         proprioceptive_parts = [
             self._as_feature_column(self._required_tensor(policy_obs, key)).float()
             for key in self.cfg.proprioceptive_keys
         ]
         proprioceptive = torch.cat(proprioceptive_parts, dim=1)
 
-        return {
+        state = {
             "proprioceptive": proprioceptive,
             "image": image,
-            "depth": depth,
         }
+
+        if self.cfg.depth_key is not None and self.cfg.depth_key in policy_obs:
+            depth = self._channel_first(self._required_tensor(policy_obs, self.cfg.depth_key)).float()
+            depth = torch.nan_to_num(
+                depth,
+                nan=self.cfg.depth_nan_value,
+                posinf=self.cfg.depth_nan_value,
+                neginf=self.cfg.depth_min,
+            )
+            state["depth"] = torch.clamp(depth, min=self.cfg.depth_min, max=self.cfg.depth_max)
+
+        return state
 
     def num_envs(self, observations: Mapping[str, object]) -> int:
         policy_obs = self._policy_observations(observations)
-        for key in (self.cfg.depth_key, self.cfg.image_key, *self.cfg.proprioceptive_keys):
+        keys = [self.cfg.image_key, *self.cfg.proprioceptive_keys]
+        if self.cfg.depth_key is not None:
+            keys.insert(0, self.cfg.depth_key)
+        for key in keys:
             value = policy_obs.get(key)
             if value is not None:
                 return int(torch.as_tensor(value).shape[0])
