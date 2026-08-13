@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import gdown
 import zipfile
@@ -13,7 +14,13 @@ def main():
     zip_path = os.path.join(script_dir, zip_filename)
 
     # Download the zip file
-    gdown.download(url, output=zip_path, quiet=False)
+    try:
+        gdown.download(url, output=zip_path, quiet=False)
+    except TypeError as e:
+        # Exception raised: older gdown version needs fuzzy parameter
+        # Fallback for older gdown versions that require fuzzy parameter
+        print(f"Error: {e}. Retrying with fuzzy=True for other gdown versions...")
+        gdown.download(url, output=zip_path, quiet=False, fuzzy=True)
 
     # Unzip to repo root
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:

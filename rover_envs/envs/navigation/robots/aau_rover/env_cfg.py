@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from isaaclab.managers import RewardTermCfg as RewTerm
+from isaaclab.managers import SceneEntityCfg
 from isaaclab.utils import configclass
 import rover_envs.mdp as mdp
+import rover_envs.envs.navigation.mdp as navigation_mdp
 from rover_envs.assets.robots.aau_rover import AAU_ROVER_CFG
 from rover_envs.assets.robots.aau_rover_simple import AAU_ROVER_SIMPLE_CFG
-from rover_envs.envs.navigation.rover_env_cfg import RoverEnvCfg
+from rover_envs.envs.navigation.rover_env_cfg import RewardsCfg, RoverEnvCfg
+from rover_envs.envs.navigation.utils.terrains.risk_map import ObstacleRiskMapCfg
 from rover_envs.envs.navigation.rover_env_camera_cfg import (
     RoverCosmosEnvCfg,
     RoverRGBDRawEnvCfg,
@@ -15,6 +19,30 @@ from rover_envs.envs.navigation.rover_env_camera_cfg import (
     RoverRGBResnetEnvCfg,
 )
 from rover_envs.envs.navigation.rover_env_cfg import RoverEnvDictCfg
+
+
+@configclass
+class ConservativeTeacherRewardsCfg(RewardsCfg):
+    """Base navigation reward plus a smooth obstacle-risk penalty."""
+
+    obstacle_risk = RewTerm(
+        func=navigation_mdp.obstacle_risk_cost,
+        weight=-20.0,
+        params={"asset_cfg": SceneEntityCfg(name="robot")},
+    )
+
+
+@configclass
+class VeryConservativeTeacherRewardsCfg(RewardsCfg):
+    """Base navigation reward plus a wider, stronger obstacle-risk penalty."""
+
+    obstacle_risk = RewTerm(
+        func=navigation_mdp.obstacle_risk_cost,
+        weight=-40.0,
+        params={"asset_cfg": SceneEntityCfg(name="robot")},
+    )
+
+
 @configclass
 class AAURoverEnvCfgSimple(RoverEnvCfg):
     """Configuration for the AAU rover environment (simple version)."""
@@ -33,6 +61,29 @@ class AAURoverEnvCfgSimple(RoverEnvCfg):
             drive_joint_names=[".*Drive_Continuous"],
             offset=-0.0135
         )
+
+
+@configclass
+class AAURoverEnvSimpleRiskTeacherCfg(AAURoverEnvCfgSimple):
+    """Simple AAU rover environment for moderately conservative teacher PPO training."""
+
+    rewards: ConservativeTeacherRewardsCfg = ConservativeTeacherRewardsCfg()
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.scene.terrain.obstacle_risk_cfg = ObstacleRiskMapCfg(decay_distance_m=1.5)
+
+
+@configclass
+class AAURoverEnvSimpleVeryRiskTeacherCfg(AAURoverEnvCfgSimple):
+    """Simple AAU rover environment for very conservative teacher PPO training."""
+
+    rewards: VeryConservativeTeacherRewardsCfg = VeryConservativeTeacherRewardsCfg()
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.scene.terrain.obstacle_risk_cfg = ObstacleRiskMapCfg(decay_distance_m=2.5)
+
 
 @configclass
 class AAURoverEnvCfg(RoverEnvCfg):

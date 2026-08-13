@@ -30,6 +30,16 @@ class TimeoutRecorderCfg(RecorderTermCfg):
     class_type: type[RecorderTerm] = recorders.TimeoutRecorder
 
 @configclass
+class RockDistanceRecorderCfg(RecorderTermCfg):
+    class_type: type[RecorderTerm] = recorders.RockDistanceRecorder
+    asset_name: str = "robot"
+
+@configclass
+class RoverAttitudeRecorderCfg(RecorderTermCfg):
+    class_type: type[RecorderTerm] = recorders.RoverAttitudeRecorder
+    asset_name: str = "robot"
+
+@configclass
 class TimelineObservationRecorderCfg(RecorderTermCfg):
     class_type: type[RecorderTerm] = recorders.TimelineObservationRecorder
 
@@ -55,6 +65,8 @@ class CompressedRGBDReinforcementLearningRecorderManagerCfg(RecorderManagerBaseC
     dataset_file_handler_class_type: type = CompressedRGBDHDF5DatasetFileHandler
 
     record_actions: ActionRecorderCfg = ActionRecorderCfg()
+    record_rock_distance: RockDistanceRecorderCfg = RockDistanceRecorderCfg()
+    record_rover_attitude: RoverAttitudeRecorderCfg = RoverAttitudeRecorderCfg()
     record_observation_timeline: TimelineObservationRecorderCfg = TimelineObservationRecorderCfg()
     record_rewards: RewardRecorderCfg = RewardRecorderCfg()
     record_dones: DoneRecorderCfg = DoneRecorderCfg()

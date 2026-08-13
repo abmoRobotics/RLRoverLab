@@ -9,21 +9,29 @@ Note: IsaacLab imports are deferred to avoid import order issues with Simulation
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 # Type hints only - these won't be imported at runtime
 if TYPE_CHECKING:
     from isaaclab.assets import AssetBaseCfg
-    from isaaclab.terrains import TerrainImporterCfg
+    from rover_envs.envs.navigation.utils.terrains.terrain_importer_cfg import RoverTerrainImporterCfg
+
+
+# Runtime terrain prim paths
+_TERRAIN_MESH_PRIM_PATH = "/World/terrain/terrain"
+_OBSTACLE_MESH_PRIM_PATH = "/World/terrain/obstacles/obstacles"
+_LETHAL_COLLISION_MESH_PRIM_PATH = "/World/terrain/lethal_collision/rocks"
 
 
 @dataclass
 class TerrainFiles:
     """Dataclass holding paths to terrain USD files."""
-    terrain_only: str  # Ground terrain without obstacles
-    terrain_merged: str  # Combined terrain for raycaster
-    rocks_merged: str  # Obstacles/rocks
+
+    terrain_only: str
+    rocks: str | None = None
+    lighting: str | None = None
+    lethal_collision: str | None = None
 
 
 @dataclass
@@ -32,21 +40,42 @@ class TerrainConfig:
     name: str
     files: TerrainFiles
     description: str = ""
+    obstacle_mesh_prim_path: str | None = None
+    height_scanner_mesh_prim_paths: tuple[str, ...] = field(default_factory=lambda: (_TERRAIN_MESH_PRIM_PATH,))
 
 
 # Global terrain registry
 _TERRAIN_REGISTRY: dict[str, TerrainConfig] = {}
 
 
-def register_terrain(name: str, files: TerrainFiles, description: str = "") -> None:
+def register_terrain(
+    name: str,
+    files: TerrainFiles,
+    description: str = "",
+    obstacle_mesh_prim_path: str | None = None,
+    height_scanner_mesh_prim_paths: tuple[str, ...] | None = None,
+) -> None:
     """Register a terrain configuration.
     
     Args:
         name: Unique identifier for the terrain (e.g., "mars", "debug")
         files: TerrainFiles dataclass with paths to USD files
         description: Optional description of the terrain
+        obstacle_mesh_prim_path: Runtime merged obstacle mesh, if one exists
+        height_scanner_mesh_prim_paths: Explicit runtime mesh targets for the height scanner
     """
-    _TERRAIN_REGISTRY[name] = TerrainConfig(name=name, files=files, description=description)
+    if height_scanner_mesh_prim_paths is None:
+        height_scanner_mesh_prim_paths = (_TERRAIN_MESH_PRIM_PATH,)
+        if obstacle_mesh_prim_path is not None:
+            height_scanner_mesh_prim_paths += (obstacle_mesh_prim_path,)
+
+    _TERRAIN_REGISTRY[name] = TerrainConfig(
+        name=name,
+        files=files,
+        description=description,
+        obstacle_mesh_prim_path=obstacle_mesh_prim_path,
+        height_scanner_mesh_prim_paths=height_scanner_mesh_prim_paths,
+    )
 
 
 def register_terrain_from_folder(
@@ -54,8 +83,8 @@ def register_terrain_from_folder(
     folder: str,
     description: str = "",
     terrain_only: str = "terrain_only.usd",
-    terrain_merged: str = "terrain_merged.usd",
     rocks_merged: str = "rocks_merged.usd",
+    lighting: str | None = "lighting.usd",
 ) -> None:
     """Register a terrain from a folder with standard file naming.
     
@@ -67,19 +96,26 @@ def register_terrain_from_folder(
         folder: Path to the folder containing the terrain USD files (absolute or relative to terrains dir)
         description: Optional description of the terrain
         terrain_only: Filename for ground terrain (default: "terrain_only.usd")
-        terrain_merged: Filename for merged terrain used by raycaster (default: "terrain_merged.usd")
         rocks_merged: Filename for obstacles/rocks (default: "rocks_merged.usd")
+        lighting: Filename for terrain lighting, or None when no lighting USD exists
     """
     # If folder is not absolute, treat it as relative to the terrains base path
     if not os.path.isabs(folder):
         folder = os.path.join(_TERRAINS_BASE_PATH, folder)
-    
+
+    lighting_path = os.path.join(folder, lighting) if lighting is not None else None
+
     files = TerrainFiles(
         terrain_only=os.path.join(folder, terrain_only),
-        terrain_merged=os.path.join(folder, terrain_merged),
-        rocks_merged=os.path.join(folder, rocks_merged),
+        rocks=os.path.join(folder, rocks_merged),
+        lighting=lighting_path if lighting_path and os.path.exists(lighting_path) else None,
     )
-    register_terrain(name=name, files=files, description=description)
+    register_terrain(
+        name=name,
+        files=files,
+        description=description,
+        obstacle_mesh_prim_path=_OBSTACLE_MESH_PRIM_PATH,
+    )
 
 
 def get_terrain(name: str) -> TerrainConfig:
@@ -122,7 +158,7 @@ def discover_generated_terrains() -> None:
             continue
         
         # Check if required files exist
-        required_files = ["terrain_only.usd", "terrain_merged.usd", "rocks_merged.usd"]
+        required_files = ["terrain_only.usd", "rocks_merged.usd"]
         if all(os.path.exists(os.path.join(terrain_path, f)) for f in required_files):
             if name not in _TERRAIN_REGISTRY:
                 register_terrain_from_folder(
@@ -132,55 +168,131 @@ def discover_generated_terrains() -> None:
                 )
 
 
+def discover_lunar_lte_terrains() -> None:
+    """Auto-discover LTE lunar terrain packages."""
+    lunar_dir = os.path.join(_TERRAINS_BASE_PATH, "lunar")
+    if not os.path.exists(lunar_dir):
+        return
+
+    for folder_name in sorted(os.listdir(lunar_dir), key=_lunar_lte_sort_key):
+        if not _is_lunar_lte_folder(folder_name):
+            continue
+        terrain_path = os.path.join(lunar_dir, folder_name)
+        if not os.path.isdir(terrain_path):
+            continue
+
+        required_files = [
+            "terrain_only.usd",
+            "rocks.usd",
+            "lighting.usd",
+        ]
+        if not all(os.path.exists(os.path.join(terrain_path, f)) for f in required_files):
+            continue
+
+        terrain_name = f"lunar_{folder_name}"
+        if terrain_name in _TERRAIN_REGISTRY:
+            continue
+
+        lethal_collision_path = os.path.join(terrain_path, "lethal_collision.usd")
+        if not os.path.exists(lethal_collision_path):
+            lethal_collision_path = None
+
+        register_terrain(
+            name=terrain_name,
+            files=TerrainFiles(
+                terrain_only=os.path.join(terrain_path, "terrain_only.usd"),
+                rocks=os.path.join(terrain_path, "rocks.usd"),
+                lighting=os.path.join(terrain_path, "lighting.usd"),
+                lethal_collision=lethal_collision_path,
+            ),
+            description=f"Lunar LTE terrain: {folder_name}",
+            obstacle_mesh_prim_path=_LETHAL_COLLISION_MESH_PRIM_PATH if lethal_collision_path is not None else None,
+        )
+
+
+def _is_lunar_lte_folder(name: str) -> bool:
+    return name.startswith("lte") and name[3:].isdigit()
+
+
+def _lunar_lte_sort_key(name: str) -> tuple[int, str]:
+    if _is_lunar_lte_folder(name):
+        return int(name[3:]), name
+    return 10**9, name
+
+
 # ============================================================================
 # Helper functions to create scene components from terrain config
 # These functions use lazy imports to avoid SimulationApp import order issues
 # ============================================================================
 
-def create_hidden_terrain_cfg(terrain_config: TerrainConfig) -> "AssetBaseCfg":
-    """Create hidden terrain configuration for raycaster."""
-    # Lazy import to avoid SimulationApp requirement
-    import isaaclab.sim as sim_utils
-    from isaaclab.assets import AssetBaseCfg
-    
-    return AssetBaseCfg(
-        prim_path="/World/terrain/hidden_terrain",
-        spawn=sim_utils.UsdFileCfg(
-            visible=False,
-            usd_path=terrain_config.files.terrain_merged,
-        ),
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
-    )
-
-
-def create_obstacles_cfg(terrain_config: TerrainConfig) -> "AssetBaseCfg":
+def create_obstacles_cfg(terrain_config: TerrainConfig) -> "AssetBaseCfg | None":
     """Create obstacles configuration."""
     # Lazy import to avoid SimulationApp requirement
     import isaaclab.sim as sim_utils
     from isaaclab.assets import AssetBaseCfg
     
+    if terrain_config.files.rocks is None:
+        return None
+
     return AssetBaseCfg(
         prim_path="/World/terrain/obstacles",
         spawn=sim_utils.UsdFileCfg(
             visible=True,
-            usd_path=terrain_config.files.rocks_merged,
+            usd_path=terrain_config.files.rocks,
         ),
         init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
     )
 
 
-def create_terrain_importer_cfg(terrain_config: TerrainConfig) -> "TerrainImporterCfg":
+def create_lighting_cfg(terrain_config: TerrainConfig) -> "AssetBaseCfg | None":
+    """Create terrain-owned lighting configuration."""
+    import isaaclab.sim as sim_utils
+    from isaaclab.assets import AssetBaseCfg
+
+    if terrain_config.files.lighting is None:
+        return None
+
+    return AssetBaseCfg(
+        prim_path="/World/terrain/lighting",
+        spawn=sim_utils.UsdFileCfg(
+            visible=True,
+            usd_path=terrain_config.files.lighting,
+        ),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
+    )
+
+
+def create_lethal_collision_cfg(terrain_config: TerrainConfig) -> "AssetBaseCfg | None":
+    """Create the optional collision-only lethal obstacle configuration."""
+    import isaaclab.sim as sim_utils
+    from isaaclab.assets import AssetBaseCfg
+
+    if terrain_config.files.lethal_collision is None:
+        return None
+
+    return AssetBaseCfg(
+        prim_path="/World/terrain/lethal_collision",
+        spawn=sim_utils.UsdFileCfg(
+            visible=False,
+            usd_path=terrain_config.files.lethal_collision,
+        ),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
+    )
+
+
+def create_terrain_importer_cfg(terrain_config: TerrainConfig) -> "RoverTerrainImporterCfg":
     """Create terrain importer configuration."""
     # Lazy import to avoid SimulationApp requirement
-    from isaaclab.terrains import TerrainImporterCfg
     from rover_envs.envs.navigation.utils.terrains.terrain_importer import RoverTerrainImporter
+    from rover_envs.envs.navigation.utils.terrains.terrain_importer_cfg import RoverTerrainImporterCfg
     
-    return TerrainImporterCfg(
+    return RoverTerrainImporterCfg(
         class_type=RoverTerrainImporter,
         prim_path="/World/terrain",
         terrain_type="usd",
         collision_group=-1,
         usd_path=terrain_config.files.terrain_only,
+        spawn_obstacle_mesh_prim_path=terrain_config.obstacle_mesh_prim_path,
     )
 
 
@@ -206,3 +318,4 @@ register_terrain_from_folder(
 
 # Auto-discover generated terrains
 discover_generated_terrains()
+discover_lunar_lte_terrains()
