@@ -9,7 +9,7 @@ from pxr import Usd, UsdGeom
 def isaacsim_available():
     """Check if Isaac Sim is available, with automatic caching."""
     try:
-        import isaacsim.core
+        import omni.usd
         return True
     except ImportError:
         return False
@@ -17,9 +17,11 @@ def isaacsim_available():
 
 def get_triangles_and_vertices_from_prim(prim_path):
     """Get triangles and vertices from a mesh prim or mesh-containing prim tree."""
-    from isaacsim.core.utils.stage import get_current_stage
+    import omni.usd
 
-    stage: Usd.Stage = get_current_stage()
+    stage: Usd.Stage = omni.usd.get_context().get_stage()
+    if stage is None:
+        raise RuntimeError("No USD stage is open.")
     root_prim = stage.GetPrimAtPath(prim_path)
     if not root_prim or not root_prim.IsValid():
         raise RuntimeError(f"Invalid or null prim at path: {prim_path}")
@@ -144,8 +146,11 @@ def check_prim_exists(prim_path):
         bool: True if prim exists and is valid, False otherwise
     """
     try:
-        from isaacsim.core.utils.stage import get_current_stage
-        stage: Usd.Stage = get_current_stage()
+        import omni.usd
+
+        stage: Usd.Stage = omni.usd.get_context().get_stage()
+        if stage is None:
+            return False
         mesh_prim = stage.GetPrimAtPath(prim_path)
 
         return (mesh_prim and 

@@ -113,9 +113,9 @@ class TimelineObservationRecorder(RecorderTerm):
 
         sensor_output = sensor.data.output
         if RGB_OBSERVATION_KEY in observations:
-            observations[RGB_OBSERVATION_KEY] = self._slice_env_ids(sensor_output["rgb"].clone(), env_ids)
+            observations[RGB_OBSERVATION_KEY] = self._slice_env_ids(sensor_output["rgb"].torch.clone(), env_ids)
         if DEPTH_OBSERVATION_KEY in observations:
-            observations[DEPTH_OBSERVATION_KEY] = self._slice_env_ids(sensor_output["depth"].clone(), env_ids)
+            observations[DEPTH_OBSERVATION_KEY] = self._slice_env_ids(sensor_output["depth"].torch.clone(), env_ids)
         return observations
 
 class NextObservationRecorder(RecorderTerm):

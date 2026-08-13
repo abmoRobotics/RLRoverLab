@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import torch
-import warp as wp
 # Importing necessary modules from the isaaclab package
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor
@@ -130,7 +129,7 @@ def collision_penalty(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, thresh
             "Collision reward is configured for strict obstacle-only mode. "
             "Check ContactSensorCfg.filter_prim_paths_expr and PhysX report pairs."
         )
-    force_matrix = wp.to_torch(force_matrix_w)  # shape: (N, B, M, 3)
+    force_matrix = force_matrix_w.torch  # shape: (N, B, M, 3)
     normalized_forces = torch.norm(force_matrix, dim=-1)
     forces_active = normalized_forces.sum(dim=(1, 2)) > threshold
 

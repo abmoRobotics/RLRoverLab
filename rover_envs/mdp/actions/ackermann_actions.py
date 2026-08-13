@@ -92,8 +92,8 @@ class AckermannAction(ActionTerm):
 
         self._joint_pos, self._joint_vel = ackermann(
             self._processed_actions[:, 0], self._processed_actions[:, 1], self.cfg, self.device)
-        self._asset.set_joint_velocity_target(self._joint_vel, joint_ids=self._sorted_drive_ids)
-        self._asset.set_joint_position_target(self._joint_pos, joint_ids=self._sorted_steering_ids)
+        self._asset.set_joint_velocity_target_index(target=self._joint_vel, joint_ids=self._sorted_drive_ids)
+        self._asset.set_joint_position_target_index(target=self._joint_pos, joint_ids=self._sorted_steering_ids)
 
 
 class AckermannActionNonVec():
@@ -174,8 +174,8 @@ class AckermannActionNonVec():
         self._joint_pos, self._joint_vel = ackermann(
             self._processed_actions[:, 0], self._processed_actions[:, 1], self.cfg, self.device)
 
-        self._asset.set_joint_velocity_target(self._joint_vel, joint_ids=self._sorted_drive_ids)
-        self._asset.set_joint_position_target(self._joint_pos, joint_ids=self._sorted_steering_ids)
+        self._asset.set_joint_velocity_target_index(target=self._joint_vel, joint_ids=self._sorted_drive_ids)
+        self._asset.set_joint_position_target_index(target=self._joint_pos, joint_ids=self._sorted_steering_ids)
 
 
 def ackermann(lin_vel, ang_vel, cfg, device):

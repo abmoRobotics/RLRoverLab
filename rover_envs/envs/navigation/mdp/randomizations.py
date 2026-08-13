@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING  # noqa: F401
 
 import torch
-import warp as wp
 from isaaclab.assets import Articulation, RigidObject
 from isaaclab.envs import ManagerBasedEnv
 from isaaclab.managers import SceneEntityCfg
@@ -30,8 +29,8 @@ def reset_root_state_rover(
     positions[:, 2] += z_offset
 
     # Random yaw about world Z-axis. Isaac Lab 3.0 uses quaternion ordering (x, y, z, w).
-    default_root_pose = wp.to_torch(asset.data.default_root_pose)[env_ids].clone()
-    default_root_vel = wp.to_torch(asset.data.default_root_vel)[env_ids].clone()
+    default_root_pose = asset.data.default_root_pose.torch[env_ids].clone()
+    default_root_vel = asset.data.default_root_vel.torch[env_ids].clone()
     angle = torch.rand(len(env_ids), device=env.device) * 2 * torch.pi
     yaw_quat = math_utils.quat_from_euler_xyz(
         torch.zeros_like(angle), torch.zeros_like(angle), angle

@@ -1,6 +1,6 @@
 [tool.black]
 line-length = 120
-target-version = ['py310']
+target-version = ['py312']
 skip-string-normalization = true
 
 [tool.flake8]
@@ -8,7 +8,7 @@ max-line-length = 120
 
 [tool.isort]
 
-py_version = 310
+py_version = 312
 line_length = 120
 group_by_package = true
 

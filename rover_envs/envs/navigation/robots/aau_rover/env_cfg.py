@@ -55,7 +55,7 @@ class AAURoverEnvCfg(RoverEnvCfg):
         self.sim.dt = 1 / 30
         self.decimation = 6
         self.sim.physics.solver_type = 0  # 0: PGS, 1: TGS
-        self.sim.physics.enable_external_forces_every_iteration = 0
+        self.sim.physics.enable_external_forces_every_iteration = False
 
 @configclass
 class AAURoverEnvDictCfg(RoverEnvDictCfg):
@@ -78,7 +78,7 @@ class AAURoverEnvDictCfg(RoverEnvDictCfg):
         self.sim.dt = 1 / 30
         self.decimation = 6
         self.sim.physics.solver_type = 0  # 0: PGS, 1: TGS
-        self.sim.physics.enable_external_forces_every_iteration = 0
+        self.sim.physics.enable_external_forces_every_iteration = False
 
 @configclass
 class AAURoverRGBResnetEnvCfg(RoverRGBResnetEnvCfg):

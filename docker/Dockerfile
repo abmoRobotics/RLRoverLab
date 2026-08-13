@@ -1,12 +1,14 @@
-ARG ISAAC_SIM_VERSION=6.0.0-dev2
-FROM nvcr.io/nvidia/isaac-sim:${ISAAC_SIM_VERSION}
+ARG ISAAC_SIM_VERSION=6.0.1
+ARG ISAAC_SIM_DIGEST=sha256:783444c706538aa76cf5126e911ddc5e618779e6105305ad4af4260362a30aa9
+FROM nvcr.io/nvidia/isaac-sim:${ISAAC_SIM_VERSION}@${ISAAC_SIM_DIGEST}
 
 # Set default RUN shell to bash
 SHELL ["/bin/bash", "-c"]
 
 ARG ISAAC_SIM_PATH
 ARG ISAAC_LAB_GIT_URL=https://github.com/isaac-sim/IsaacLab.git
-ARG ISAAC_LAB_GIT_REF=a4a7602
+ARG ISAAC_LAB_GIT_REF=v3.0.0-beta2.patch1
+ARG ISAAC_LAB_GIT_SHA=ffff603eafc6b74264a5261cc0183d6a65390d78
 # Set environment variables
 ENV LANG=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
@@ -30,13 +32,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt -y autoremove && apt clean autoclean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Isaac Lab from source.
-# The ref can be either a tag (e.g. v3.0.0-beta) or a commit SHA (e.g. a4a7602).
+# Install Isaac Lab from the verified Beta 2 Patch 1 release tag. Keep the
+# expected commit separate so a moved or mistyped tag fails the image build.
 RUN git clone ${ISAAC_LAB_GIT_URL} ${ISAAC_LAB_PATH} && \
     cd ${ISAAC_LAB_PATH} && \
-    git checkout ${ISAAC_LAB_GIT_REF} && \
+    git checkout --detach ${ISAAC_LAB_GIT_REF} && \
+    test "$(git rev-parse HEAD)" = "${ISAAC_LAB_GIT_SHA}" && \
     ln -sfn ${ISAAC_SIM_PATH} _isaac_sim && \
-    ./isaaclab.sh --install assets,contrib,mimic,newton,ov,physx,rl[rl_games,rsl_rl,sb3,skrl,robomimic],tasks,teleop,visualizers
+    ./isaaclab.sh --install 'rl[skrl],rl[rsl-rl],visualizer[kit]'
 
 # Install dependencies from setup.py (without installing the package itself)
 # Copy as root then change ownership to isaac-sim user

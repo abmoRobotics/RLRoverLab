@@ -42,7 +42,7 @@ def height_scan_rover(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> tor
     sensor: RayCaster = env.scene.sensors[sensor_cfg.name]
     # height scan: height = sensor_height - hit_point_z - 0.26878
     # Note: 0.26878 is the distance between the sensor and the rover's base
-    return sensor.data.pos_w[:, 2].unsqueeze(1) - sensor.data.ray_hits_w[..., 2] - 0.26878
+    return sensor.data.pos_w.torch[:, 2].unsqueeze(1) - sensor.data.ray_hits_w.torch[..., 2] - 0.26878
 
 
 def angle_diff(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:

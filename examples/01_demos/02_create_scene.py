@@ -8,7 +8,6 @@ from isaaclab.app import AppLauncher
 parser = argparse.ArgumentParser(description="Create and run a simple rover scene.")
 parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to create")
 AppLauncher.add_app_launcher_args(parser)
-parser.set_defaults(visualizer="kit")
 args_cli = parser.parse_args()
 
 app_launcher = AppLauncher(args_cli)
@@ -35,6 +34,8 @@ from rover_envs.assets.robots.exomy import EXOMY_CFG  # noqa: E402
 def _to_torch(tensor_like: torch.Tensor):
     if isinstance(tensor_like, torch.Tensor):
         return tensor_like
+    if hasattr(tensor_like, "torch"):
+        return tensor_like.torch
     if wp is None:
         raise TypeError("Expected a torch tensor but got a non-torch value without warp available.")
     return wp.to_torch(tensor_like)
@@ -59,7 +60,7 @@ class RoverEmptySceneCfg(InteractiveSceneCfg):
 def setup_scene() -> tuple[SimulationContext, InteractiveScene]:
     """Set up the simulation and scene."""
     sim_cfg = sim_utils.SimulationCfg(
-        device=args_cli.device if not args_cli.cpu else "cpu",
+        device=args_cli.device,
         dt=1.0 / 60.0,
         gravity=(0.0, 0.0, -9.81),
     )

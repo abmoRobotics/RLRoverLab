@@ -30,10 +30,10 @@ x-default-isaac-lab-volumes:
     - type: volume
       source: isaac-docs
       target: /home/isaac-sim/Documents
-      # These volumes allow X11 Forwarding
-    # - type: bind
-      # source: /tmp/.X11-unix
-      # target: /tmp/.X11-unix
+    # These volumes allow X11 forwarding for --viz kit.
+    - type: bind
+      source: /tmp/.X11-unix
+      target: /tmp/.X11-unix
     - type: bind
       source: ${HOME}/.Xauthority
       target: /home/isaac-sim/.Xauthority
@@ -72,9 +72,11 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
       args:
-        - ISAAC_SIM_VERSION=${ISAAC_SIM_VERSION:-6.0.0-dev2}
+        - ISAAC_SIM_VERSION=${ISAAC_SIM_VERSION:-6.0.1}
+        - ISAAC_SIM_DIGEST=${ISAAC_SIM_DIGEST:-sha256:783444c706538aa76cf5126e911ddc5e618779e6105305ad4af4260362a30aa9}
         - ISAAC_LAB_GIT_URL=${ISAAC_LAB_GIT_URL:-https://github.com/isaac-sim/IsaacLab.git}
-        - ISAAC_LAB_GIT_REF=${ISAAC_LAB_GIT_REF:-a4a7602}
+        - ISAAC_LAB_GIT_REF=${ISAAC_LAB_GIT_REF:-v3.0.0-beta2.patch1}
+        - ISAAC_LAB_GIT_SHA=${ISAAC_LAB_GIT_SHA:-ffff603eafc6b74264a5261cc0183d6a65390d78}
         - ISAAC_SIM_PATH=/isaac-sim
         - USER_HOME=/root
     image: rover-lab-base

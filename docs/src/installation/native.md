@@ -1,78 +1,66 @@
 ## Native Installation
 
-If you prefer to install the suite natively without using Docker, follow these steps.
+Docker is the validated installation path. For native development, use a clean Python 3.12 environment and the exact Isaac Sim/Lab versions below.
 
 ### Prerequisites
 
-- **Python 3.11** (required)
-- **NVIDIA GPU** with CUDA support
-- **~50GB+ free disk space** (Isaac Sim packages are very large)
+- Ubuntu 22.04 or 24.04
+- Python 3.12
+- NVIDIA RTX GPU and a compatible production driver
+- At least 50 GB of free disk space
+- `git`, `git-lfs`, and [uv](https://docs.astral.sh/uv/)
 
-### Installation Steps
+### Install the pinned simulation stack
 
-1. **Create a Conda environment with Python 3.11:**
-   ```bash
-   conda create -n roverlab python=3.11
-   conda activate roverlab
-   ```
-
-2. **Clone the repository:**
-   ```bash
-   git clone https://github.com/abmoRobotics/RLRoverLab
-   cd RLRoverLab
-   ```
-
-3. **Install the package:**
-
-   This will automatically install Isaac Sim 5.1.0, Isaac Lab 2.3.0, and all other dependencies:
-   ```bash
-   pip install -e .[all]
-   ```
-
-   > **Note:** The installation downloads large packages (~30GB+). Ensure you have sufficient disk space and a stable internet connection. If you run out of space in `/tmp`, you can use a different temp directory:
-   > ```bash
-   > TMPDIR=/path/to/larger/disk pip install -e .[all]
-   > ```
-
-4. **Download terrain assets:**
-   ```bash
-   python download_usd.py
-   ```
-
-### Running The Suite
-
-**To train a model**, navigate to the training script and run:
 ```bash
-cd examples/02_training
-python train.py --task="AAURoverEnv-v0" --num_envs=256
+uv venv --python 3.12 --seed env_roverlab
+source env_roverlab/bin/activate
+
+uv pip install "isaacsim[all,extscache]==6.0.1.0" \
+  --extra-index-url https://pypi.nvidia.com \
+  --index-strategy unsafe-best-match \
+  --prerelease=allow
+
+git clone https://github.com/isaac-sim/IsaacLab.git \
+  --branch v3.0.0-beta2.patch1
+cd IsaacLab
+test "$(git rev-parse HEAD)" = "ffff603eafc6b74264a5261cc0183d6a65390d78"
+./isaaclab.sh --install 'rl[skrl],rl[rsl-rl],visualizer[kit]'
+cd ..
 ```
 
-**To evaluate a pre-trained policy**, navigate to the inference script and run:
+### Install RLRoverLab
+
 ```bash
-cd examples/03_inference
-python eval.py --task="AAURoverEnv-v0" --num_envs=32
+git clone https://github.com/abmoRobotics/RLRoverLab.git
+cd RLRoverLab
+uv pip install --editable .
+python download_usd.py
 ```
 
-### Troubleshooting
+Set the source checkout location when it differs from the Docker default, then verify the stack:
 
-#### "No space left on device" error
-Isaac Sim packages are very large. Clear pip cache and ensure you have enough space:
 ```bash
-rm -rf ~/.cache/pip
-df -h /tmp ~/.cache
+export ISAAC_LAB_PATH="$(cd ../IsaacLab && pwd)"
+python tools/verify_stack.py
 ```
 
-Or use a different temp directory with more space:
+### Run navigation
+
+Force headless execution with `--viz none`:
+
 ```bash
-TMPDIR=/path/to/larger/disk pip install -e .[all]
+python examples/01_demos/01_zero_agent.py \
+  --task AAURoverEnvSimple-v0 --num_envs 1 --viz none
 ```
 
-<!-- #### Package conflicts
-If you encounter dependency conflicts, try creating a fresh conda environment:
+Open the local Kit viewer with `--viz kit`:
+
 ```bash
-conda deactivate
-conda remove -n roverlab --all
-conda create -n roverlab python=3.11
-conda activate roverlab
-pip install -e .[all]
-``` -->
+python examples/01_demos/01_zero_agent.py \
+  --task AAURoverEnvSimple-v0 --num_envs 1 --viz kit
+```
+
+Use `--device cpu` when CPU physics is required. Isaac Lab 3.0 deprecates the old `--headless` and `--cpu` flags.
+
+Manipulation configurations are not currently set up or included in the validated workflow.

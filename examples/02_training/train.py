@@ -39,9 +39,9 @@ if "--list-terrains" in sys.argv:
 AppLauncher.add_app_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
 
-# always enable cameras to record video
-if args_cli.video:
-    args_cli.enable_cameras = True
+from rover_envs.utils.launcher import configure_camera_launcher_args
+
+configure_camera_launcher_args(args_cli)
 
 # clear out sys.argv for Hydra
 sys.argv = [sys.argv[0]] + hydra_args
@@ -71,7 +71,7 @@ from rover_envs.utils.terrain_utils import handle_terrain_config  # noqa: E402
 
 def train():
     args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
-    env_cfg = parse_env_cfg(args_cli.task, device="cuda:0" if not args_cli.cpu else "cpu", num_envs=args_cli.num_envs)
+    env_cfg = parse_env_cfg(args_cli.task, device=args_cli.device, num_envs=args_cli.num_envs)
     
     # Handle terrain configuration.
     terrain_name = handle_terrain_config(args_cli.terrain)
@@ -89,7 +89,7 @@ def train():
 
     # Create the environment
     render_mode = "rgb_array" if args_cli.video else None
-    env = gym.make(args_cli.task, cfg=env_cfg, viewport=args_cli.video, render_mode=render_mode)
+    env = gym.make(args_cli.task, cfg=env_cfg, render_mode=render_mode)
     # Check if video recording is enabled
     env = video_record(env, log_dir, args_cli.video, args_cli.video_length, args_cli.video_interval)
     # Wrap the environment

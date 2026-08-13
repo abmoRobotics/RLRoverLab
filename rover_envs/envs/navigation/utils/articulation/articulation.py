@@ -1,8 +1,15 @@
 import re
 from typing import Sequence
 
-from isaacsim.core.utils.stage import get_current_stage
+import omni.usd
 from pxr import PhysxSchema, Sdf, Usd, UsdGeom
+
+
+def _get_current_stage() -> Usd.Stage:
+    stage = omni.usd.get_context().get_stage()
+    if stage is None:
+        raise RuntimeError("No USD stage is open.")
+    return stage
 
 
 def prepare_rover_contact_sensors(report_targets: Sequence[str]) -> None:
@@ -10,7 +17,7 @@ def prepare_rover_contact_sensors(report_targets: Sequence[str]) -> None:
     if not report_targets:
         raise ValueError("At least one rover contact report target is required.")
 
-    stage = get_current_stage()
+    stage = _get_current_stage()
     pattern = "/World/envs/env_.*/Robot/.*_(Drive|Steer|Boogie|Bogie|Body|Rocker)$"
     matching_prims = []
     prim: Usd.Prim
@@ -28,7 +35,7 @@ def prepare_rover_contact_sensors(report_targets: Sequence[str]) -> None:
 
 def prepare_franka_contact_sensors() -> None:
     """Attach Franka contact report pairs for all matching prims in the stage."""
-    stage = get_current_stage()
+    stage = _get_current_stage()
     pattern = "/World/envs/env_.*/Robot/.*(link1|link2|link3|link4|link5|link6|link7|hand)$"
     matching_prims = []
     prim: Usd.Prim

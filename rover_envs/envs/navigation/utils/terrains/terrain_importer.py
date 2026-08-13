@@ -2,7 +2,6 @@ from typing import Sequence
 
 import isaaclab.sim as sim_utils
 import torch
-import warp as wp
 from isaaclab.assets import Articulation
 from isaaclab.envs import ManagerBasedEnv
 from isaaclab.managers import CommandTerm
@@ -101,9 +100,9 @@ class TerrainBasedPositionCommand(CommandTerm):
 
     def _update_command(self):
         """Re-target the position command to the current root position and heading."""
-        root_link_pos_w = wp.to_torch(self.robot.data.root_link_pos_w)
-        root_link_quat_w = wp.to_torch(self.robot.data.root_link_quat_w)
-        heading_w = wp.to_torch(self.robot.data.heading_w)
+        root_link_pos_w = self.robot.data.root_link_pos_w.torch
+        root_link_quat_w = self.robot.data.root_link_quat_w.torch
+        heading_w = self.robot.data.heading_w.torch
 
         target_vec = self.pos_command_w - root_link_pos_w[:, :3]
         self.pos_command_b[:] = quat_apply_inverse(
@@ -113,8 +112,8 @@ class TerrainBasedPositionCommand(CommandTerm):
 
     def _update_metrics(self):
         # logs data
-        root_link_pos_w = wp.to_torch(self.robot.data.root_link_pos_w)
-        heading_w = wp.to_torch(self.robot.data.heading_w)
+        root_link_pos_w = self.robot.data.root_link_pos_w.torch
+        heading_w = self.robot.data.heading_w.torch
         self.metrics["error_pos"] = torch.norm(
             self.pos_command_w - root_link_pos_w[:, :3], dim=1)
         self.metrics["error_heading"] = torch.abs(wrap_to_pi(

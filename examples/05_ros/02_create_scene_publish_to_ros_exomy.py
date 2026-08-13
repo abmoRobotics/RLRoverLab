@@ -20,9 +20,9 @@ args_cli = parser.parse_args()
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 carb.settings.get_settings().set("persistent/app/omniverse/gamepadCameraControl", False)
-from isaacsim.core.utils.extensions import enable_extension  # noqa: F401, E402
+import omni.kit.app  # noqa: E402
 
-enable_extension("omni.isaac.ros2_bridge")
+omni.kit.app.get_app().get_extension_manager().set_extension_enabled_immediate("isaacsim.ros2.bridge", True)
 
 import isaaclab.sim as sim_utils  # noqa: F401, E402
 from isaaclab.assets import Articulation, ArticulationCfg, AssetBaseCfg  # noqa: F401, E402
@@ -76,14 +76,14 @@ def setup_scene():
     scene = InteractiveScene(scene_cfg)
 
     # Create Camera
-    import omni.isaac.core.utils.numpy.rotations as rot_utils  # noqa: F401
+    import isaacsim.core.experimental.utils.transform as transform_utils
     camera = Camera(
         prim_path="/World/envs/env_0/Robot/Body/Camera",
         resolution=(1280, 720),
         translation=([-0.151, 0, 0.73428]),
         # orientation=([0.64086, 0.29884, -0.29884, -0.64086]),
         # orientation=([-0.64086, 0.64086, 0.29884, -0.64086]),
-        orientation=(rot_utils.euler_angles_to_quats(np.array([0, 30, 0]), degrees=True))
+        orientation=transform_utils.euler_angles_to_quaternion(np.array([0, 30, 0]), degrees=True).numpy()
         # orientation=([0.64086, 0.29884, -0.29884, -0.64086]),
     )
     camera.initialize()
@@ -123,11 +123,12 @@ def run_simulation(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     count = 0
 
     def reset_scene(robot: RoverArticulation, scene: InteractiveScene):
-        root_state = robot.data.default_root_state.clone()
+        root_state = robot.data.default_root_state.torch.clone()
         root_state[:, :3] += scene.env_origins
         robot.write_root_state_to_sim(root_state)
 
-        joint_pos, joint_vel = robot.data.default_joint_pos.clone(), robot.data.default_joint_vel.clone()
+        joint_pos = robot.data.default_joint_pos.torch.clone()
+        joint_vel = robot.data.default_joint_vel.torch.clone()
         joint_pos += torch.randn_like(joint_pos) * 0.1
         robot.write_joint_state_to_sim(joint_pos, joint_vel)
 

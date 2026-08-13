@@ -56,7 +56,7 @@ parser.add_argument(
     "--torch_device",
     type=str,
     default=None,
-    help="Torch device. Defaults to cuda:0 unless --cpu is set.",
+    help="Torch device. Defaults to the Isaac Lab --device value.",
 )
 parser.add_argument("--steps", type=int, default=1000, help="Number of simulation steps.")
 parser.add_argument("--warmup_steps", type=int, default=1, help="Initial zero-action steps before policy actions.")
@@ -94,8 +94,9 @@ if "--list-terrains" in sys.argv:
 AppLauncher.add_app_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
 
-if args_cli.video:
-    args_cli.enable_cameras = True
+from rover_envs.utils.launcher import configure_camera_launcher_args
+
+configure_camera_launcher_args(args_cli)
 
 sys.argv = [sys.argv[0]] + hydra_args
 app_launcher = AppLauncher(args_cli)
@@ -130,7 +131,7 @@ def main() -> None:
     if args_cli.checkpoint is None:
         raise ValueError("Set --checkpoint to a CloneLab actor checkpoint file or checkpoint directory.")
 
-    device = args_cli.torch_device or ("cpu" if args_cli.cpu else "cuda:0")
+    device = args_cli.torch_device or args_cli.device
     seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
     set_seed(seed)
 
@@ -144,7 +145,7 @@ def main() -> None:
     try:
         try:
             if args_cli.video:
-                env = gym.make(args_cli.task, cfg=env_cfg, viewport=True, render_mode="rgb_array")
+                env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array")
             else:
                 env = gym.make(args_cli.task, cfg=env_cfg)
         except BaseException as exc:

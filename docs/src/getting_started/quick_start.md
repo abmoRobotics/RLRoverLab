@@ -34,11 +34,11 @@ Before starting, ensure you have:
 
 ### 1. Train a Simple Agent
 
-Train a PPO agent on the simple AAU rover environment:
+Train a PPO agent on the simple AAU rover environment in forced headless mode:
 
 ```bash
 cd examples/02_training
-/workspace/isaac_lab/isaaclab.sh -p train.py --task="AAURoverEnvSimple-v0" --num_envs=128
+/workspace/isaac_lab/isaaclab.sh -p train.py --task="AAURoverEnvSimple-v0" --num_envs=128 --viz none
 ```
 
 ### 2. Evaluate a Pre-trained Model
@@ -47,16 +47,16 @@ If you have a trained model, evaluate it:
 
 ```bash
 cd examples/03_inference
-/workspace/isaac_lab/isaaclab.sh -p eval.py --task="AAURoverEnvSimple-v0" --num_envs=32 --checkpoint=path/to/your/model.pt
+/workspace/isaac_lab/isaaclab.sh -p eval.py --task="AAURoverEnvSimple-v0" --num_envs=32 --checkpoint=path/to/your/model.pt --viz none
 ```
 
 ### 3. Demo with Zero Agent
 
-Run a basic demo to see the environment:
+Run a basic demo in the Kit viewer:
 
 ```bash
 cd examples/01_demos
-/workspace/isaac_lab/isaaclab.sh -p 01_zero_agent.py
+/workspace/isaac_lab/isaaclab.sh -p 01_zero_agent.py --viz kit
 ```
 
 ## Available Environments
@@ -67,7 +67,7 @@ The suite provides several pre-configured environments:
 |---|---|---|
 | `AAURoverEnvSimple-v0` | AAU Rover (Simple) | Simplified rover with basic sensors |
 | `AAURoverEnv-v0` | AAU Rover | Full rover with advanced sensors |
-| `ExomyEnv-v0` | Exomy | ESA's Exomy rover |
+| `Exomy-v0` | Exomy | ESA's ExoMy rover |
 
 ## What's Next?
 
