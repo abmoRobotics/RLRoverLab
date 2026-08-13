@@ -199,6 +199,27 @@ class RoverZed2iHD720EnvCfg(RoverSceneCfg):
     )
 
 @configclass
+class RoverZed2iHD1080EnvCfg(RoverSceneCfg):
+    tiled_camera: TiledCameraCfg = TiledCameraCfg(
+        prim_path="{ENV_REGEX_NS}/Robot/Body/Zed2iHD1080_camera",
+        # Same physical mount as the WVGA ZED2i camera, rendered with HD1080 intrinsics.
+        offset=TiledCameraCfg.OffsetCfg(
+            pos=(0.26294, -0.20045, 0.40189),
+            rot=(0.53366, -0.39541, -0.4639, 0.58622),
+            convention="opengl",
+        ),
+        data_types=["rgb", "depth"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=2.12,
+            horizontal_aperture=3.840,
+            vertical_aperture=2.160,
+            clipping_range=(0.1, 100),
+        ),
+        width=1920,
+        height=1080,
+    )
+
+@configclass
 class RoverZed2iWVGAEnvCfgTEMP(RoverZed2iWVGAEnvCfg):
     """Temporary configuration for the Rover environment with ZED2i WVGA camera, will be used for learning by cheating"""
 
@@ -276,6 +297,14 @@ class RoverRGBDRawHD720EnvCfg(RoverEnvCfg):
 
     observations: RoverRGBDRawObservationsCfg = RoverRGBDRawObservationsCfg()
     scene: RoverZed2iHD720EnvCfg = RoverZed2iHD720EnvCfg(num_envs=8, env_spacing=4.0, replicate_physics=False)
+    commands: CommandsNoVizCfg = CommandsNoVizCfg()
+
+@configclass
+class RoverRGBDRawHD1080EnvCfg(RoverEnvCfg):
+    """Rover RGB-D raw observation task with ZED2i HD1080 camera parameters."""
+
+    observations: RoverRGBDRawObservationsCfg = RoverRGBDRawObservationsCfg()
+    scene: RoverZed2iHD1080EnvCfg = RoverZed2iHD1080EnvCfg(num_envs=8, env_spacing=4.0, replicate_physics=False)
     commands: CommandsNoVizCfg = CommandsNoVizCfg()
 
 @configclass

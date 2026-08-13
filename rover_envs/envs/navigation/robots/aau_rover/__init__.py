@@ -104,6 +104,19 @@ gym.register(
 )
 
 gym.register(
+    id="AAURoverEnvRGBDRawHD1080-v0",
+    entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": env_cfg.AAURoverRGBDRawHD1080EnvCfg,
+        "skrl_cfgs": {
+            "PPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_ppo_dict.yaml",
+        },
+        "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_heightmap.pt",
+    }
+)
+
+gym.register(
     id="AAURoverEnvRGBDRawWVGA-v0",
     entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
     disable_env_checker=True,

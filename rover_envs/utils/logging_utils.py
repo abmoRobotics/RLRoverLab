@@ -6,29 +6,13 @@ from isaaclab.utils.dict import print_dict
 from isaaclab.utils.io import dump_yaml
 from isaaclab.envs import ManagerBasedRLEnv
 from isaaclab.managers import DatasetExportMode # noqa: E402
-from rover_envs.mdp.recorders.recorders_cfg import ReinforcementLearningRecorderManagerCfg, ImitationLearningRecorderManagerCfg # noqa: E402
+from rover_envs.mdp.recorders.recorders_cfg import (  # noqa: E402
+    CompressedRGBDReinforcementLearningRecorderManagerCfg,
+    ImitationLearningRecorderManagerCfg,
+    ReinforcementLearningRecorderManagerCfg,
+)
 import pickle
 from typing import Any
-
-def dump_pickle(filename: str, data: Any):
-    """Saves data into a pickle file safely.
-
-    Note:
-        The function creates any missing directory along the file's path.
-
-    Args:
-        filename: The path to save the file at.
-        data: The data to save.
-    """
-    # check ending
-    if not filename.endswith("pkl"):
-        filename += ".pkl"
-    # create directory
-    if not os.path.exists(os.path.dirname(filename)):
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-    # save data
-    with open(filename, "wb") as f:
-        pickle.dump(data, f)
 
 def video_record(
         env: ManagerBasedRLEnv, log_dir: str, video: bool, video_length: int, video_interval: int
@@ -93,8 +77,6 @@ def log_setup(experiment_cfg, env_cfg, agent):
     # dump the configuration into log-directory
     dump_yaml(os.path.join(log_dir, "params", "env.yaml"), env_cfg)
     dump_yaml(os.path.join(log_dir, "params", "agent.yaml"), experiment_cfg)
-    dump_pickle(os.path.join(log_dir, "params", "env.pkl"), env_cfg)
-    dump_pickle(os.path.join(log_dir, "params", "agent.pkl"), experiment_cfg)
     return log_dir
 
 
@@ -115,6 +97,10 @@ def configure_datarecorder(env_cfg, dataset_dir, dataset_name, dataset_type):
             env_cfg.recorders = ImitationLearningRecorderManagerCfg()
         elif dataset_type == "RL":
             env_cfg.recorders = ReinforcementLearningRecorderManagerCfg()
+        elif dataset_type == "RL_COMPRESSED":
+            env_cfg.recorders = CompressedRGBDReinforcementLearningRecorderManagerCfg()
+        else:
+            raise ValueError(f"Unsupported dataset_type '{dataset_type}'. Expected IL, RL, or RL_COMPRESSED.")
         env_cfg.recorders.dataset_export_mode = DatasetExportMode.EXPORT_ALL
         env_cfg.recorders.dataset_export_dir_path = dataset_dir
         env_cfg.recorders.dataset_filename = dataset_name + ".hdf5"

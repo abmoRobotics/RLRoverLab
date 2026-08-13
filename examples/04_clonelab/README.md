@@ -49,6 +49,11 @@ python examples/03_inference/eval.py \
 This produces an Isaac Lab HDF5 dataset that CloneLab can read through its
 `HDF5DictDatasetRandom` and sequence datasets.
 
+To keep the legacy recorder unchanged while writing the compressed zero-duplicate
+RGB-D schema, use `--dataset_type RL_COMPRESSED`. This stores a single
+observation timeline per episode with JPEG RGB frames and uint16 millimeter
+depth JPEG2000 byte streams.
+
 To record the same dataset with the ZED2i WVGA mode, use:
 
 ```bash
@@ -60,7 +65,7 @@ python examples/03_inference/eval.py \
   --enable_cameras \
   --dataset_dir ./datasets \
   --dataset_name rover_rgbd_wvga_expert_1000 \
-  --dataset_type RL
+  --dataset_type RL_COMPRESSED
 ```
 
 ## Train Offline
