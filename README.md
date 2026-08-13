@@ -38,7 +38,11 @@ https://github.com/user-attachments/assets/98032f5c-1cdc-42c2-8a94-57d52740d026
 
 
 ## Video of trained RL-agent
-https://github.com/user-attachments/assets/44844311-87cd-45cb-a933-f451376f27d8
+<!--https://github.com/user-attachments/assets/44844311-87cd-45cb-a933-f451376f27d8 -->
+
+
+https://github.com/user-attachments/assets/7ecc4d9e-a4f3-4d4d-b7db-b04c7f35b083
+
 
 
 
