@@ -39,7 +39,7 @@ RUN git clone ${ISAAC_LAB_GIT_URL} ${ISAAC_LAB_PATH} && \
     git checkout --detach ${ISAAC_LAB_GIT_REF} && \
     test "$(git rev-parse HEAD)" = "${ISAAC_LAB_GIT_SHA}" && \
     ln -sfn ${ISAAC_SIM_PATH} _isaac_sim && \
-    ./isaaclab.sh --install 'rl[skrl],rl[rsl-rl],visualizer[kit]'
+    ./isaaclab.sh --install 'rl[skrl],visualizer[kit]'
 
 # Install dependencies from setup.py (without installing the package itself)
 # Copy as root then change ownership to isaac-sim user

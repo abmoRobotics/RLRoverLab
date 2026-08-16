@@ -25,7 +25,7 @@ git clone https://github.com/isaac-sim/IsaacLab.git \
   --branch v3.0.0-beta2.patch1
 cd IsaacLab
 test "$(git rev-parse HEAD)" = "ffff603eafc6b74264a5261cc0183d6a65390d78"
-./isaaclab.sh --install 'rl[skrl],rl[rsl-rl],visualizer[kit]'
+./isaaclab.sh --install 'rl[skrl],visualizer[kit]'
 cd ..
 ```
 

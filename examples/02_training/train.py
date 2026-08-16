@@ -23,7 +23,14 @@ parser.add_argument("--task", type=str, default="AAURoverEnvSimple-v0", help="Na
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
 parser.add_argument("--agent", type=str, default="PPO", help="Name of the agent.")
 parser.add_argument("--checkpoint", type=str, default=None, help="Path to model checkpoint to resume training.")
-parser.add_argument("--wandb", action="store_true", default=True, help="Enable Weights & Biases logging during training.")
+parser.add_argument("--steps", type=int, default=None, help="Override the configured number of training steps.")
+parser.add_argument(
+    "--checkpoint-interval",
+    type=int,
+    default=None,
+    help="Override the configured checkpoint interval (in training steps).",
+)
+parser.add_argument("--wandb", action="store_true", default=False, help="Enable Weights & Biases logging during training.")
 parser.add_argument("--terrain", type=str, default=None, help="Registered terrain name, e.g. 'mars' or 'debug'.")
 parser.add_argument("--list-terrains", action="store_true", default=False, help="List available terrain types and exit.")
 
@@ -81,6 +88,14 @@ def train():
     # key = agent name, value = path to config file
     experiment_cfg_file = gym.spec(args_cli.task).kwargs.get("skrl_cfgs")[args_cli.agent.upper()]
     experiment_cfg = parse_skrl_cfg(experiment_cfg_file)
+    if args_cli.steps is not None:
+        if args_cli.steps <= 0:
+            raise ValueError("--steps must be greater than zero.")
+        experiment_cfg["trainer"]["timesteps"] = args_cli.steps
+    if args_cli.checkpoint_interval is not None:
+        if args_cli.checkpoint_interval <= 0:
+            raise ValueError("--checkpoint-interval must be greater than zero.")
+        experiment_cfg["agent"]["experiment"]["checkpoint_interval"] = args_cli.checkpoint_interval
     experiment_cfg.setdefault("agent", {}).setdefault("experiment", {})["wandb"] = bool(args_cli.wandb)
     if args_cli.wandb:
         patch_skrl_summary_writer_for_wandb()
@@ -100,6 +115,8 @@ def train():
     trainer_cfg = experiment_cfg["trainer"]
 
     agent: Agent = create_agent(args_cli.agent, env, experiment_cfg)
+    if args_cli.checkpoint is not None:
+        agent.load(args_cli.checkpoint)
     trainer = SequentialTrainer(cfg=trainer_cfg, agents=agent, env=env)
     trainer.train()
 

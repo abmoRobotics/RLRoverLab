@@ -7,7 +7,6 @@ from argparse import Namespace
 
 _CAMERA_TASK_PREFIXES = (
     "AAURoverEnvCamera",
-    "AAURoverEnvCosmos",
     "AAURoverEnvRGBD",
 )
 
