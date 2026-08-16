@@ -46,6 +46,8 @@ parser.add_argument(
     default=None,
     help="Registered terrain name, e.g. mars or debug.",
 )
+parser.add_argument("--terrain-seed", type=int, default=None, help="Compatibility terrain seed argument.")
+parser.add_argument("--keep-terrain", action="store_true", default=False, help="Compatibility terrain cleanup argument.")
 parser.add_argument(
     "--list-terrains",
     action="store_true",
@@ -87,6 +89,19 @@ parser.add_argument(
     action="store_true",
     default=False,
     help="Reset recurrent policy state on episode end.",
+)
+parser.add_argument(
+    "--height_scan",
+    action="store_true",
+    default=False,
+    help="Feed observations/state/height_scan as the policy image input instead of RGB-D.",
+)
+parser.add_argument(
+    "--height_scan_mode",
+    type=str,
+    default="height_scan",
+    choices=("height_scan", "heightmap", "height_scan_front_2p5m", "height_scan_front_2m"),
+    help="Height-scan observation mode used when --height_scan is set.",
 )
 parser.add_argument("--metrics_out", type=str, default=None, help="Optional path to write evaluation metrics as JSON.")
 parser.add_argument("--episodes_out", type=str, default=None, help="Optional path to write per-episode metrics as JSONL.")
@@ -147,7 +162,7 @@ from rover_envs.integrations.clonelab.risk_evaluation_metrics import (  # noqa: 
     termination_masks,
 )
 from rover_envs.utils.logging_utils import video_record  # noqa: E402
-from rover_envs.utils.terrain_utils import handle_terrain_config  # noqa: E402
+from rover_envs.utils.terrain_utils import cleanup_terrain, handle_terrain_config  # noqa: E402
 
 simulation_app = app_launcher.app
 
@@ -252,7 +267,11 @@ def main() -> None:
     env_cfg = parse_env_cfg(args_cli.task, device=device, num_envs=args_cli.num_envs)
     env_cfg.recorders = make_risk_evaluation_recorder_cfg()
     print("[INFO] Parsed RLRoverLab environment config.", flush=True)
-    terrain_name = handle_terrain_config(args_cli.terrain)
+    terrain_name, terrain_cleanup_path = handle_terrain_config(
+        args_cli.terrain,
+        terrain_seed=args_cli.terrain_seed,
+        keep_terrain=args_cli.keep_terrain,
+    )
     if terrain_name is not None:
         env_cfg.scene.set_terrain(terrain_name)
 
@@ -294,6 +313,7 @@ def main() -> None:
         observation_adapter = RoverToCloneLabObservation(
             CloneLabObservationConfig(
                 device=device,
+                visual_mode=args_cli.height_scan_mode if args_cli.height_scan else "rgbd",
                 proprioceptive_keys=tuple(getattr(policy, "proprioceptive_keys", ("angle_diff", "distance", "heading"))),
             )
         )
@@ -446,6 +466,9 @@ def main() -> None:
         risk_summary = risk_metrics.summary()
         metrics = {
             "task": args_cli.task,
+            "terrain": terrain_name,
+            "terrain_seed": args_cli.terrain_seed,
+            "observation_mode": args_cli.height_scan_mode if args_cli.height_scan else "rgbd",
             "steps": args_cli.steps,
             "num_envs": num_envs,
             "target_episodes": args_cli.target_episodes,
@@ -486,6 +509,7 @@ def main() -> None:
                 rover_rgb_video_writer.close()
         if env is not None:
             env.close()
+        cleanup_terrain(terrain_cleanup_path)
         simulation_app.close()
 
 
