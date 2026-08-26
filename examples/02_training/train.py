@@ -1,9 +1,8 @@
 import argparse
-import math
 import os
 import random
 import sys
-from datetime import datetime
+import traceback
 
 # Temporary work around for --viz=none
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
@@ -11,7 +10,7 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
 
-from isaaclab.app import AppLauncher
+from isaaclab.app import AppLauncher  # noqa: E402
 
 # add argparse arguments
 parser = argparse.ArgumentParser("Welcome to Isaac Lab: Omniverse Robotics Environments!")
@@ -30,13 +29,24 @@ parser.add_argument(
     default=None,
     help="Override the configured checkpoint interval (in training steps).",
 )
-parser.add_argument("--wandb", action="store_true", default=False, help="Enable Weights & Biases logging during training.")
+parser.add_argument(
+    "--wandb",
+    action="store_true",
+    default=False,
+    help="Enable Weights & Biases logging during training.",
+)
 parser.add_argument("--terrain", type=str, default=None, help="Registered terrain name, e.g. 'mars' or 'debug'.")
-parser.add_argument("--list-terrains", action="store_true", default=False, help="List available terrain types and exit.")
+parser.add_argument(
+    "--list-terrains",
+    action="store_true",
+    default=False,
+    help="List available terrain types and exit.",
+)
 
 # Handle --list-terrains before AppLauncher to avoid starting simulation
 if "--list-terrains" in sys.argv:
-    from rover_envs.assets.terrains import list_terrains, get_terrain
+    from rover_envs.assets.terrains import get_terrain, list_terrains
+
     print("\nAvailable terrains:")
     for name in list_terrains():
         terrain = get_terrain(name)
@@ -46,7 +56,7 @@ if "--list-terrains" in sys.argv:
 AppLauncher.add_app_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
 
-from rover_envs.utils.launcher import configure_camera_launcher_args
+from rover_envs.utils.launcher import configure_camera_launcher_args  # noqa: E402
 
 configure_camera_launcher_args(args_cli)
 
@@ -77,52 +87,70 @@ from rover_envs.utils.terrain_utils import handle_terrain_config  # noqa: E402
 
 
 def train():
-    args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
-    env_cfg = parse_env_cfg(args_cli.task, device=args_cli.device, num_envs=args_cli.num_envs)
-    
-    # Handle terrain configuration.
-    terrain_name = handle_terrain_config(args_cli.terrain)
-    if terrain_name is not None:
-        env_cfg.scene.set_terrain(terrain_name)
-    
-    # key = agent name, value = path to config file
-    experiment_cfg_file = gym.spec(args_cli.task).kwargs.get("skrl_cfgs")[args_cli.agent.upper()]
-    experiment_cfg = parse_skrl_cfg(experiment_cfg_file)
-    if args_cli.steps is not None:
-        if args_cli.steps <= 0:
-            raise ValueError("--steps must be greater than zero.")
-        experiment_cfg["trainer"]["timesteps"] = args_cli.steps
-    if args_cli.checkpoint_interval is not None:
-        if args_cli.checkpoint_interval <= 0:
-            raise ValueError("--checkpoint-interval must be greater than zero.")
-        experiment_cfg["agent"]["experiment"]["checkpoint_interval"] = args_cli.checkpoint_interval
-    experiment_cfg.setdefault("agent", {}).setdefault("experiment", {})["wandb"] = bool(args_cli.wandb)
-    if args_cli.wandb:
-        patch_skrl_summary_writer_for_wandb()
+    env = None
+    exit_code = 0
 
-    log_dir = log_setup(experiment_cfg, env_cfg, args_cli.agent)
+    try:
+        args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
+        env_cfg = parse_env_cfg(args_cli.task, device=args_cli.device, num_envs=args_cli.num_envs)
 
-    # Create the environment
-    render_mode = "rgb_array" if args_cli.video else None
-    env = gym.make(args_cli.task, cfg=env_cfg, render_mode=render_mode)
-    # Check if video recording is enabled
-    env = video_record(env, log_dir, args_cli.video, args_cli.video_length, args_cli.video_interval)
-    # Wrap the environment
-    env = SkrlVecEnvWrapper(env, ml_framework="torch")
-    set_seed(args_cli_seed if args_cli_seed is not None else experiment_cfg["seed"])
+        # Handle terrain configuration.
+        terrain_name = handle_terrain_config(args_cli.terrain)
+        if terrain_name is not None:
+            env_cfg.scene.set_terrain(terrain_name)
 
-    # Get the observation and action spaces
-    trainer_cfg = experiment_cfg["trainer"]
+        # key = agent name, value = path to config file
+        experiment_cfg_file = gym.spec(args_cli.task).kwargs.get("skrl_cfgs")[args_cli.agent.upper()]
+        experiment_cfg = parse_skrl_cfg(experiment_cfg_file)
+        if args_cli.steps is not None:
+            if args_cli.steps <= 0:
+                raise ValueError("--steps must be greater than zero.")
+            experiment_cfg["trainer"]["timesteps"] = args_cli.steps
+        if args_cli.checkpoint_interval is not None:
+            if args_cli.checkpoint_interval <= 0:
+                raise ValueError("--checkpoint-interval must be greater than zero.")
+            experiment_cfg["agent"]["experiment"]["checkpoint_interval"] = args_cli.checkpoint_interval
+        experiment_cfg.setdefault("agent", {}).setdefault("experiment", {})["wandb"] = bool(args_cli.wandb)
+        if args_cli.wandb:
+            patch_skrl_summary_writer_for_wandb()
 
-    agent: Agent = create_agent(args_cli.agent, env, experiment_cfg)
-    if args_cli.checkpoint is not None:
-        agent.load(args_cli.checkpoint)
-    trainer = SequentialTrainer(cfg=trainer_cfg, agents=agent, env=env)
-    trainer.train()
+        log_dir = log_setup(experiment_cfg, env_cfg, args_cli.agent)
 
-    env.close()
-    simulation_app.close()
+        # Create the environment
+        render_mode = "rgb_array" if args_cli.video else None
+        env = gym.make(args_cli.task, cfg=env_cfg, render_mode=render_mode)
+        # Check if video recording is enabled
+        env = video_record(env, log_dir, args_cli.video, args_cli.video_length, args_cli.video_interval)
+        # Wrap the environment
+        env = SkrlVecEnvWrapper(env, ml_framework="torch")
+        set_seed(args_cli_seed if args_cli_seed is not None else experiment_cfg["seed"])
+
+        # Get the observation and action spaces
+        trainer_cfg = experiment_cfg["trainer"]
+
+        agent: Agent = create_agent(args_cli.agent, env, experiment_cfg)
+        if args_cli.checkpoint is not None:
+            agent.load(args_cli.checkpoint)
+        trainer = SequentialTrainer(cfg=trainer_cfg, agents=agent, env=env)
+        trainer.train()
+    except BaseException:
+        traceback.print_exc()
+        sys.stderr.flush()
+        exit_code = 1
+    finally:
+        if env is not None:
+            try:
+                env.close()
+            except BaseException:
+                traceback.print_exc()
+                sys.stderr.flush()
+                exit_code = 1
+
+        # Kit's fast shutdown exits the process directly, so preserve failures.
+        simulation_app.close(exit_code=exit_code)
+
+    return exit_code
 
 
 if __name__ == "__main__":
-    train()
+    sys.exit(train())
