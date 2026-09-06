@@ -24,6 +24,9 @@ jobs:
         with:
           mdbook-version: 'latest'
 
+      - name: Install mdBook-KaTeX
+        run: cargo install mdbook-katex --locked
+
       - name: Build the book
         run: mdbook build
         working-directory: ./docs
