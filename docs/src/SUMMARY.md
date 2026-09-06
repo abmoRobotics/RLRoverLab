@@ -13,6 +13,10 @@
   - [Mapless Navigation](<./tasks/mapless_navigation.md>)
 - [Manipulation](<>)
 
+# Dataset Recordings
+- [Overview](<./dataset_recordings.md>)
+  - [Optimized RGB-D HDF5](<./dataset_recordings_optimized_rgbd.md>)
+
 # Development
 - [Addings new robots or assets](<./development/adding_new_robots_or_assets.md>)
 - [Adding a new task](<./development/adding_new_task.md>)

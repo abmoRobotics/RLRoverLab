@@ -1,7 +1,6 @@
 [book]
 authors = ["abmoRobotics"]
 language = "en"
-multilingual = false
 src = "src"
 title = "RLRoverLab Documentation"
 [preprocessor.katex]

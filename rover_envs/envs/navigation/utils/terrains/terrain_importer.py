@@ -11,9 +11,10 @@ from isaaclab.markers import VisualizationMarkers
 # from isaaclab.envs.mdp.commands.position_command import TerrainBasedPositionCommand
 from isaaclab.markers.config import GREEN_ARROW_X_MARKER_CFG
 from isaaclab.markers.visualization_markers import VisualizationMarkersCfg
-from isaaclab.terrains import TerrainImporter, TerrainImporterCfg
+from isaaclab.terrains import TerrainImporter
 from isaaclab.utils.math import quat_from_euler_xyz, quat_apply_inverse, wrap_to_pi, yaw_quat
 
+from .terrain_importer_cfg import RoverTerrainImporterCfg
 from .terrain_utils import TerrainManager
 
 SPHERE_MARKER_CFG = VisualizationMarkersCfg(
@@ -90,27 +91,33 @@ class TerrainBasedPositionCommand(CommandTerm):
         # sample new position targets from the terrain
         self.pos_command_w[env_ids] = self.terrain.sample_new_targets(env_ids)
         # offset the position command by the current root position
-        self.pos_command_w[env_ids,
-                           2] += self.robot.data.default_root_state[env_ids, 2]
+        # Use config init-state z offset (constant across envs) to avoid backend-specific state buffer indexing.
+        root_z_offset = float(self.robot.cfg.init_state.pos[2])
+        self.pos_command_w[env_ids, 2] += root_z_offset
         # random heading command
         r = torch.empty(len(env_ids), device=self.device)
         self.heading_command_w[env_ids] = r.uniform_(*self.cfg.ranges.heading)
 
     def _update_command(self):
         """Re-target the position command to the current root position and heading."""
-        target_vec = self.pos_command_w - \
-            self.robot.data.root_link_pos_w[:, :3]
+        root_link_pos_w = self.robot.data.root_link_pos_w.torch
+        root_link_quat_w = self.robot.data.root_link_quat_w.torch
+        heading_w = self.robot.data.heading_w.torch
+
+        target_vec = self.pos_command_w - root_link_pos_w[:, :3]
         self.pos_command_b[:] = quat_apply_inverse(
-            yaw_quat(self.robot.data.root_link_quat_w), target_vec)
+            yaw_quat(root_link_quat_w), target_vec)
         self.heading_command_b[:] = wrap_to_pi(
-            self.heading_command_w - self.robot.data.heading_w)
+            self.heading_command_w - heading_w)
 
     def _update_metrics(self):
         # logs data
+        root_link_pos_w = self.robot.data.root_link_pos_w.torch
+        heading_w = self.robot.data.heading_w.torch
         self.metrics["error_pos"] = torch.norm(
-            self.pos_command_w - self.robot.data.root_link_pos_w[:, :3], dim=1)
+            self.pos_command_w - root_link_pos_w[:, :3], dim=1)
         self.metrics["error_heading"] = torch.abs(wrap_to_pi(
-            self.heading_command_w - self.robot.data.heading_w))
+            self.heading_command_w - heading_w))
 
     def _set_debug_vis_impl(self, debug_vis: bool):
 
@@ -149,11 +156,14 @@ class TerrainBasedPositionCommand(CommandTerm):
 
 
 class RoverTerrainImporter(TerrainImporter):
-    def __init__(self, cfg: TerrainImporterCfg):
+    def __init__(self, cfg: RoverTerrainImporterCfg):
         super().__init__(cfg)
         self._cfg = cfg
         self._terrainManager = TerrainManager(
-            num_envs=self._cfg.num_envs, device=self.device)
+            num_envs=self._cfg.num_envs,
+            device=self.device,
+            spawn_obstacle_mesh_prim_path=self._cfg.spawn_obstacle_mesh_prim_path,
+        )
         self.target_distance = 9.0
 
     def sample_new_targets(self, env_ids):

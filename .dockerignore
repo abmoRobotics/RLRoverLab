@@ -1,0 +1,8 @@
+# The application source is bind-mounted at runtime. Image builds only need
+# package metadata and Docker support files, so keep large datasets/logs/assets
+# out of the build context.
+**
+!setup.py
+!pyproject.toml
+!docker/
+!docker/**

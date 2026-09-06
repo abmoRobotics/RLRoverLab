@@ -24,12 +24,12 @@ app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 carb.settings.get_settings().set(
     "persistent/app/omniverse/gamepadCameraControl", False)
-from omni.isaac.core.utils.extensions import enable_extension  # noqa: F401, E402
+import omni.kit.app  # noqa: E402
 
-enable_extension("omni.isaac.ros2_bridge")
+omni.kit.app.get_app().get_extension_manager().set_extension_enabled_immediate("isaacsim.ros2.bridge", True)
 
 import isaaclab.sim as sim_utils  # noqa: F401, E402
-import isaacsim.core.utils.numpy.rotations as rot_utils  # noqa: F401, E402
+import isaacsim.core.experimental.utils.transform as transform_utils  # noqa: F401, E402
 from isaaclab.assets import Articulation, ArticulationCfg, AssetBaseCfg  # noqa: F401, E402
 from isaaclab.scene import InteractiveScene, InteractiveSceneCfg  # noqa: F401, E402
 from isaaclab.sim import SimulationContext  # noqa: F401, E402
@@ -138,8 +138,7 @@ def setup_camera():
         prim_path="/World/envs/env_0/Robot/Body/Camera",
         resolution=(1280, 720),
         translation=([-0.151, 0, 0.73428]),
-        orientation=(rot_utils.euler_angles_to_quats(
-            np.array([0, 30, 0]), degrees=True)),
+        orientation=transform_utils.euler_angles_to_quaternion(np.array([0, 30, 0]), degrees=True).numpy(),
     )
 
     camera.initialize()
@@ -192,13 +191,15 @@ def run_simulation(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     robot: RoverArticulation = scene["robot"]
 
     def reset_scene(robot: RoverArticulation, scene: InteractiveScene):
-        root_state = robot.data.default_root_state.clone()
+        root_state = robot.data.default_root_state.torch.clone()
         root_state[:, :3] += torch.tensor([12.0, 5.0, 0.1])
         # scene.env_origins
         robot.write_root_state_to_sim(root_state)
 
-        joint_pos, joint_vel = robot.data.default_joint_pos.clone(
-        ), robot.data.default_joint_vel.clone()
+        joint_pos, joint_vel = (
+            robot.data.default_joint_pos.torch.clone(),
+            robot.data.default_joint_vel.torch.clone(),
+        )
         joint_pos += torch.randn_like(joint_pos) * 0.1
         robot.write_joint_state_to_sim(joint_pos, joint_vel)
 
@@ -206,7 +207,7 @@ def run_simulation(sim: sim_utils.SimulationContext, scene: InteractiveScene):
         print("Reset")
 
     def goal_distance():
-        return np.linalg.norm(robot.data.root_link_pos_w[0, :2] - goal_position_list)
+        return np.linalg.norm(robot.data.root_link_pos_w.torch[0, :2].cpu().numpy() - goal_position_list)
 
     action_cfg = mdp.AckermannActionCfg(
         asset_name="robot",
@@ -243,7 +244,7 @@ def run_simulation(sim: sim_utils.SimulationContext, scene: InteractiveScene):
 
         if time.time() - timer > 0.5:
             robot_position_publisher.publish_robot_position(
-                robot.data.root_link_state_w[0, :7])
+                robot.data.root_link_state_w.torch[0, :7])
             timer = time.time()
 
 

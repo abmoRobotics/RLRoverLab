@@ -59,11 +59,15 @@ def collision_with_obstacles(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg,
     # Accessing the contact sensor and its data
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
 
-    # Reshape as follows (num_envs, num_bodies, 3)
-    force_matrix = contact_sensor.data.force_matrix_w.view(env.num_envs, -1, 3)
-
-    # Calculating the force and returning true if it is above the threshold
-    normalized_forces = torch.norm(force_matrix, dim=1)
-    forces_active = torch.sum(normalized_forces, dim=-1) > 1
+    force_matrix_w = contact_sensor.data.force_matrix_w
+    if force_matrix_w is None:
+        raise RuntimeError(
+            f"Filtered contact force matrix is unavailable for sensor '{sensor_cfg.name}'. "
+            "Collision detection is configured for strict obstacle-only mode. "
+            "Check ContactSensorCfg.filter_prim_paths_expr and PhysX report pairs."
+        )
+    force_matrix = force_matrix_w.torch  # shape: (N, B, M, 3)
+    normalized_forces = torch.norm(force_matrix, dim=-1)
+    forces_active = normalized_forces.sum(dim=(1, 2)) > threshold
 
     return torch.where(forces_active, True, False)

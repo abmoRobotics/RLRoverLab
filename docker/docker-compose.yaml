@@ -2,52 +2,44 @@ x-default-isaac-lab-volumes:
   &default-isaac-lab-volumes
     # These volumes follow from this page
     # https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/install_faq.html#save-isaac-sim-configs-on-local-disk
+    # Note: Using /home/isaac-sim paths since container runs as isaac-sim user (uid 1234)
     - type: volume
       source: isaac-cache-kit
       target: /isaac-sim/kit/cache
     - type: volume
       source: isaac-cache-ov
-      target: /root/.cache/ov
+      target: /home/isaac-sim/.cache/ov
     - type: volume
       source: isaac-cache-pip
-      target: /root/.cache/pip
+      target: /home/isaac-sim/.cache/pip
     - type: volume
       source: isaac-cache-gl
-      target: /root/.cache/nvidia/GLCache
+      target: /home/isaac-sim/.cache/nvidia/GLCache
     - type: volume
       source: isaac-cache-compute
-      target: /root/.nv/ComputeCache
+      target: /home/isaac-sim/.nv/ComputeCache
     - type: volume
       source: isaac-logs
-      target: /root/.nvidia-omniverse/logs
+      target: /home/isaac-sim/.nvidia-omniverse/logs
     - type: volume
       source: isaac-carb-logs
       target: /isaac-sim/kit/logs/Kit/Isaac-Sim
     - type: volume
       source: isaac-data
-      target: /root/.local/share/ov/data
+      target: /home/isaac-sim/.local/share/ov/data
     - type: volume
       source: isaac-docs
-      target: /root/Documents
-      # These volumes allow X11 Forwarding
-    # - type: bind
-      # source: /tmp/.X11-unix
-      # target: /tmp/.X11-unix
+      target: /home/isaac-sim/Documents
+    # These volumes allow X11 forwarding for --viz kit.
+    - type: bind
+      source: /tmp/.X11-unix
+      target: /tmp/.X11-unix
     - type: bind
       source: ${HOME}/.Xauthority
-      target: /root/.Xauthority
+      target: /home/isaac-sim/.Xauthority
     - type: bind
       source: ../
-      target: /workspace/isaac_rover/
-    - type: volume
-      source: orbit-docs
-      target: /workspace/orbit/docs/_build
-    - type: volume
-      source: orbit-logs
-      target: /workspace/orbit/logs
-    - type: volume
-      source: orbit-data
-      target: /workspace/orbit/data_storage
+      target: /workspace/rlroverlab/
 
 
 x-default-isaac-lab-deploy:
@@ -69,7 +61,8 @@ x-default-isaac-lab-enviroment:
     RMW_IMPLEMENTATION: rmw_fastrtps_cpp
     FASTRTPS_DEFAULT_PROFILES_FILE: /root/.ros/fastdds.xml
     CYCLONEDDS_URI: /root/.ros/cyclonedds.xml
-    RLROVERLAB_PATH: /workspace/isaac_rover/
+    RLROVERLAB_PATH: /workspace/rlroverlab/
+    PYTHONPATH: /workspace/rlroverlab:${PYTHONPATH}
 
 
 
@@ -79,8 +72,11 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
       args:
-        - ISAAC_SIM_VERSION=5.0.0
-        - ISAAC_LAB_VERSION=2.2.0
+        - ISAAC_SIM_VERSION=${ISAAC_SIM_VERSION:-6.0.1}
+        - ISAAC_SIM_DIGEST=${ISAAC_SIM_DIGEST:-sha256:783444c706538aa76cf5126e911ddc5e618779e6105305ad4af4260362a30aa9}
+        - ISAAC_LAB_GIT_URL=${ISAAC_LAB_GIT_URL:-https://github.com/isaac-sim/IsaacLab.git}
+        - ISAAC_LAB_GIT_REF=${ISAAC_LAB_GIT_REF:-v3.0.0-beta2.patch1}
+        - ISAAC_LAB_GIT_SHA=${ISAAC_LAB_GIT_SHA:-ffff603eafc6b74264a5261cc0183d6a65390d78}
         - ISAAC_SIM_PATH=/isaac-sim
         - USER_HOME=/root
     image: rover-lab-base
@@ -89,7 +85,8 @@ services:
     volumes: *default-isaac-lab-volumes
     network_mode: host
     deploy: *default-isaac-lab-deploy
-    entrypoint: bash -c "/isaac-sim/python.sh -m pip install -e /workspace/isaac_rover/ && bash"
+    entrypoint: /workspace/rlroverlab/docker/entrypoint.sh
+    command: bash
     stdin_open: true
     tty: true
 
@@ -100,15 +97,16 @@ services:
       context: ../
       dockerfile: docker/Dockerfile.ros2
       args:
-        - ROS2_APT_PACKAGE=ros-base
         - USER_HOME=/root
+        - ISAAC_SIM_PATH=/isaac-sim
     image: rover-lab-ros2
     container_name: rover-lab-ros2
     environment: *default-isaac-lab-environment
     volumes: *default-isaac-lab-volumes
     network_mode: host
     deploy: *default-isaac-lab-deploy
-    entrypoint: bash -c "/isaac-sim/python.sh -m pip install -e /workspace/isaac_rover/ && bash"
+    entrypoint: /workspace/rlroverlab/docker/entrypoint.sh
+    command: bash
     stdin_open: true
     tty: true
 

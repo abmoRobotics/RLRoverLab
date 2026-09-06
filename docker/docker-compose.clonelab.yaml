@@ -1,0 +1,27 @@
+# Optional Compose overlay for CloneLab/CloneRL development.
+#
+# Keep this out of docker-compose.yaml so the default RLRoverLab container does
+# not require a sibling CloneLab checkout or CloneLab dependencies. This overlay
+# only mounts CloneLab and exposes it on PYTHONPATH; CloneLab owns its own
+# training/runtime dependency setup. Use it with:
+#
+#   docker compose -f docker-compose.yaml -f docker-compose.clonelab.yaml up rover-lab-base --detach --build
+#
+# Override CLONELAB_HOST_PATH when CloneLab is not checked out next to RLRoverLab.
+
+services:
+  rover-lab-base:
+    environment:
+      PYTHONPATH: /workspace/rlroverlab:/workspace/clonelab:${PYTHONPATH:-}
+    volumes:
+      - type: bind
+        source: ${CLONELAB_HOST_PATH:-../../CloneLab}
+        target: /workspace/clonelab/
+
+  rover-lab-ros2:
+    environment:
+      PYTHONPATH: /workspace/rlroverlab:/workspace/clonelab:${PYTHONPATH:-}
+    volumes:
+      - type: bind
+        source: ${CLONELAB_HOST_PATH:-../../CloneLab}
+        target: /workspace/clonelab/

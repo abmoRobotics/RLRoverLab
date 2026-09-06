@@ -1,36 +1,18 @@
-import itertools
-
 from setuptools import find_packages, setup  # noqa: F401
 
+# Packages needed regardless of environment
 INSTALL_REQUIRES = [
-    # generic
-    "numpy",
-    "torch",
     "prettytable==3.3.0",
     "pymeshlab",
     "open3d",
     "gdown",
     "termcolor",
-    # devices
     "hidapi",
-    "skrl==1.4.1",
     "wandb",
     "opencv-python",
-    "isaaclab==2.2.0",
-    "cosmos-tokenizer@git+https://github.com/NVIDIA/Cosmos-Tokenizer.git"
+    "skrl>=2.1.0",
+    "tqdm",
 ]
-
-# url=EXTENSION_TOML_DATA["package"]["repository"], # add later
-# version=EXTENSION_TOML_DATA["package"]["version"],
-# description=EXTENSION_TOML_DATA["package"]["description"],
-# keywords=EXTENSION_TOML_DATA["package"]["keywords"],
-EXTRAS_REQUIRE = {
-    "rsl_rl": ["rsl_rl@git+https://github.com/leggedrobotics/rsl_rl.git"],
-    #"cosmos": ["cosmos-tokenizer@git+https://github.com/NVIDIA/Cosmos-Tokenizer.git"],
-}
-
-# cumulation of all extra-requires
-EXTRAS_REQUIRE["all"] = list(itertools.chain.from_iterable(EXTRAS_REQUIRE.values()))
 setup(
     name="omni.abmoRobotics.RLRoverLab",
     author="Anton Bjørndahl Mortensen",
@@ -38,10 +20,12 @@ setup(
     maintainer_email="abmoRobotics@gmail.com",
     license="BSD-3-Clause",
     include_package_data=True,
-    python_requires=">=3.10",
+    python_requires=">=3.12,<3.13",
     install_requires=INSTALL_REQUIRES,
-    extras_require=EXTRAS_REQUIRE,
-    packages=["rover_envs"],
-    classifiers=["Natural Language :: English", "Programming Language :: Python :: 3.10"],
+    packages=find_packages(include=["rover_envs", "rover_envs.*"]),
+    classifiers=[
+        "Natural Language :: English",
+        "Programming Language :: Python :: 3.12",
+    ],
     zip_safe=False,
 )

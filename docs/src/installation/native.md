@@ -1,68 +1,66 @@
 ## Native Installation
-If you prefer to install the suite natively without using Docker, follow these steps:
-1. **Install Isaac Sim 5.0** According to the [Official Documentation](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html).
 
-    First [Download the Isaac Sim 5.0](https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone-5.0.0-linux-x86_64.zip) to the `~/Downloads` directory.
+Docker is the validated installation path. For native development, use a clean Python 3.12 environment and the exact Isaac Sim/Lab versions below.
 
-    Then run the following commands:
+### Prerequisites
 
-    ```bash
-    mkdir ~/isaacsim
-    cd ~/Downloads
-    unzip "isaac-sim-standalone@5.0.0-linux-x86_64.zip" -d ~/isaacsim
-    cd ~/isaacsim
-    ./post_install.sh
-    ./isaac-sim.selector.sh
-    ```
-2. **Install Isaac Lab**
-   ```bash
-   git clone https://github.com/isaac-sim/IsaacLab
-   cd isaac_lab
+- Ubuntu 22.04 or 24.04
+- Python 3.12
+- NVIDIA RTX GPU and a compatible production driver
+- At least 50 GB of free disk space
+- `git`, `git-lfs`, and [uv](https://docs.astral.sh/uv/)
 
-   # create aliases
-   export ISAACSIM_PATH="${HOME}/isaacsim"
-   export ISAACSIM_PYTHON_EXE="${ISAACSIM_PATH}/python.sh"
+### Install the pinned simulation stack
 
-   # Create symbolic link
-   ln -s ${ISAACSIM_PATH} _isaac_sim
+```bash
+uv venv --python 3.12 --seed env_roverlab
+source env_roverlab/bin/activate
 
-   # Create Conda Env
-   ./isaaclab.sh --conda isaaclab_env
+uv pip install "isaacsim[all,extscache]==6.0.1.0" \
+  --extra-index-url https://pypi.nvidia.com \
+  --index-strategy unsafe-best-match \
+  --prerelease=allow
 
-   # Activate Env
-   conda activate isaaclab_env
+git clone https://github.com/isaac-sim/IsaacLab.git \
+  --branch v3.0.0-beta2.patch1
+cd IsaacLab
+test "$(git rev-parse HEAD)" = "ffff603eafc6b74264a5261cc0183d6a65390d78"
+./isaaclab.sh --install 'rl[skrl],visualizer[kit]'
+cd ..
+```
 
-   # Install dependencies
-   conda --install
+### Install RLRoverLab
 
-   ```
+```bash
+git clone https://github.com/abmoRobotics/RLRoverLab.git
+cd RLRoverLab
+uv pip install --editable .
+python download_usd.py
+```
 
-3. **Set up the RL-suite:**
+Set the source checkout location when it differs from the Docker default, then verify the stack:
 
-   ```bash
-   # Clone Repo
-   git clone https://github.com/abmoRobotics/RLRoverLab
-   cd RLRoverLab
+```bash
+export ISAAC_LAB_PATH="$(cd ../IsaacLab && pwd)"
+python tools/verify_stack.py
+```
 
-   # Install Repo (make sure conda is activated)
-   python -m pip install -e .[all]
-   ```
-4. **Download terrain assets:**
-   ```bash
-   pip3 install gdown
-   python3 download_usd.py
-   ```
+### Run navigation
 
-5. **Running The Suite**
+Force headless execution with `--viz none`:
 
-   **To train a model**, navigate to the training script and run:
-   ```bash
-   cd examples/02_train/train.py
-   python train.py
-   ```
+```bash
+python examples/01_demos/01_zero_agent.py \
+  --task AAURoverEnvSimple-v0 --num_envs 1 --viz none
+```
 
-   **To evaluate a pre-trained policy**, navigate to the inference script and run:
-   ```bash
-   cd examples/03_inference_pretrained/eval.py
-   python eval.py
-   ```
+Open the local Kit viewer with `--viz kit`:
+
+```bash
+python examples/01_demos/01_zero_agent.py \
+  --task AAURoverEnvSimple-v0 --num_envs 1 --viz kit
+```
+
+Use `--device cpu` when CPU physics is required. Isaac Lab 3.0 deprecates the old `--headless` and `--cpu` flags.
+
+Manipulation configurations are not currently set up or included in the validated workflow.

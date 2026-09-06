@@ -1,12 +1,16 @@
 import argparse
-import math
 import os
 import random
 import sys
-from datetime import datetime
+import traceback
 
-import gymnasium as gym
-from isaaclab.app import AppLauncher
+# Temporary work around for --viz=none
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+
+from isaaclab.app import AppLauncher  # noqa: E402
 
 # add argparse arguments
 parser = argparse.ArgumentParser("Welcome to Isaac Lab: Omniverse Robotics Environments!")
@@ -18,13 +22,43 @@ parser.add_argument("--task", type=str, default="AAURoverEnvSimple-v0", help="Na
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
 parser.add_argument("--agent", type=str, default="PPO", help="Name of the agent.")
 parser.add_argument("--checkpoint", type=str, default=None, help="Path to model checkpoint to resume training.")
+parser.add_argument("--steps", type=int, default=None, help="Override the configured number of training steps.")
+parser.add_argument(
+    "--checkpoint-interval",
+    type=int,
+    default=None,
+    help="Override the configured checkpoint interval (in training steps).",
+)
+parser.add_argument(
+    "--wandb",
+    action="store_true",
+    default=False,
+    help="Enable Weights & Biases logging during training.",
+)
+parser.add_argument("--terrain", type=str, default=None, help="Registered terrain name, e.g. 'mars' or 'debug'.")
+parser.add_argument(
+    "--list-terrains",
+    action="store_true",
+    default=False,
+    help="List available terrain types and exit.",
+)
+
+# Handle --list-terrains before AppLauncher to avoid starting simulation
+if "--list-terrains" in sys.argv:
+    from rover_envs.assets.terrains import get_terrain, list_terrains
+
+    print("\nAvailable terrains:")
+    for name in list_terrains():
+        terrain = get_terrain(name)
+        print(f"  - {name}: {terrain.description}")
+    sys.exit(0)
 
 AppLauncher.add_app_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
 
-# always enable cameras to record video
-if args_cli.video:
-    args_cli.enable_cameras = True
+from rover_envs.utils.launcher import configure_camera_launcher_args  # noqa: E402
+
+configure_camera_launcher_args(args_cli)
 
 # clear out sys.argv for Hydra
 sys.argv = [sys.argv[0]] + hydra_args
@@ -33,13 +67,11 @@ sys.argv = [sys.argv[0]] + hydra_args
 
 app_launcher = AppLauncher(args_cli)
 
+import gymnasium as gym  # noqa: E402
 from isaaclab_rl.skrl import SkrlVecEnvWrapper  # noqa: E402
 
 simulation_app = app_launcher.app
 
-from isaaclab.envs import ManagerBasedRLEnv  # noqa: E402
-from isaaclab.utils.dict import print_dict  # noqa: E402
-from isaaclab.utils.io import dump_pickle, dump_yaml  # noqa: E402
 from isaaclab_tasks.utils import parse_env_cfg  # noqa: E402
 from skrl.agents.torch.base import Agent  # noqa: E402
 from skrl.trainers.torch import SequentialTrainer  # noqa: E402
@@ -50,46 +82,75 @@ import rover_envs.envs.navigation.robots  # noqa: E402, F401
 from rover_envs.learning.agents import create_agent  # noqa: E402
 from rover_envs.utils.config import parse_skrl_cfg  # noqa: E402
 from rover_envs.utils.logging_utils import log_setup, video_record  # noqa: E402
+from rover_envs.utils.skrl_wandb import patch_skrl_summary_writer_for_wandb  # noqa: E402
+from rover_envs.utils.terrain_utils import handle_terrain_config  # noqa: E402
 
 
 def train():
-    args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
-    env_cfg = parse_env_cfg(args_cli.task, device="cuda:0" if not args_cli.cpu else "cpu", num_envs=args_cli.num_envs)
-    # key = agent name, value = path to config file
-    experiment_cfg_file = gym.spec(args_cli.task).kwargs.get("skrl_cfgs")[args_cli.agent.upper()]
-    experiment_cfg = parse_skrl_cfg(experiment_cfg_file)
+    env = None
+    exit_code = 0
 
-    log_dir = log_setup(experiment_cfg, env_cfg, args_cli.agent)
+    try:
+        args_cli_seed = args_cli.seed if args_cli.seed is not None else random.randint(0, 100000000)
+        env_cfg = parse_env_cfg(args_cli.task, device=args_cli.device, num_envs=args_cli.num_envs)
 
-    # Create the environment
-    render_mode = "rgb_array" if args_cli.video else None
-    env = gym.make(args_cli.task, cfg=env_cfg, viewport=args_cli.video, render_mode=render_mode)
-    # Check if video recording is enabled
-    env = video_record(env, log_dir, args_cli.video, args_cli.video_length, args_cli.video_interval)
-    # Wrap the environment
-    env = SkrlVecEnvWrapper(env, ml_framework="torch")
-    set_seed(args_cli_seed if args_cli_seed is not None else experiment_cfg["seed"])
+        # Handle terrain configuration.
+        terrain_name = handle_terrain_config(args_cli.terrain)
+        if terrain_name is not None:
+            env_cfg.scene.set_terrain(terrain_name)
 
-    # Get the observation and action spaces
-    num_obs = env.unwrapped.observation_manager.group_obs_dim["policy"][0]
-    num_actions = env.unwrapped.action_manager.action_term_dim[0]
-    observation_space = gym.spaces.Box(low=-math.inf, high=math.inf, shape=(num_obs,))
-    action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(num_actions,))
-    print(f'Observation space: {observation_space.shape}')
-    print(f'Action space: {action_space.shape}')
-    print(f'num envs: {env.num_envs}')
-    print(f'env obs space: {env.observation_space}')
-    print(f'env action space: {env.action_space}')
-    # exit()
-    trainer_cfg = experiment_cfg["trainer"]
+        # key = agent name, value = path to config file
+        experiment_cfg_file = gym.spec(args_cli.task).kwargs.get("skrl_cfgs")[args_cli.agent.upper()]
+        experiment_cfg = parse_skrl_cfg(experiment_cfg_file)
+        if args_cli.steps is not None:
+            if args_cli.steps <= 0:
+                raise ValueError("--steps must be greater than zero.")
+            experiment_cfg["trainer"]["timesteps"] = args_cli.steps
+        if args_cli.checkpoint_interval is not None:
+            if args_cli.checkpoint_interval <= 0:
+                raise ValueError("--checkpoint-interval must be greater than zero.")
+            experiment_cfg["agent"]["experiment"]["checkpoint_interval"] = args_cli.checkpoint_interval
+        experiment_cfg.setdefault("agent", {}).setdefault("experiment", {})["wandb"] = bool(args_cli.wandb)
+        if args_cli.wandb:
+            patch_skrl_summary_writer_for_wandb()
 
-    agent: Agent = create_agent(args_cli.agent, env, experiment_cfg)
-    trainer = SequentialTrainer(cfg=trainer_cfg, agents=agent, env=env)
-    trainer.train()
+        log_dir = log_setup(experiment_cfg, env_cfg, args_cli.agent)
 
-    env.close()
-    simulation_app.close()
+        # Create the environment
+        render_mode = "rgb_array" if args_cli.video else None
+        env = gym.make(args_cli.task, cfg=env_cfg, render_mode=render_mode)
+        # Check if video recording is enabled
+        env = video_record(env, log_dir, args_cli.video, args_cli.video_length, args_cli.video_interval)
+        # Wrap the environment
+        env = SkrlVecEnvWrapper(env, ml_framework="torch")
+        set_seed(args_cli_seed if args_cli_seed is not None else experiment_cfg["seed"])
+
+        # Get the observation and action spaces
+        trainer_cfg = experiment_cfg["trainer"]
+
+        agent: Agent = create_agent(args_cli.agent, env, experiment_cfg)
+        if args_cli.checkpoint is not None:
+            agent.load(args_cli.checkpoint)
+        trainer = SequentialTrainer(cfg=trainer_cfg, agents=agent, env=env)
+        trainer.train()
+    except BaseException:
+        traceback.print_exc()
+        sys.stderr.flush()
+        exit_code = 1
+    finally:
+        if env is not None:
+            try:
+                env.close()
+            except BaseException:
+                traceback.print_exc()
+                sys.stderr.flush()
+                exit_code = 1
+
+        # Kit's fast shutdown exits the process directly, so preserve failures.
+        simulation_app.close(exit_code=exit_code)
+
+    return exit_code
 
 
 if __name__ == "__main__":
-    train()
+    sys.exit(train())
