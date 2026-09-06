@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Native - RLRoverLab Documentation</title>
+        <title>Overview - RLRoverLab Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -12,20 +12,20 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="../favicon-de23e50b.svg">
-        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
-        <link rel="stylesheet" href="../css/variables-8adf115d.css">
-        <link rel="stylesheet" href="../css/general-e96d0476.css">
-        <link rel="stylesheet" href="../css/chrome-d279d366.css">
-        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
-        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
-        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
 
@@ -34,13 +34,13 @@
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "../";
+            const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-17f6eb0b.js";
+            window.path_to_searchindex_js = "searchindex-17f6eb0b.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-12b5944a.js"></script>
+        <script src="toc-12b5944a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -107,7 +107,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
             </noscript>
             <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -142,7 +142,7 @@
                     <h1 class="menu-title">RLRoverLab Documentation</h1>
 
                     <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
                             <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
                         </a>
 
@@ -177,63 +177,95 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h2 id="native-installation"><a class="header" href="#native-installation">Native Installation</a></h2>
-<p>Docker is the validated installation path. For native development, use a clean Python 3.12 environment and the exact Isaac Sim/Lab versions below.</p>
-<h3 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h3>
-<ul>
-<li>Ubuntu 22.04 or 24.04</li>
-<li>Python 3.12</li>
-<li>NVIDIA RTX GPU and a compatible production driver</li>
-<li>At least 50 GB of free disk space</li>
-<li><code>git</code>, <code>git-lfs</code>, and <a href="https://docs.astral.sh/uv/">uv</a></li>
-</ul>
-<h3 id="install-the-pinned-simulation-stack"><a class="header" href="#install-the-pinned-simulation-stack">Install the pinned simulation stack</a></h3>
-<pre><code class="language-bash">uv venv --python 3.12 --seed env_roverlab
-source env_roverlab/bin/activate
-
-uv pip install "isaacsim[all,extscache]==6.0.1.0" \
-  --extra-index-url https://pypi.nvidia.com \
-  --index-strategy unsafe-best-match \
-  --prerelease=allow
-
-git clone https://github.com/isaac-sim/IsaacLab.git \
-  --branch v3.0.0-beta2.patch1
-cd IsaacLab
-test "$(git rev-parse HEAD)" = "ffff603eafc6b74264a5261cc0183d6a65390d78"
-./isaaclab.sh --install 'rl[skrl],visualizer[kit]'
-cd ..
+<h1 id="dataset-recordings"><a class="header" href="#dataset-recordings">Dataset Recordings</a></h1>
+<p>RLRoverLab records datasets from <code>examples/03_inference/eval.py</code> when
+<code>--dataset_name</code> is set. Files are written to
+<code>&lt;dataset_dir&gt;/&lt;dataset_name&gt;.hdf5</code> on environment close.</p>
+<pre><code class="language-bash">python examples/03_inference/eval.py \
+  --task AAURoverEnvRGBDRawWVGA-v0 \
+  --num_envs 1 \
+  --steps 1000 \
+  --enable_cameras \
+  --dataset_dir ./datasets \
+  --dataset_name rover_wvga_expert_1000 \
+  --dataset_type RL_COMPRESSED
 </code></pre>
-<h3 id="install-rlroverlab"><a class="header" href="#install-rlroverlab">Install RLRoverLab</a></h3>
-<pre><code class="language-bash">git clone https://github.com/abmoRobotics/RLRoverLab.git
-cd RLRoverLab
-uv pip install --editable .
-python download_usd.py
+<h2 id="recorder-types"><a class="header" href="#recorder-types">Recorder Types</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>--dataset_type</code></th><th>Format</th><th>Use when</th></tr>
+</thead>
+<tbody>
+<tr><td><code>RL</code></td><td>Legacy Isaac Lab HDF5, robomimic-style layout</td><td>A loader expects <code>/data/demo_*/obs</code>, <code>/data/demo_*/next_obs</code>, actions, rewards, and dones.</td></tr>
+<tr><td><code>IL</code></td><td>Legacy Isaac Lab HDF5, robomimic-style layout</td><td>Only observations and actions are needed.</td></tr>
+<tr><td><code>RL_COMPRESSED</code></td><td>Optimized RLRoverLab RGB-D schema</td><td>RGB-D storage size and random-access offline loading matter more than direct robomimic layout compatibility.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="legacy-hdf5"><a class="header" href="#legacy-hdf5">Legacy HDF5</a></h2>
+<p><code>RL</code> and <code>IL</code> use Isaac Lab’s default HDF5 dataset writer. The layout follows
+the robomimic convention of storing demonstrations under <code>/data/demo_N</code>.
+Current robomimic training compatibility still depends on the loader,
+environment metadata, and observation keys used by the training config.</p>
+<p>For <code>RL</code>, each episode contains:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Path</th><th>Contents</th></tr>
+</thead>
+<tbody>
+<tr><td><code>/data</code></td><td>Root data group. Attribute <code>total</code> is the total transition count; <code>env_args</code> stores environment metadata as JSON.</td></tr>
+<tr><td><code>/data/demo_N</code></td><td>One recorded episode. Attributes include <code>num_samples</code> and optional <code>seed</code> and <code>success</code>.</td></tr>
+<tr><td><code>/data/demo_N/actions</code></td><td>Action tensor for each transition.</td></tr>
+<tr><td><code>/data/demo_N/rewards</code></td><td>Reward tensor for each transition.</td></tr>
+<tr><td><code>/data/demo_N/dones</code></td><td>Done flags for each transition.</td></tr>
+<tr><td><code>/data/demo_N/obs/...</code></td><td>Observation at time <code>t</code>.</td></tr>
+<tr><td><code>/data/demo_N/next_obs/...</code></td><td>Observation after the action, at time <code>t + 1</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>IL</code> uses the same episode layout but records only <code>actions</code> and <code>obs</code>.
+Datasets are gzip-compressed by HDF5. This format is simple and compatible with
+many robomimic-style loaders, but RGB-D trajectories are large because
+<code>next_obs</code> physically duplicates the next observation tree.</p>
+<p>Use it with:</p>
+<pre><code class="language-bash">python examples/03_inference/eval.py \
+  --task AAURoverEnvRGBDRawWVGA-v0 \
+  --num_envs 1 \
+  --steps 1000 \
+  --enable_cameras \
+  --dataset_dir ./datasets \
+  --dataset_name rover_wvga_legacy_1000 \
+  --dataset_type RL
 </code></pre>
-<p>Set the source checkout location when it differs from the Docker default, then verify the stack:</p>
-<pre><code class="language-bash">export ISAAC_LAB_PATH="$(cd ../IsaacLab &amp;&amp; pwd)"
-python tools/verify_stack.py
+<h2 id="optimized-rgb-d-hdf5"><a class="header" href="#optimized-rgb-d-hdf5">Optimized RGB-D HDF5</a></h2>
+<p><code>RL_COMPRESSED</code> writes RLRoverLab’s optimized RGB-D HDF5 schema. It stores RGB
+and depth observations once in an indexed timeline instead of duplicating a
+physical <code>next_obs</code> tree.</p>
+<p>Use it when RGB-D storage size and random-access offline loading matter more
+than direct robomimic layout compatibility. The full dataloader contract is in
+<a href="./dataset_recordings_optimized_rgbd.html">Optimized RGB-D HDF5</a>.</p>
+<p>Record an optimized RGB-D dataset with:</p>
+<pre><code class="language-bash">python examples/03_inference/eval.py \
+  --task AAURoverEnvRGBDRawWVGA-v0 \
+  --num_envs 1 \
+  --steps 1000 \
+  --enable_cameras \
+  --dataset_dir ./datasets \
+  --dataset_name rover_wvga_compressed_1000 \
+  --dataset_type RL_COMPRESSED
 </code></pre>
-<h3 id="run-navigation"><a class="header" href="#run-navigation">Run navigation</a></h3>
-<p>Force headless execution with <code>--viz none</code>:</p>
-<pre><code class="language-bash">python examples/01_demos/01_zero_agent.py \
-  --task AAURoverEnvSimple-v0 --num_envs 1 --viz none
-</code></pre>
-<p>Open the local Kit viewer with <code>--viz kit</code>:</p>
-<pre><code class="language-bash">python examples/01_demos/01_zero_agent.py \
-  --task AAURoverEnvSimple-v0 --num_envs 1 --viz kit
-</code></pre>
-<p>Use <code>--device cpu</code> when CPU physics is required. Isaac Lab 3.0 deprecates the old <code>--headless</code> and <code>--cpu</code> flags.</p>
-<p>Manipulation configurations are not currently set up or included in the validated workflow.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../installation/docker.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="tasks/mapless_navigation.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../getting_started/quick_start.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="dataset_recordings_optimized_rgbd.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -243,11 +275,11 @@ python tools/verify_stack.py
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../installation/docker.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="tasks/mapless_navigation.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../getting_started/quick_start.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="dataset_recordings_optimized_rgbd.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>
@@ -267,13 +299,13 @@ python tools/verify_stack.py
         </script>
 
 
-        <script src="../elasticlunr-ef4e11c1.min.js"></script>
-        <script src="../mark-09e88c2c.min.js"></script>
-        <script src="../searcher-09f2665d.js"></script>
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
 
-        <script src="../clipboard-1626706a.min.js"></script>
-        <script src="../highlight-abc7f01d.js"></script>
-        <script src="../book-609e4cb8.js"></script>
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-609e4cb8.js"></script>
 
         <!-- Custom JS scripts -->
 

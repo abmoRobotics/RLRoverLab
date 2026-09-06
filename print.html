@@ -13,21 +13,20 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
 
@@ -39,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex.js";
+            window.path_to_searchindex_js = "searchindex-17f6eb0b.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="toc-12b5944a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -56,7 +55,7 @@
             </div>
         </div>
     </div>
-    <div id="body-container">
+    <div id="mdbook-body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
@@ -85,12 +84,12 @@
             html.classList.add("js");
         </script>
 
-        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
             let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -105,39 +104,39 @@
             }
         </script>
 
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
                 <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
             </noscript>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
             </div>
         </nav>
 
-        <div id="page-wrapper" class="page-wrapper">
+        <div id="mdbook-page-wrapper" class="page-wrapper">
 
             <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
-                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
                         </label>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
                         </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
                         </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
                         </button>
                     </div>
 
@@ -145,54 +144,56 @@
 
                     <div class="right-buttons">
                         <a href="print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
                         </a>
 
                     </div>
                 </div>
 
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
                         <div class="search-wrapper">
-                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
                             <div class="spinner-wrapper">
-                                <i class="fa fa-spinner fa-spin"></i>
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
                             </div>
                         </div>
                     </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
                         </ul>
                     </div>
                 </div>
 
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
                 <script>
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
                         link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
                     });
                 </script>
 
-                <div id="content" class="content">
+                <div id="mdbook-content" class="content">
                     <main>
-                        <!-- This is the initial pre-release of this RL-suite. Please let me know if there is information missing by contacting me at abmoRobotics@gmail.com. -->
+                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<!-- This is the initial pre-release of this RL-suite. Please let me know if there is information missing by contacting me at abmoRobotics@gmail.com. -->
 <h1 id="rl-suite-overview"><a class="header" href="#rl-suite-overview">RL-suite Overview</a></h1>
 <p>Welcome to the RL-suite documentation! This suite is designed to provide comprehensive resources for developing and testing reinforcement learning algorithms with a focus on space robotics. Below you will find links to various sections of our documentation, including installation instructions, examples, task details, development guides, and benchmarks.</p>
 <h2 id="table-of-contents"><a class="header" href="#table-of-contents">Table of Contents</a></h2>
 <ul>
-<li><a href="./installation/installation.html"><strong>Installing the suite</strong></a>: Step-by-step guide on how to get the RL-suite up and running on your system.</li>
-<li><a href="./examples/examples.html"><strong>Examples of using the suite</strong></a>: A collection of examples showcasing the capabilities of the RL-suite and how to use it for your projects.</li>
-<li><a href="./tasks/tasks.html"><strong>Task Details</strong></a>: Detailed descriptions of the tasks available within the suite, including their objectives, input/output specifications, and evaluation metrics.</li>
-<li><a href="./development/adding_new_robots_or_assets.html"><strong>Developing new tasks and adding assets</strong></a>: Guidelines on how to extend the RL-suite by developing new tasks or adding new assets.</li>
-<li><a href="./benchmarks/benchmarks.html"><strong>Benchmarks</strong></a>: Benchmark results for different reinforcement learning algorithms using the tasks provided in the suite.</li>
+<li><a href="#installation-guide"><strong>Installing the suite</strong></a>: Step-by-step guide on how to get the RL-suite up and running on your system.</li>
+<li><a href="#examples"><strong>Examples of using the suite</strong></a>: A collection of examples showcasing the capabilities of the RL-suite and how to use it for your projects.</li>
+<li><a href="tasks/tasks.html"><strong>Task Details</strong></a>: Detailed descriptions of the tasks available within the suite, including their objectives, input/output specifications, and evaluation metrics.</li>
+<li><a href="#addings-new-robots-or-assets"><strong>Developing new tasks and adding assets</strong></a>: Guidelines on how to extend the RL-suite by developing new tasks or adding new assets.</li>
+<li><a href="#benchmarks"><strong>Benchmarks</strong></a>: Benchmark results for different reinforcement learning algorithms using the tasks provided in the suite.</li>
 </ul>
 <h2 id="getting-help"><a class="header" href="#getting-help">Getting Help</a></h2>
-<p>If you encounter any issues or have questions regarding the RL-suite, please don't hesitate to reach out by emailing me at <a href="mailto:abmoRobotics@gmail.com">abmoRobotics@gmail.com</a>.</p>
+<p>If you encounter any issues or have questions regarding the RL-suite, please don’t hesitate to reach out by emailing me at <a href="mailto:abmoRobotics@gmail.com">abmoRobotics@gmail.com</a>.</p>
 <p>Thank you for exploring the RL-suite.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="installation-guide"><a class="header" href="#installation-guide">Installation Guide</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="installation-guide"><a class="header" href="#installation-guide">Installation Guide</a></h1>
 <p>This guide provides detailed instructions for setting up the RL-suite using Docker, which simplifies the installation process of Isaac Sim, Isaac Lab, and our suite. Additionally, we provide steps for native installation.</p>
 <h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
 <p>Before you begin, ensure your system meets the following requirements:</p>
@@ -204,17 +205,23 @@
 </ul>
 <h3 id="software-requirements"><a class="header" href="#software-requirements">Software Requirements</a></h3>
 <ul>
-<li><strong>Operating System</strong>: Ubuntu 20.04 or 22.04</li>
+<li><strong>Operating System</strong>: Ubuntu 22.04 or 24.04</li>
 <li><strong>Packages</strong>: Docker and Nvidia Container Toolkit</li>
 </ul>
 <h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
 <p>There are two ways to install the RL-suite: using Docker or natively.</p>
 <p>The steps for each method are outlined in the following pages:</p>
 <ul>
-<li><a href="installation/./docker.html">Installation Using Docker</a></li>
-<li><a href="installation/./native.html">Native Installation</a></li>
+<li><a href="#docker">Installation Using Docker</a></li>
+<li><a href="#native">Native Installation</a></li>
 </ul>
-<div style="break-before: page; page-break-before: always;"></div><h2 id="installation-using-docker"><a class="header" href="#installation-using-docker">Installation Using Docker</a></h2>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="docker"><a href="#docker" class="header">Docker</a></h1>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h2 id="installation-using-docker"><a class="header" href="#installation-using-docker">Installation Using Docker</a></h2>
+<p>Docker is the <strong>recommended installation method</strong> as it provides a consistent environment with all dependencies pre-installed.</p>
+<p>The image is pinned to Isaac Sim <code>6.0.1</code> (including its multi-architecture image digest), Isaac Lab
+<code>v3.0.0-beta2.patch1</code> (<code>ffff603</code>), and Python 3.12.</p>
 <h3 id="prerequisites-1"><a class="header" href="#prerequisites-1">Prerequisites</a></h3>
 <ul>
 <li>
@@ -254,76 +261,10 @@ Password:
 </ul>
 <h3 id="building-the-docker-image"><a class="header" href="#building-the-docker-image">Building the Docker Image</a></h3>
 <ol>
-<li><strong>Clone the repository and navigate to the docker directory</strong>:
+<li>
+<p><strong>Clone the repository and navigate to the docker directory</strong>:</p>
 <pre><code class="language-bash">git clone https://github.com/abmoRobotics/RLRoverLab
-cd RLRoverLab/docker
-</code></pre>
-</li>
-<li><strong>Download terrain assets:</strong>
-<pre><code class="language-bash">pip3 install gdown
-python3 download_usd.py
-</code></pre>
-<!-- 1. Download from Google Drive: https://drive.google.com/file/d/1VXFTD2OgHcsQL_ifO81AzD2HDkA98h93/view?usp=sharing
-1. Unzip files in root folder of the git repository -->
-</li>
-<li><strong>Build and start the Docker container</strong>:
-<pre><code class="language-bash">./run.sh
-docker exec -it rover-lab-base bash
-</code></pre>
-</li>
-<li><strong>Training an Agent Inside the Docker Container</strong>
-To train an agent, use the following command inside the Docker container:
-<pre><code class="language-bash">cd examples/02_train
-/workspace/isaac_lab/isaaclab.sh -p train.py --task="AAURoverEnv-v0" --num_envs=256
-</code></pre>
-</li>
-</ol>
-<div style="break-before: page; page-break-before: always;"></div><h2 id="native-installation"><a class="header" href="#native-installation">Native Installation</a></h2>
-<p>If you prefer to install the suite natively without using Docker, follow these steps:</p>
-<ol>
-<li>
-<p><strong>Install Isaac Sim 5.0</strong> According to the <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html">Official Documentation</a>.</p>
-<p>First <a href="https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone-5.0.0-linux-x86_64.zip">Download the Isaac Sim 5.0</a> to the <code>~/Downloads</code> directory.</p>
-<p>Then run the following commands:</p>
-<pre><code class="language-bash">mkdir ~/isaacsim
-cd ~/Downloads
-unzip "isaac-sim-standalone@5.0.0-linux-x86_64.zip" -d ~/isaacsim
-cd ~/isaacsim
-./post_install.sh
-./isaac-sim.selector.sh
-</code></pre>
-</li>
-<li>
-<p><strong>Install Isaac Lab</strong></p>
-<pre><code class="language-bash">git clone https://github.com/isaac-sim/IsaacLab
-cd isaac_lab
-
-# create aliases
-export ISAACSIM_PATH="${HOME}/isaacsim"
-export ISAACSIM_PYTHON_EXE="${ISAACSIM_PATH}/python.sh"
-
-# Create symbolic link
-ln -s ${ISAACSIM_PATH} _isaac_sim
-
-# Create Conda Env
-./isaaclab.sh --conda isaaclab_env
-
-# Activate Env
-conda activate isaaclab_env
-
-# Install dependencies
-conda --install
-
-</code></pre>
-</li>
-<li>
-<p><strong>Set up the RL-suite:</strong></p>
-<pre><code class="language-bash"># Clone Repo
-git clone https://github.com/abmoRobotics/RLRoverLab
 cd RLRoverLab
-
-# Install Repo (make sure conda is activated)
-python -m pip install -e .[all]
 </code></pre>
 </li>
 <li>
@@ -333,25 +274,102 @@ python3 download_usd.py
 </code></pre>
 </li>
 <li>
-<p><strong>Running The Suite</strong></p>
-<p><strong>To train a model</strong>, navigate to the training script and run:</p>
-<pre><code class="language-bash">cd examples/02_train/train.py
-python train.py
+<p><strong>Build and start the Docker container</strong>:</p>
+<pre><code class="language-bash">cd docker
+./run.sh
+docker exec -it rover-lab-base bash
 </code></pre>
-<p><strong>To evaluate a pre-trained policy</strong>, navigate to the inference script and run:</p>
-<pre><code class="language-bash">cd examples/03_inference_pretrained/eval.py
-python eval.py
+</li>
+<li>
+<p><strong>Verify the installed versions</strong> inside the container:</p>
+<pre><code class="language-bash">cd /workspace/rlroverlab
+python tools/verify_stack.py
 </code></pre>
 </li>
 </ol>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="quick-start-guide"><a class="header" href="#quick-start-guide">Quick Start Guide</a></h1>
+<h3 id="usage"><a class="header" href="#usage">Usage</a></h3>
+<h4 id="training-an-agent"><a class="header" href="#training-an-agent">Training an Agent</a></h4>
+<p>To train an agent headlessly, use the following command inside the Docker container:</p>
+<pre><code class="language-bash">cd /workspace/rlroverlab
+python examples/02_training/train.py --task="AAURoverEnv-v0" --num_envs=256 --viz none
+</code></pre>
+<h4 id="evaluating-a-pre-trained-policy"><a class="header" href="#evaluating-a-pre-trained-policy">Evaluating a Pre-trained Policy</a></h4>
+<p>To evaluate a pre-trained policy, use the following command inside the Docker container:</p>
+<pre><code class="language-bash">cd /workspace/rlroverlab
+python examples/03_inference/eval.py --task="AAURoverEnv-v0" --num_envs=32 --viz none
+</code></pre>
+<h4 id="running-with-the-kit-viewer"><a class="header" href="#running-with-the-kit-viewer">Running with the Kit viewer</a></h4>
+<p>Pass <code>--viz kit</code> from a machine with a working local display and X11 access:</p>
+<pre><code class="language-bash">cd /workspace/rlroverlab
+python examples/01_demos/01_zero_agent.py --task="AAURoverEnvSimple-v0" --num_envs=1 --viz kit
+</code></pre>
+<p>Isaac Lab 3.0 deprecates <code>--headless</code>; use <code>--viz none</code> to force headless execution. Camera and RGB-D tasks enable their required camera extensions automatically.</p>
+<h3 id="development-workflow"><a class="header" href="#development-workflow">Development Workflow</a></h3>
+<p>The Docker setup bind-mounts the repository to <code>/workspace/rlroverlab/</code>, so any changes you make to the code on your host machine are immediately reflected inside the container. This makes it ideal for development:</p>
+<ol>
+<li>Edit code on your host machine using your preferred editor</li>
+<li>Run/test inside the container</li>
+<li>No need to rebuild the container for code changes</li>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="native"><a href="#native" class="header">Native</a></h1>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h2 id="native-installation"><a class="header" href="#native-installation">Native Installation</a></h2>
+<p>Docker is the validated installation path. For native development, use a clean Python 3.12 environment and the exact Isaac Sim/Lab versions below.</p>
+<h3 id="prerequisites-2"><a class="header" href="#prerequisites-2">Prerequisites</a></h3>
+<ul>
+<li>Ubuntu 22.04 or 24.04</li>
+<li>Python 3.12</li>
+<li>NVIDIA RTX GPU and a compatible production driver</li>
+<li>At least 50 GB of free disk space</li>
+<li><code>git</code>, <code>git-lfs</code>, and <a href="https://docs.astral.sh/uv/">uv</a></li>
+</ul>
+<h3 id="install-the-pinned-simulation-stack"><a class="header" href="#install-the-pinned-simulation-stack">Install the pinned simulation stack</a></h3>
+<pre><code class="language-bash">uv venv --python 3.12 --seed env_roverlab
+source env_roverlab/bin/activate
+
+uv pip install "isaacsim[all,extscache]==6.0.1.0" \
+  --extra-index-url https://pypi.nvidia.com \
+  --index-strategy unsafe-best-match \
+  --prerelease=allow
+
+git clone https://github.com/isaac-sim/IsaacLab.git \
+  --branch v3.0.0-beta2.patch1
+cd IsaacLab
+test "$(git rev-parse HEAD)" = "ffff603eafc6b74264a5261cc0183d6a65390d78"
+./isaaclab.sh --install 'rl[skrl],visualizer[kit]'
+cd ..
+</code></pre>
+<h3 id="install-rlroverlab"><a class="header" href="#install-rlroverlab">Install RLRoverLab</a></h3>
+<pre><code class="language-bash">git clone https://github.com/abmoRobotics/RLRoverLab.git
+cd RLRoverLab
+uv pip install --editable .
+python download_usd.py
+</code></pre>
+<p>Set the source checkout location when it differs from the Docker default, then verify the stack:</p>
+<pre><code class="language-bash">export ISAAC_LAB_PATH="$(cd ../IsaacLab &amp;&amp; pwd)"
+python tools/verify_stack.py
+</code></pre>
+<h3 id="run-navigation"><a class="header" href="#run-navigation">Run navigation</a></h3>
+<p>Force headless execution with <code>--viz none</code>:</p>
+<pre><code class="language-bash">python examples/01_demos/01_zero_agent.py \
+  --task AAURoverEnvSimple-v0 --num_envs 1 --viz none
+</code></pre>
+<p>Open the local Kit viewer with <code>--viz kit</code>:</p>
+<pre><code class="language-bash">python examples/01_demos/01_zero_agent.py \
+  --task AAURoverEnvSimple-v0 --num_envs 1 --viz kit
+</code></pre>
+<p>Use <code>--device cpu</code> when CPU physics is required. Isaac Lab 3.0 deprecates the old <code>--headless</code> and <code>--cpu</code> flags.</p>
+<p>Manipulation configurations are not currently set up or included in the validated workflow.</p>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="quick-start-guide"><a class="header" href="#quick-start-guide">Quick Start Guide</a></h1>
 <p>This guide will help you get started with RLRoverLab quickly. Follow these steps to set up the environment and run your first training or evaluation.</p>
-<h2 id="prerequisites-2"><a class="header" href="#prerequisites-2">Prerequisites</a></h2>
+<h2 id="prerequisites-3"><a class="header" href="#prerequisites-3">Prerequisites</a></h2>
 <p>Before starting, ensure you have:</p>
 <ul>
 <li>NVIDIA GPU with at least 8GB VRAM</li>
 <li>Ubuntu 20.04 or 22.04</li>
-<li>Docker and NVIDIA Container Toolkit installed (see <a href="getting_started/../installation/docker.html">Docker Installation</a>)</li>
+<li>Docker and NVIDIA Container Toolkit installed (see <a href="#docker">Docker Installation</a>)</li>
 </ul>
 <h2 id="quick-setup-with-docker"><a class="header" href="#quick-setup-with-docker">Quick Setup with Docker</a></h2>
 <ol>
@@ -377,34 +395,40 @@ docker exec -it rover-lab-base bash
 </ol>
 <h2 id="running-your-first-example"><a class="header" href="#running-your-first-example">Running Your First Example</a></h2>
 <h3 id="1-train-a-simple-agent"><a class="header" href="#1-train-a-simple-agent">1. Train a Simple Agent</a></h3>
-<p>Train a PPO agent on the simple AAU rover environment:</p>
+<p>Train a PPO agent on the simple AAU rover environment in forced headless mode:</p>
 <pre><code class="language-bash">cd examples/02_training
-/workspace/isaac_lab/isaaclab.sh -p train.py --task="AAURoverEnvSimple-v0" --num_envs=128
+/workspace/isaac_lab/isaaclab.sh -p train.py --task="AAURoverEnvSimple-v0" --num_envs=128 --viz none
 </code></pre>
 <h3 id="2-evaluate-a-pre-trained-model"><a class="header" href="#2-evaluate-a-pre-trained-model">2. Evaluate a Pre-trained Model</a></h3>
 <p>If you have a trained model, evaluate it:</p>
 <pre><code class="language-bash">cd examples/03_inference
-/workspace/isaac_lab/isaaclab.sh -p eval.py --task="AAURoverEnvSimple-v0" --num_envs=32 --checkpoint=path/to/your/model.pt
+/workspace/isaac_lab/isaaclab.sh -p eval.py --task="AAURoverEnvSimple-v0" --num_envs=32 --checkpoint=path/to/your/model.pt --viz none
 </code></pre>
 <h3 id="3-demo-with-zero-agent"><a class="header" href="#3-demo-with-zero-agent">3. Demo with Zero Agent</a></h3>
-<p>Run a basic demo to see the environment:</p>
+<p>Run a basic demo in the Kit viewer:</p>
 <pre><code class="language-bash">cd examples/01_demos
-/workspace/isaac_lab/isaaclab.sh -p 01_zero_agent.py
+/workspace/isaac_lab/isaaclab.sh -p 01_zero_agent.py --viz kit
 </code></pre>
 <h2 id="available-environments"><a class="header" href="#available-environments">Available Environments</a></h2>
 <p>The suite provides several pre-configured environments:</p>
-<div class="table-wrapper"><table><thead><tr><th>Environment ID</th><th>Robot</th><th>Description</th></tr></thead><tbody>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Environment ID</th><th>Robot</th><th>Description</th></tr>
+</thead>
+<tbody>
 <tr><td><code>AAURoverEnvSimple-v0</code></td><td>AAU Rover (Simple)</td><td>Simplified rover with basic sensors</td></tr>
 <tr><td><code>AAURoverEnv-v0</code></td><td>AAU Rover</td><td>Full rover with advanced sensors</td></tr>
-<tr><td><code>ExomyEnv-v0</code></td><td>Exomy</td><td>ESA's Exomy rover</td></tr>
-</tbody></table>
+<tr><td><code>Exomy-v0</code></td><td>Exomy</td><td>ESA’s ExoMy rover</td></tr>
+</tbody>
+</table>
 </div>
-<h2 id="whats-next"><a class="header" href="#whats-next">What's Next?</a></h2>
+<h2 id="whats-next"><a class="header" href="#whats-next">What’s Next?</a></h2>
 <ul>
-<li><a href="getting_started/../examples/examples.html">Explore more examples</a></li>
-<li><a href="getting_started/../tasks/environment_overview.html">Learn about available environments</a></li>
-<li><a href="getting_started/../training/training.html">Understand the training process</a></li>
-<li><a href="getting_started/../development/adding_new_robots_or_assets.html">Add your own robot</a></li>
+<li><a href="#examples">Explore more examples</a></li>
+<li><a href="tasks/environment_overview.html">Learn about available environments</a></li>
+<li><a href="training/training.html">Understand the training process</a></li>
+<li><a href="#addings-new-robots-or-assets">Add your own robot</a></li>
 </ul>
 <h2 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h2>
 <h3 id="common-issues"><a class="header" href="#common-issues">Common Issues</a></h3>
@@ -413,8 +437,11 @@ docker exec -it rover-lab-base bash
 <li><strong>Docker Permission Issues</strong>: Ensure your user is in the docker group</li>
 <li><strong>Display Issues</strong>: Run <code>xhost +local:docker</code> before starting the container</li>
 </ol>
-<p>For more detailed troubleshooting, see the <a href="getting_started/../installation/installation.html">Installation Guide</a>.</p>
-<div style="break-before: page; page-break-before: always;"></div><p>We provide a number of examples on how to use the suite, these can be found in the examples directory. Below we show how to run the files.</p>
+<p>For more detailed troubleshooting, see the <a href="#installation-guide">Installation Guide</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="examples"><a href="#examples" class="header">Examples</a></h1>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<p>We provide a number of examples on how to use the suite, these can be found in the examples directory. Below we show how to run the files.</p>
 <h2 id="training-a-new-agent"><a class="header" href="#training-a-new-agent">Training a new agent</a></h2>
 <p>In the example we show how to train a new agent using the suite:</p>
 <pre><code class="language-bash"># Run training script or evaluate pre-trained policy
@@ -434,81 +461,360 @@ cd examples/03_inference
 python eval.py --task="AAURoverEnv-v0" --num_envs=32 --dataset_name="dataset_name" --dataset_dir="../../datasets"
 python eval.py --task="AAURoverEnvSimple-v0" --num_envs=32 --dataset_name="dataset_name" --dataset_dir="../../datasets"
 </code></pre>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="mapless-navigation"><a class="header" href="#mapless-navigation">Mapless Navigation</a></h1>
+<p>See <a href="#dataset-recordings">Dataset Recordings</a> for the legacy
+robomimic-style HDF5 format and the optimized RGB-D format.</p>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="mapless-navigation"><a class="header" href="#mapless-navigation">Mapless Navigation</a></h1>
 <p>In this task we teach an agent to autonomously navigate to target locations using local terrain information. Below we present the rewards, neural network, and terrain environment used for this task.</p>
 <h2 id="rewards"><a class="header" href="#rewards">Rewards</a></h2>
 <p>For the rover to actually learn to move, it needs some kind of indication of whether an executed action helps to accomplish the goal or not. Therefore, a set of reward functions has been implemented, evaluating if the rover moved in the right direction or if the action was beneficial in another way, e.g., to avoid a collision. For each reward function, there is a weight that defines how much influence the individual reward function has on the total reward. The weights are defined in the table below.</p>
 <div align="center">
-<div class="table-wrapper"><table><thead><tr><th>Reward Function</th><th>Weight</th></tr></thead><tbody>
-<tr><td>Relative distance</td><td>$ \omega_d $</td></tr>
-<tr><td>Heading constraint</td><td>$\omega_h$</td></tr>
-<tr><td>Collision penalty</td><td>$\omega_c$</td></tr>
-<tr><td>Velocity constraint</td><td>$\omega_v$</td></tr>
-<tr><td>Oscillation constraint</td><td>$\omega_a$</td></tr>
-</tbody></table>
-</div></div>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Reward Function</th><th>Weight</th></tr>
+</thead>
+<tbody>
+<tr><td>Relative distance</td><td><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></td></tr>
+<tr><td>Heading constraint</td><td><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">h</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></td></tr>
+<tr><td>Collision penalty</td><td><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">c</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></td></tr>
+<tr><td>Velocity constraint</td><td><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">v</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></td></tr>
+<tr><td>Oscillation constraint</td><td><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">a</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
 <h4 id="relative-distance-reward"><a class="header" href="#relative-distance-reward">Relative distance reward</a></h4>
 <p>To motivate the agent to move towards the goal, the following reward function is created:
-$$r_d = \frac{\omega_d}{1+d(x,y)^2},$$
-where, $r_d$ is a non-negative number that will increase from a number close to zero towards 1, when the rover gets closer to the goal.</p>
+<span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.0436em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1076em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord mathnormal">d</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mclose"><span class="mclose">)</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7401em;"><span style="top:-2.989em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mpunct">,</span></span></span></span></span>
+where, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is a non-negative number that will increase from a number close to zero towards 1, when the rover gets closer to the goal.</p>
 <h4 id="heading-constraint"><a class="header" href="#heading-constraint">Heading constraint</a></h4>
 <p>This reward describes the difference between the direction the rover is heading and the goal. If the heading difference is more than 90 degrees, the agent receives a penalty to prevent it from driving away from the goal. Through empirical testing the angle is set to ±115 degrees, because the rover may sometimes need to move around objects and therefore go backwards. The mentioned penalty is defined as:</p>
-<p>$$
-r_h =
-\begin{cases}
-\vert \theta_{goal}\vert &gt; 115^{\circ}, &amp; -\omega_h \cdot \vert \theta_{goal} \vert \
-\vert \theta_{goal}\vert \leq 115^{\circ}, &amp; 0
-\end{cases}
-$$</p>
-<p>where $\theta_{goal}$ is the angle between the goal location and rover heading.</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">h</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:3em;vertical-align:-1.25em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size4">{</span></span><span class="mord"><span class="mtable"><span class="col-align-l"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.69em;"><span style="top:-3.69em;"><span class="pstrut" style="height:3.008em;"></span><span class="mord"><span class="mord">∣</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">g</span><span class="mord mathnormal mtight">o</span><span class="mord mathnormal mtight">a</span><span class="mord mathnormal mtight" style="margin-right:0.01968em;">l</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mord">∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord">11</span><span class="mord"><span class="mord">5</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6741em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">∘</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span></span></span><span style="top:-2.25em;"><span class="pstrut" style="height:3.008em;"></span><span class="mord"><span class="mord">∣</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">g</span><span class="mord mathnormal mtight">o</span><span class="mord mathnormal mtight">a</span><span class="mord mathnormal mtight" style="margin-right:0.01968em;">l</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mord">∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord">11</span><span class="mord"><span class="mord">5</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6741em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">∘</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.19em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:1em;"></span><span class="col-align-l"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.69em;"><span style="top:-3.69em;"><span class="pstrut" style="height:3.008em;"></span><span class="mord"><span class="mord">−</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">h</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord">∣</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">g</span><span class="mord mathnormal mtight">o</span><span class="mord mathnormal mtight">a</span><span class="mord mathnormal mtight" style="margin-right:0.01968em;">l</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mord">∣</span></span></span><span style="top:-2.25em;"><span class="pstrut" style="height:3.008em;"></span><span class="mord"><span class="mord">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.19em;"><span></span></span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p>
+<p>where <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9805em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">g</span><span class="mord mathnormal mtight">o</span><span class="mord mathnormal mtight">a</span><span class="mord mathnormal mtight" style="margin-right:0.01968em;">l</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span></span></span></span> is the angle between the goal location and rover heading.</p>
 <h4 id="collision-penalty"><a class="header" href="#collision-penalty">Collision penalty</a></h4>
 <p>If the rover collides with a rock it will receive a penalty for colliding as seen in the equation:
-$$r_c = -\omega_c$$</p>
+<span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">c</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7333em;vertical-align:-0.15em;"></span><span class="mord">−</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">c</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span></p>
 <h4 id="velocity-constraint"><a class="header" href="#velocity-constraint">Velocity constraint</a></h4>
 <p>To ensure that the rover is not driving backwards to the goal, a penalty for non-positive velocities is given, implemented as follows:</p>
-<p>$$
-r_v =
-\begin{cases}
-v_{lin}(x,y) &lt; 0    &amp; -\omega_v \cdot \vert v_{lin} \vert\
-v_{lin}(x,y) \geq 0 &amp; 0
-\end{cases}
-$$</p>
-<p>where $v_{lin}$ is the linear velocity of the rover.</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">v</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:3em;vertical-align:-1.25em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size4">{</span></span><span class="mord"><span class="mtable"><span class="col-align-l"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.69em;"><span style="top:-3.69em;"><span class="pstrut" style="height:3.008em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.01968em;">l</span><span class="mord mathnormal mtight">in</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord">0</span></span></span><span style="top:-2.25em;"><span class="pstrut" style="height:3.008em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.01968em;">l</span><span class="mord mathnormal mtight">in</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≥</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.19em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:1em;"></span><span class="col-align-l"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.69em;"><span style="top:-3.69em;"><span class="pstrut" style="height:3.008em;"></span><span class="mord"><span class="mord">−</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">v</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord">∣</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.01968em;">l</span><span class="mord mathnormal mtight">in</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">∣</span></span></span><span style="top:-2.25em;"><span class="pstrut" style="height:3.008em;"></span><span class="mord"><span class="mord">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.19em;"><span></span></span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p>
+<p>where <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.01968em;">l</span><span class="mord mathnormal mtight">in</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is the linear velocity of the rover.</p>
 <h4 id="oscillation-constraint"><a class="header" href="#oscillation-constraint">Oscillation constraint</a></h4>
 <p>To smooth the output of the neural network, a penalty is implemented to discourage sudden changes by comparing the current action to the previous action:</p>
-<p>$$r_a = -\omega_a \sum^2_i (a_{i,t}-a_{i,t-1})^2$$</p>
-<p>where $a_{i,t}$ is the action $i$ at time $t$.</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">a</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:3.0788em;vertical-align:-1.2777em;"></span><span class="mord">−</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">a</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.8011em;"><span style="top:-1.8723em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span><span style="top:-3.05em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∑</span></span></span><span style="top:-4.3em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.2777em;"><span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mpunct mtight">,</span><span class="mord mathnormal mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.1502em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mpunct mtight">,</span><span class="mord mathnormal mtight">t</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mclose"><span class="mclose">)</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span></p>
+<p>where <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7167em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mpunct mtight">,</span><span class="mord mathnormal mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span></span></span></span> is the action <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6595em;"></span><span class="mord mathnormal">i</span></span></span></span> at time <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6151em;"></span><span class="mord mathnormal">t</span></span></span></span>.</p>
 <h4 id="total-reward"><a class="header" href="#total-reward">Total reward</a></h4>
 <p>At each time step, the total reward is calculated as the sum of the outputs of all presented reward functions:</p>
-<p>$$r_{total} = r_d  + r_c + r_v + r_h + r_a$$</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight">o</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight">a</span><span class="mord mathnormal mtight" style="margin-right:0.01968em;">l</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">c</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">v</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">h</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">a</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span></p>
 <h2 id="neural-network"><a class="header" href="#neural-network">Neural Network</a></h2>
-<p>As training is performed using an on-policy method, the policy $\pi_\theta$ is modeled using a Gaussian model. The network architecture is designed to generate a latent representations of the terrain in close proximity to the rover denoted $l_t$. This is defined as</p>
-<p>$$
-l_t = e(o_t^t),
-$$</p>
-<p>where $e$ are encoders for the terrain input. The encoder consist of two linear layers of size <code>[60, 20]</code> and utilize LeakyReLU as the activation function. A multilayer perceptron is then applied to the latent representation and the proprioceptive input as</p>
-<p>$$
-a = mlp(o_t^p, l_t),
-$$</p>
-<p>where $a$ refers to the actions and $mlp$ is a multilayer perceptron with three linear layers of size <code>[512, 256, 128]</code> and LeakyReLU as the activation function. The network architecture is visualized below.</p>
+<p>As training is performed using an on-policy method, the policy <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">π</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.02778em;">θ</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is modeled using a Gaussian model. The network architecture is designed to generate a latent representations of the terrain in close proximity to the rover denoted <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.01968em;">l</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0197em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>. This is defined as</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.01968em;">l</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0197em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0936em;vertical-align:-0.25em;"></span><span class="mord mathnormal">e</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">o</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8436em;"><span style="top:-2.453em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mpunct">,</span></span></span></span></span></p>
+<p>where <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">e</span></span></span></span> are encoders for the terrain input. The encoder consist of two linear layers of size <code>[60, 20]</code> and utilize LeakyReLU as the activation function. A multilayer perceptron is then applied to the latent representation and the proprioceptive input as</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0323em;vertical-align:-0.25em;"></span><span class="mord mathnormal">m</span><span class="mord mathnormal">lp</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">o</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.7823em;"><span style="top:-2.4542em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span><span style="top:-3.1809em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">p</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2458em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.01968em;">l</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0197em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mpunct">,</span></span></span></span></span></p>
+<p>where <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span></span></span></span> refers to the actions and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">m</span><span class="mord mathnormal">lp</span></span></span></span> is a multilayer perceptron with three linear layers of size <code>[512, 256, 128]</code> and LeakyReLU as the activation function. The network architecture is visualized below.</p>
 <div align="center">
-    <img src="tasks/../_imgs/CNN.png" width="100%" alt="Actor">
+    <img src="_imgs/CNN.png" width="100%" alt="Actor">
 </div>
+
 <h2 id="environment"><a class="header" href="#environment">Environment</a></h2>
 <p>Below the environment used in this task in shown, it features a 200m x 200m map with obstacles.</p>
 <div align="center">
-    <img src="tasks/../_imgs/environment.png" width="100%" alt="Env">
+    <img src="_imgs/environment.png" width="100%" alt="Env">
 </div>
+
 <h1 id="tube-grasping"><a class="header" href="#tube-grasping">Tube Grasping</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h2 id="adding-new-assets"><a class="header" href="#adding-new-assets">Adding new assets</a></h2>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="dataset-recordings"><a class="header" href="#dataset-recordings">Dataset Recordings</a></h1>
+<p>RLRoverLab records datasets from <code>examples/03_inference/eval.py</code> when
+<code>--dataset_name</code> is set. Files are written to
+<code>&lt;dataset_dir&gt;/&lt;dataset_name&gt;.hdf5</code> on environment close.</p>
+<pre><code class="language-bash">python examples/03_inference/eval.py \
+  --task AAURoverEnvRGBDRawWVGA-v0 \
+  --num_envs 1 \
+  --steps 1000 \
+  --enable_cameras \
+  --dataset_dir ./datasets \
+  --dataset_name rover_wvga_expert_1000 \
+  --dataset_type RL_COMPRESSED
+</code></pre>
+<h2 id="recorder-types"><a class="header" href="#recorder-types">Recorder Types</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>--dataset_type</code></th><th>Format</th><th>Use when</th></tr>
+</thead>
+<tbody>
+<tr><td><code>RL</code></td><td>Legacy Isaac Lab HDF5, robomimic-style layout</td><td>A loader expects <code>/data/demo_*/obs</code>, <code>/data/demo_*/next_obs</code>, actions, rewards, and dones.</td></tr>
+<tr><td><code>IL</code></td><td>Legacy Isaac Lab HDF5, robomimic-style layout</td><td>Only observations and actions are needed.</td></tr>
+<tr><td><code>RL_COMPRESSED</code></td><td>Optimized RLRoverLab RGB-D schema</td><td>RGB-D storage size and random-access offline loading matter more than direct robomimic layout compatibility.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="legacy-hdf5"><a class="header" href="#legacy-hdf5">Legacy HDF5</a></h2>
+<p><code>RL</code> and <code>IL</code> use Isaac Lab’s default HDF5 dataset writer. The layout follows
+the robomimic convention of storing demonstrations under <code>/data/demo_N</code>.
+Current robomimic training compatibility still depends on the loader,
+environment metadata, and observation keys used by the training config.</p>
+<p>For <code>RL</code>, each episode contains:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Path</th><th>Contents</th></tr>
+</thead>
+<tbody>
+<tr><td><code>/data</code></td><td>Root data group. Attribute <code>total</code> is the total transition count; <code>env_args</code> stores environment metadata as JSON.</td></tr>
+<tr><td><code>/data/demo_N</code></td><td>One recorded episode. Attributes include <code>num_samples</code> and optional <code>seed</code> and <code>success</code>.</td></tr>
+<tr><td><code>/data/demo_N/actions</code></td><td>Action tensor for each transition.</td></tr>
+<tr><td><code>/data/demo_N/rewards</code></td><td>Reward tensor for each transition.</td></tr>
+<tr><td><code>/data/demo_N/dones</code></td><td>Done flags for each transition.</td></tr>
+<tr><td><code>/data/demo_N/obs/...</code></td><td>Observation at time <code>t</code>.</td></tr>
+<tr><td><code>/data/demo_N/next_obs/...</code></td><td>Observation after the action, at time <code>t + 1</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>IL</code> uses the same episode layout but records only <code>actions</code> and <code>obs</code>.
+Datasets are gzip-compressed by HDF5. This format is simple and compatible with
+many robomimic-style loaders, but RGB-D trajectories are large because
+<code>next_obs</code> physically duplicates the next observation tree.</p>
+<p>Use it with:</p>
+<pre><code class="language-bash">python examples/03_inference/eval.py \
+  --task AAURoverEnvRGBDRawWVGA-v0 \
+  --num_envs 1 \
+  --steps 1000 \
+  --enable_cameras \
+  --dataset_dir ./datasets \
+  --dataset_name rover_wvga_legacy_1000 \
+  --dataset_type RL
+</code></pre>
+<h2 id="optimized-rgb-d-hdf5"><a class="header" href="#optimized-rgb-d-hdf5">Optimized RGB-D HDF5</a></h2>
+<p><code>RL_COMPRESSED</code> writes RLRoverLab’s optimized RGB-D HDF5 schema. It stores RGB
+and depth observations once in an indexed timeline instead of duplicating a
+physical <code>next_obs</code> tree.</p>
+<p>Use it when RGB-D storage size and random-access offline loading matter more
+than direct robomimic layout compatibility. The full dataloader contract is in
+<a href="#optimized-rgb-d-hdf5-1">Optimized RGB-D HDF5</a>.</p>
+<p>Record an optimized RGB-D dataset with:</p>
+<pre><code class="language-bash">python examples/03_inference/eval.py \
+  --task AAURoverEnvRGBDRawWVGA-v0 \
+  --num_envs 1 \
+  --steps 1000 \
+  --enable_cameras \
+  --dataset_dir ./datasets \
+  --dataset_name rover_wvga_compressed_1000 \
+  --dataset_type RL_COMPRESSED
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="optimized-rgb-d-hdf5-1"><a class="header" href="#optimized-rgb-d-hdf5-1">Optimized RGB-D HDF5</a></h1>
+<p><code>--dataset_type RL_COMPRESSED</code> writes RLRoverLab’s optimized RGB-D schema:
+<code>rlroverlab.offline_rgbd_v2</code> with <code>format_version = 2</code>. It is designed for
+offline RGB-D dataloaders, not Isaac Lab episode replay or direct robomimic
+layout consumption.</p>
+<p>The key idea is simple: for an episode with <code>T</code> actions, the file stores
+<code>T + 1</code> observations once in a single observation timeline. A transition stores
+the action, reward, done flags, and two integer indices: one pointing to
+<code>obs_t</code>, and one pointing to <code>obs_{t+1}</code>. Therefore the file has no physical
+<code>next_obs</code> group.</p>
+<h2 id="file-attributes"><a class="header" href="#file-attributes">File Attributes</a></h2>
+<p>Only a few attributes are needed to load samples. The others are metadata that
+make the file easier to inspect and validate.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Attribute</th><th>Expected value or meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>schema_name</code></td><td>Must be <code>rlroverlab.offline_rgbd_v2</code>.</td></tr>
+<tr><td><code>format_version</code></td><td>Must be <code>2</code> for this document.</td></tr>
+<tr><td><code>writer_status</code></td><td>Must be <code>complete</code>; incomplete or failed files should not be used for training.</td></tr>
+<tr><td><code>recommended_rgb_scale</code></td><td>Scale applied by the loader after RGB decode. Default is <code>1 / 255</code>.</td></tr>
+<tr><td><code>recommended_depth_scale_m</code></td><td>Scale applied by the loader after depth decode. Default is <code>0.001</code> m per integer unit.</td></tr>
+<tr><td><code>depth_invalid_sentinel</code></td><td>Invalid depth value after decode. Default is <code>0</code>.</td></tr>
+<tr><td><code>total_transitions</code></td><td>Convenience count. It should match <code>len(/transitions/actions)</code>.</td></tr>
+<tr><td><code>total_observations</code></td><td>Convenience count. It should match <code>len(/observations/rgb_jpeg)</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Attributes such as <code>zero_structural_duplication</code>, <code>total_episodes</code>,
+<code>camera_width</code>, <code>camera_height</code>, <code>camera_channels</code>, <code>depth_min_m</code>,
+<code>depth_max_m</code>, codec names, source names, and JPEG quality are useful for
+inspection, but a loader can derive or ignore them.</p>
+<h2 id="groups"><a class="header" href="#groups">Groups</a></h2>
+<p>The optimized file has three data groups that matter to a loader:
+<code>/observations</code>, <code>/transitions</code>, and <code>/index</code>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Group</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>/observations</code></td><td>Stores every observation once. Visual observations are compressed byte arrays; non-visual observations are numeric timelines.</td></tr>
+<tr><td><code>/transitions</code></td><td>Stores transition-level values such as actions, rewards, and done flags.</td></tr>
+<tr><td><code>/index</code></td><td>Connects transition rows to observation rows and, for sequence loaders, to episode boundaries.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>/episodes</code> and <code>/data</code> are metadata groups. They are useful for inspection and
+environment metadata, but they are not needed to reconstruct training samples.</p>
+<h2 id="observations-group"><a class="header" href="#observations-group">Observations Group</a></h2>
+<p><code>/observations</code> has one row per observation timestep. For each episode with <code>T</code>
+actions, this group receives <code>T + 1</code> rows: the initial observation and one
+post-action observation for each transition.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Path</th><th>Contents</th></tr>
+</thead>
+<tbody>
+<tr><td><code>/observations/rgb_jpeg</code></td><td>Shape <code>(num_observations,)</code>. Each row is a variable-length <code>uint8</code> array containing one JPEG frame. Decode to RGB <code>uint8</code> with shape <code>(H, W, 3)</code>.</td></tr>
+<tr><td><code>/observations/depth_jp2</code></td><td>Shape <code>(num_observations,)</code>. Each row is a variable-length <code>uint8</code> array containing one JPEG2000 depth image. Decode to single-channel <code>uint16</code> depth in millimeters.</td></tr>
+<tr><td><code>/observations/state/...</code></td><td>Optional numeric observation values. Every leaf dataset has length <code>num_observations</code>. Keys are task-dependent; common rover keys include <code>angle_diff</code>, <code>distance</code>, and <code>heading</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p>RGB and depth rows with the same observation index belong to the same timestep.
+State rows, when present, use the same indexing.</p>
+<h2 id="transitions-group"><a class="header" href="#transitions-group">Transitions Group</a></h2>
+<p><code>/transitions</code> has one row per action step. A minimal offline RL transition uses
+<code>actions</code>, <code>rewards</code>, and <code>dones</code>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Path</th><th>Contents</th></tr>
+</thead>
+<tbody>
+<tr><td><code>/transitions/actions</code></td><td>Action tensor. First dimension is <code>num_transitions</code>; remaining dimensions are the action shape.</td></tr>
+<tr><td><code>/transitions/rewards</code></td><td>Reward tensor. First dimension is <code>num_transitions</code>.</td></tr>
+<tr><td><code>/transitions/dones</code></td><td>Boolean episode-boundary flag for each transition.</td></tr>
+<tr><td><code>/transitions/timeouts</code></td><td>Optional boolean flag for time-limit truncations.</td></tr>
+<tr><td><code>/transitions/terminals</code></td><td>Optional boolean flag for true terminal states. If <code>timeouts</code> is present, this can be derived as <code>dones &amp; ~timeouts</code>.</td></tr>
+<tr><td><code>/transitions/extra/...</code></td><td>Optional numeric transition data. Every leaf dataset has length <code>num_transitions</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p>For the simplest loader, <code>dones</code> is enough. <code>timeouts</code> and <code>terminals</code> are kept
+to support offline RL algorithms that distinguish real terminal states from
+time-limit truncations.</p>
+<h2 id="index-group"><a class="header" href="#index-group">Index Group</a></h2>
+<p><code>/index</code> is what replaces a physical <code>next_obs</code> group. It maps each transition
+row to the observation row for <code>obs_t</code> and <code>obs_{t+1}</code>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Path</th><th>Contents</th></tr>
+</thead>
+<tbody>
+<tr><td><code>/index/obs_index</code></td><td><code>int64</code>, shape <code>(num_transitions,)</code>. Observation row for <code>obs_t</code>.</td></tr>
+<tr><td><code>/index/next_obs_index</code></td><td><code>int64</code>, shape <code>(num_transitions,)</code>. Observation row for <code>obs_{t+1}</code>. In the current writer this is always <code>obs_index + 1</code>.</td></tr>
+<tr><td><code>/index/episode_lengths</code></td><td><code>int64</code>, shape <code>(num_episodes,)</code>. Optional for random transition loading, required for episode-aware sequence sampling.</td></tr>
+<tr><td><code>/index/obs_offsets</code></td><td><code>int64</code>, shape <code>(num_episodes,)</code>. First observation row for each episode. Required for sequence loading.</td></tr>
+<tr><td><code>/index/transition_offsets</code></td><td><code>int64</code>, shape <code>(num_episodes,)</code>. First transition row for each episode. Required for sequence loading.</td></tr>
+<tr><td><code>/index/episode_id</code></td><td>Optional per-transition episode id. Derivable from <code>episode_lengths</code> and <code>transition_offsets</code>.</td></tr>
+<tr><td><code>/index/episode_transition_index</code></td><td>Optional local timestep inside each episode. Derivable from <code>transition_offsets</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p>For a random transition dataloader, only <code>obs_index</code> and <code>next_obs_index</code> are
+strictly needed. Episode offsets and lengths are needed when sampling contiguous
+sequences, splitting by episode, or doing frame stacking without crossing
+episode boundaries.</p>
+<h2 id="index-invariants"><a class="header" href="#index-invariants">Index Invariants</a></h2>
+<p>For episode <code>e</code>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Quantity</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>T = /index/episode_lengths[e]</code></td><td>Number of transitions in episode <code>e</code>.</td></tr>
+<tr><td><code>o0 = /index/obs_offsets[e]</code></td><td>Start of the episode’s observation timeline.</td></tr>
+<tr><td><code>t0 = /index/transition_offsets[e]</code></td><td>Start of the episode’s transition rows.</td></tr>
+<tr><td>Observation rows</td><td><code>o0, o0 + 1, ..., o0 + T</code>. There are <code>T + 1</code> rows.</td></tr>
+<tr><td>Transition rows</td><td><code>t0, t0 + 1, ..., t0 + T - 1</code>. There are <code>T</code> rows.</td></tr>
+</tbody>
+</table>
+</div>
+<p>For global transition row <code>i</code>, a loader reconstructs the transition as:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Read from</th></tr>
+</thead>
+<tbody>
+<tr><td><code>obs</code></td><td>Decode observation at <code>/index/obs_index[i]</code>.</td></tr>
+<tr><td><code>action</code></td><td><code>/transitions/actions[i]</code>.</td></tr>
+<tr><td><code>reward</code></td><td><code>/transitions/rewards[i]</code>.</td></tr>
+<tr><td><code>next_obs</code></td><td>Decode observation at <code>/index/next_obs_index[i]</code>.</td></tr>
+<tr><td><code>done</code></td><td><code>/transitions/dones[i]</code>. If absent in older files, use <code>terminals[i] or timeouts[i]</code>.</td></tr>
+<tr><td><code>terminal</code></td><td><code>/transitions/terminals[i]</code>.</td></tr>
+<tr><td><code>timeout</code></td><td><code>/transitions/timeouts[i]</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The writer validates that <code>next_obs_index[i] == obs_index[i] + 1</code> and that the
+next index never points past <code>total_observations</code>.</p>
+<h2 id="visual-decode-rules"><a class="header" href="#visual-decode-rules">Visual Decode Rules</a></h2>
+<p>RGB frames are stored as raw camera RGB values encoded as JPEG.</p>
+<ol>
+<li>Read <code>encoded = file["observations/rgb_jpeg"][obs_index]</code>.</li>
+<li>Convert the variable-length <code>uint8</code> array to bytes.</li>
+<li>Decode JPEG to <code>uint8</code>.</li>
+<li>Ensure channel order is RGB. Pillow returns RGB after <code>.convert("RGB")</code>; OpenCV returns BGR and must be converted with <code>[..., ::-1]</code>.</li>
+<li>Convert to <code>float32</code> and multiply by <code>recommended_rgb_scale</code> for training.</li>
+<li>Common tensor layout for PyTorch is channel-first <code>(3, H, W)</code>.</li>
+</ol>
+<p>Depth frames are metric camera depth values quantized before compression.</p>
+<ol>
+<li>Source depth is in meters.</li>
+<li>During recording, finite depths in <code>[depth_min_m, depth_max_m]</code> are rounded to millimeters and stored as <code>uint16</code>.</li>
+<li>Invalid, NaN, too-near, or too-far depth values are stored as <code>depth_invalid_sentinel</code>, normally <code>0</code>.</li>
+<li>Read <code>encoded = file["observations/depth_jp2"][obs_index]</code>.</li>
+<li>Decode JPEG2000 to a single-channel <code>uint16</code> image.</li>
+<li>Convert to <code>float32</code> meters with <code>depth_m = decoded_uint16 * recommended_depth_scale_m</code>.</li>
+<li>Preserve or mask <code>decoded_uint16 == depth_invalid_sentinel</code> as invalid. Do not treat <code>0</code> as a valid obstacle distance.</li>
+<li>Common tensor layout for PyTorch is <code>(1, H, W)</code>.</li>
+</ol>
+<p>JPEG2000 decode requires a library built with JPEG2000 support. Pillow with
+OpenJPEG works on CPU. CUDA loaders can use torchvision or nvJPEG for RGB JPEG
+and NVIDIA nvImageCodec or nvJPEG2000 for depth JP2.</p>
+<h2 id="reconstructing-samples"><a class="header" href="#reconstructing-samples">Reconstructing Samples</a></h2>
+<p>For global transition row <code>i</code>, read:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Sample field</th><th>Source</th></tr>
+</thead>
+<tbody>
+<tr><td><code>obs</code></td><td>Decode <code>/observations/...</code> at row <code>/index/obs_index[i]</code>.</td></tr>
+<tr><td><code>action</code></td><td><code>/transitions/actions[i]</code>.</td></tr>
+<tr><td><code>reward</code></td><td><code>/transitions/rewards[i]</code>.</td></tr>
+<tr><td><code>next_obs</code></td><td>Decode <code>/observations/...</code> at row <code>/index/next_obs_index[i]</code>.</td></tr>
+<tr><td><code>done</code></td><td><code>/transitions/dones[i]</code>.</td></tr>
+<tr><td><code>timeout</code></td><td><code>/transitions/timeouts[i]</code> if present.</td></tr>
+<tr><td><code>terminal</code></td><td><code>/transitions/terminals[i]</code> if present, otherwise <code>done and not timeout</code> when timeout is available.</td></tr>
+<tr><td><code>extra</code></td><td>Any matching row in <code>/transitions/extra/...</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The current writer validates that <code>next_obs_index[i] == obs_index[i] + 1</code> and
+that the next index never points past the observation timeline.</p>
+<p>For sequence loaders, select one episode <code>e</code>, choose a local start timestep
+<code>s</code>, then read transition rows
+<code>transition_offsets[e] + s : transition_offsets[e] + s + sequence_length</code> and
+observation rows <code>obs_offsets[e] + s : obs_offsets[e] + s + sequence_length</code>.
+The corresponding <code>next_obs</code> rows are the same observation rows shifted by one.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="addings-new-robots-or-assets"><a href="#addings-new-robots-or-assets" class="header">Addings new robots or assets</a></h1>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h2 id="adding-new-assets"><a class="header" href="#adding-new-assets">Adding new assets</a></h2>
 <p>To integrate a new robot asset into your project, please follow the steps outlined below. These steps ensure that the asset is correctly added and configured for use in Isaac Lab.</p>
 <h3 id="step-1-collect-the-asset"><a class="header" href="#step-1-collect-the-asset">Step 1: Collect the Asset</a></h3>
 <p>Begin by collecting the necessary asset within Isaac Sim. You do this by right clicking your robot USD file, and click collect as illustratred in the figure below.</p>
-<p><img src="development/../_imgs/collect_asset.png" alt="Collect" /></p>
+<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="_imgs/collect_asset.png" alt="Collect"><span class="img-wrapper"><img src="_imgs/collect_asset.png" alt="Collect"></span></label></p>
 <p>You then type in the following options, select an output folder and click collect.</p>
-<p><img src="development/../_imgs/collect_asset2.png" alt="Collect2" /></p>
+<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="_imgs/collect_asset2.png" alt="Collect2"><span class="img-wrapper"><img src="_imgs/collect_asset2.png" alt="Collect2"></span></label></p>
 <h3 id="step-2-add-the-asset-files"><a class="header" href="#step-2-add-the-asset-files">Step 2: Add the Asset Files</a></h3>
-<p>Once you have the asset, you need to add it to your project's file structure. Specifically:</p>
+<p>Once you have the asset, you need to add it to your project’s file structure. Specifically:</p>
 <ul>
 <li>
 <p>Navigate to <code>rover_envs/assets/robots/YOUR_ROBOT_NAME</code>.</p>
@@ -529,7 +835,10 @@ $$</p>
 <li>Open <code>YOUR_ROBOT_NAME.cfg</code> and configure it as needed. You can refer to previous configuration files for examples of how to structure your settings. An example configuration file can be found here: <a href="https://github.com/abmoRobotics/RLRoverLab/blob/main/rover_envs/assets/robots/exomy.py">Exomy Example Configuration</a>.</li>
 </ul>
 <p>By following these steps, you can successfully add and configure a new robot asset and use the suite to train an agent or perform experiments.</p>
-<div style="break-before: page; page-break-before: always;"></div><h2 id="adding-a-new-task"><a class="header" href="#adding-a-new-task">Adding a New Task</a></h2>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="adding-a-new-task-1"><a href="#adding-a-new-task-1" class="header">Adding a new task</a></h1>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h2 id="adding-a-new-task"><a class="header" href="#adding-a-new-task">Adding a New Task</a></h2>
 <p>To incorporate a new task into your project, follow the steps outlined below. This guide ensures that your new task is properly set up and integrated within the existing project structure.</p>
 <h3 id="step-1-create-a-new-environment-folder"><a class="header" href="#step-1-create-a-new-environment-folder">Step 1: Create a New Environment Folder</a></h3>
 <ul>
@@ -537,12 +846,12 @@ $$</p>
 </ul>
 <h3 id="step-2-create-the-task-configuration-file"><a class="header" href="#step-2-create-the-task-configuration-file">Step 2: Create the Task Configuration File</a></h3>
 <ul>
-<li>Inside <code>TASK_FOLDER</code>, create a configuration file named <code>TASK_env_cfg.py</code>, substituting <code>TASK</code> with the name of your task. This file will define the task's configuration.</li>
+<li>Inside <code>TASK_FOLDER</code>, create a configuration file named <code>TASK_env_cfg.py</code>, substituting <code>TASK</code> with the name of your task. This file will define the task’s configuration.</li>
 </ul>
 <h3 id="step-3-define-the-mdps"><a class="header" href="#step-3-define-the-mdps">Step 3: Define the MDPs</a></h3>
 <ul>
 <li>
-<p>In <code>TASK_env_cfg.py</code>, you'll define the configurations for actions, observations, terminations, commands, and, optionally, randomizations that make up your task's Markov Decision Process (MDP).</p>
+<p>In <code>TASK_env_cfg.py</code>, you’ll define the configurations for actions, observations, terminations, commands, and, optionally, randomizations that make up your task’s Markov Decision Process (MDP).</p>
 <p>You can refer to the <a href="https://github.com/abmoRobotics/RLRoverLab/blob/main/rover_envs/envs/navigation/rover_env_cfg.py">Navigation Task example</a> for guidance on how to structure this file.</p>
 </li>
 </ul>
@@ -593,7 +902,10 @@ gym.register(
 cd examples/02_train
 python train.py --task="TASK_NAME-v0" --num_envs=128
 </code></pre>
-<div style="break-before: page; page-break-before: always;"></div><p>Benchmarks will be available soon. Stay tuned!</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="benchmarks"><a href="#benchmarks" class="header">Benchmarks</a></h1>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<p>Benchmarks will be available soon. Stay tuned!</p>
 
                     </main>
 
@@ -612,6 +924,11 @@ python train.py --task="TASK_NAME-v0" --num_envs=128
 
         </div>
 
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
 
 
 
@@ -620,13 +937,13 @@ python train.py --task="TASK_NAME-v0" --num_envs=128
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-609e4cb8.js"></script>
 
         <!-- Custom JS scripts -->
 
