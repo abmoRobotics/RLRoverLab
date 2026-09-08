@@ -13,7 +13,6 @@ Welcome to RLRoverLab! This project implements Reinforcement Learning (RL) agent
 ## Features
 
 - **Navigation Tasks**: RL environments for the AAU Rover and ExoMy, including state, height-map, camera, and RGB-D observations.
-- **Manipulation Scaffolding**: Experimental configuration code that is not yet set up or release-tested.
 - **Isaac Sim and Isaac Lab Integration**: Utilizes the advanced simulation environments of Isaac Sim and the Isaac Lab framework for realistic task scenarios.
 - **Expandable Framework**: Architecture designed for easy extension with new tasks and functionalities.
 
