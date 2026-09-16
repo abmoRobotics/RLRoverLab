@@ -6,7 +6,11 @@ from pathlib import Path
 from typing import Any
 
 import torch
+import logging
 
+
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_ACTOR_CONFIG: dict[str, Any] = {
     "proprioception_channels": 3,
@@ -145,7 +149,7 @@ class CloneLabActorPolicy:
 
         actor = build_actor(factory_spec, model_config, device)
         loaded_path = load_actor_state(actor, checkpoint, checkpoint_name, device)
-        print(f"[INFO] Loaded CloneLab actor checkpoint: {loaded_path}")
+        logger.info(f"Loaded CloneLab actor checkpoint: {loaded_path}")
         return cls(actor, device)
 
     def act(self, state: dict[str, torch.Tensor], deterministic: bool = True) -> torch.Tensor:
