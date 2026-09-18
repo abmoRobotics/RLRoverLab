@@ -12,19 +12,22 @@ def _get_current_stage() -> Usd.Stage:
     return stage
 
 
-def prepare_rover_contact_sensors(report_targets: Sequence[str]) -> None:
+def prepare_rover_contact_sensors(
+    report_targets: Sequence[str],
+    prim_path_expr: str = "/World/envs/env_.*/Robot/.*_(Drive|Steer|Boogie|Bogie|Body|Rocker)",
+) -> None:
     """Attach rover contact report pairs for all matching prims in the stage."""
     if not report_targets:
         raise ValueError("At least one rover contact report target is required.")
 
     stage = _get_current_stage()
-    pattern = "/World/envs/env_.*/Robot/.*_(Drive|Steer|Boogie|Bogie|Body|Rocker)$"
+    pattern = prim_path_expr.replace("{ENV_REGEX_NS}", "/World/envs/env_.*")
     matching_prims = []
     prim: Usd.Prim
     for prim in stage.Traverse():
         if prim.IsA(UsdGeom.Xform):
             prim_path: Sdf.Path = prim.GetPath()
-            if re.match(pattern, prim_path.pathString):
+            if re.fullmatch(pattern, prim_path.pathString):
                 matching_prims.append(prim_path)
 
     for prim in matching_prims:
