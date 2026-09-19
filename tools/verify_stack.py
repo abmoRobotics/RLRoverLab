@@ -13,7 +13,7 @@ from importlib import metadata
 from pathlib import Path
 
 
-EXPECTED_ISAAC_SIM_VERSION = "6.0.1"
+EXPECTED_ISAAC_SIM_VERSION = "6.1.0"
 EXPECTED_ISAAC_LAB_REF = "v3.0.0-beta2.patch1"
 EXPECTED_ISAAC_LAB_SHA = "ffff603eafc6b74264a5261cc0183d6a65390d78"
 

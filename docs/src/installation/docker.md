@@ -2,7 +2,7 @@
 
 Docker is the **recommended installation method** as it provides a consistent environment with all dependencies pre-installed.
 
-The image is pinned to Isaac Sim `6.0.1` (including its multi-architecture image digest), Isaac Lab
+The image is pinned to Isaac Sim `6.1.0` (including its multi-architecture image digest), Isaac Lab
 `v3.0.0-beta2.patch1` (`ffff603`), and Python 3.12.
 
 ### Prerequisites

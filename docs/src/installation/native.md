@@ -16,7 +16,7 @@ Docker is the validated installation path. For native development, use a clean P
 uv venv --python 3.12 --seed env_roverlab
 source env_roverlab/bin/activate
 
-uv pip install "isaacsim[all,extscache]==6.0.1.0" \
+uv pip install "isaacsim[all,extscache]==6.1.0.0" \
   --extra-index-url https://pypi.nvidia.com \
   --index-strategy unsafe-best-match \
   --prerelease=allow

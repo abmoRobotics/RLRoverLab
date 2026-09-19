@@ -1,7 +1,7 @@
 
 # RLRoverLab
 
-[![Isaac Sim](https://img.shields.io/badge/IsaacSim-6.0.1-green.svg)](https://docs.isaacsim.omniverse.nvidia.com/6.0.1/)
+[![Isaac Sim](https://img.shields.io/badge/IsaacSim-6.1.0-green.svg)](https://docs.isaacsim.omniverse.nvidia.com/6.1.0/)
 [![Isaac Lab](https://img.shields.io/badge/IsaacLab-v3.0.0--beta2.patch1-green)](https://github.com/isaac-sim/IsaacLab/releases/tag/v3.0.0-beta2.patch1)
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://docs.python.org/3/whatsnew/3.12.html)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04%20%7C%2024.04-orange.svg)](https://abmorobotics.github.io/RLRoverLab/installation/installation.html)
