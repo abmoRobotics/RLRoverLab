@@ -11,6 +11,7 @@ gym.register(
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": env_cfg.SawppyEnvCfg,
+        "rsl_rl_cfg_entry_point": "rover_envs.envs.navigation.learning.rsl_rl.ppo_cfg:RoverPPORunnerCfg",
         "skrl_cfgs": {
             "PPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_ppo.yaml",
             "TRPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_trpo.yaml",

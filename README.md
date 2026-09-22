@@ -20,6 +20,16 @@ Welcome to RLRoverLab! This project implements Reinforcement Learning (RL) agent
 
 To get started with RLRoverLab, please refer to our [Installation Guide](https://abmorobotics.github.io/RLRoverLab/installation/installation.html). The guide provides comprehensive steps for setting up the suite using Docker as well as instructions for native installation.
 
+### Train with RSL-RL
+
+The height-map tasks (`AAURoverEnv-v0`, `AAURoverEnvSimple-v0`, `Exomy-v0`, and `Sawppy-v0`) have an RSL-RL PPO configuration. From the repository root:
+
+```bash
+python examples/02_training/train_rsl_rl.py --task AAURoverEnvSimple-v0 --num_envs 128 --terrain mars --viz none
+```
+
+Use `--max_iterations` to set the training length or `--checkpoint` to resume an RSL-RL run. Training exports `policy.onnx` alongside checkpoints under `logs/rsl_rl/rover_heightmap/`. To export an existing checkpoint without training, pass `--checkpoint PATH --export-only`. Additional agent configurations can be registered with a Gym key and selected with `--agent KEY`. The RSL-RL baseline uses an MLP on the flat height-map observation; the existing skrl trainer keeps its CNN and supports the camera tasks.
+
 ### Quick Links
 
 - [Installation Guide](https://abmorobotics.github.io/RLRoverLab/installation/installation.html)

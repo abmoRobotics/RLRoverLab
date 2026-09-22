@@ -10,6 +10,7 @@ gym.register(
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": env_cfg.ExoMyEnvCfg,
+        "rsl_rl_cfg_entry_point": "rover_envs.envs.navigation.learning.rsl_rl.ppo_cfg:RoverPPORunnerCfg",
         "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent.pt",
     }
 )

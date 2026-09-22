@@ -10,6 +10,7 @@ gym.register(
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": env_cfg.AAURoverEnvCfg,
+        "rsl_rl_cfg_entry_point": "rover_envs.envs.navigation.learning.rsl_rl.ppo_cfg:RoverPPORunnerCfg",
         "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_heightmap.pt",
         "skrl_cfgs": {
             "PPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_ppo.yaml",
@@ -27,6 +28,7 @@ gym.register(
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": env_cfg.AAURoverEnvCfgSimple,
+        "rsl_rl_cfg_entry_point": "rover_envs.envs.navigation.learning.rsl_rl.ppo_cfg:RoverPPORunnerCfg",
         "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_heightmap.pt",
         "skrl_cfgs": {
             "PPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_ppo.yaml",
