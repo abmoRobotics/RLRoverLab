@@ -7,6 +7,7 @@
 """Utility functions for parsing skrl configuration files."""
 
 import yaml
+from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 __all__ = ["parse_skrl_cfg"]
 

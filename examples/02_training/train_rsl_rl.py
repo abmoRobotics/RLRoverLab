@@ -38,6 +38,7 @@ from isaaclab_tasks.utils import load_cfg_from_registry, parse_env_cfg  # noqa: 
 from rsl_rl.runners import OnPolicyRunner  # noqa: E402
 
 import rover_envs.envs.navigation.robots  # noqa: E402, F401
+from rover_envs.utils.rsl_rl_wandb import patch_rsl_rl_logger_for_training_progress  # noqa: E402
 
 
 def train() -> int:
@@ -60,7 +61,10 @@ def train() -> int:
             os.path.join("logs", "rsl_rl", agent_cfg.experiment_name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         )
         env_cfg.log_dir = log_dir
-        env = RslRlVecEnvWrapper(gym.make(args.task, cfg=env_cfg), clip_actions=agent_cfg.clip_actions)
+        gym_env = gym.make(args.task, cfg=env_cfg)
+        step_dt = gym_env.unwrapped.step_dt
+        env = RslRlVecEnvWrapper(gym_env, clip_actions=agent_cfg.clip_actions)
+        patch_rsl_rl_logger_for_training_progress(step_dt=step_dt)
         runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
         if args.checkpoint:
             runner.load(args.checkpoint, map_location=agent_cfg.device)

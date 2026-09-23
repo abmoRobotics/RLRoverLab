@@ -111,18 +111,19 @@ def train():
                 raise ValueError("--checkpoint-interval must be greater than zero.")
             experiment_cfg["agent"]["experiment"]["checkpoint_interval"] = args_cli.checkpoint_interval
         experiment_cfg.setdefault("agent", {}).setdefault("experiment", {})["wandb"] = bool(args_cli.wandb)
-        if args_cli.wandb:
-            patch_skrl_summary_writer_for_wandb()
 
         log_dir = log_setup(experiment_cfg, env_cfg, args_cli.agent)
 
         # Create the environment
         render_mode = "rgb_array" if args_cli.video else None
         env = gym.make(args_cli.task, cfg=env_cfg, render_mode=render_mode)
+        step_dt = env.unwrapped.step_dt
         # Check if video recording is enabled
         env = video_record(env, log_dir, args_cli.video, args_cli.video_length, args_cli.video_interval)
         # Wrap the environment
         env = SkrlVecEnvWrapper(env, ml_framework="torch")
+        if args_cli.wandb:
+            patch_skrl_summary_writer_for_wandb(num_envs=env.num_envs, step_dt=step_dt)
         set_seed(args_cli_seed if args_cli_seed is not None else experiment_cfg["seed"])
 
         # Get the observation and action spaces

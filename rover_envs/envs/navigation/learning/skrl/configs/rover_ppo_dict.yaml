@@ -24,7 +24,6 @@ models:
       encoder_input_size: 10201
 
 
-#   learning_rate_scheduler: "KLAdaptiveRL"
 agent:
   rollouts: 60
   learning_epochs: 4
@@ -33,8 +32,10 @@ agent:
   gae_lambda: 0.95
   learning_rate: 1.e-4
 
-  #learning_rate_scheduler: "None"
-  #learning_rate_scheduler_kwargs: null
+  learning_rate_scheduler: "KLAdaptiveLR"
+  learning_rate_scheduler_kwargs:
+    kl_threshold: 0.01
+    min_lr: 1.e-5
   #state_preprocessor: "None"
   #state_preprocessor_kwargs: null
   #value_preprocessor: "None"
@@ -46,7 +47,7 @@ agent:
   value_clip: 0.2
   entropy_loss_scale: 0.0
   value_loss_scale: 1.0
-  kl_threshold: 0.008
+  kl_threshold: 0.0
   #rewards_shaper_scale: null
   # logging and checkpoint
   experiment:
