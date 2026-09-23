@@ -49,6 +49,13 @@ RUN mkdir -p /tmp/rover_deps/rover_envs && touch /tmp/rover_deps/rover_envs/__in
     SKIP_ISAAC_SIM_INSTALL=true ${ISAAC_SIM_PATH}/python.sh -m pip install --user --no-cache-dir . && \
     rm -rf /tmp/rover_deps
 
+# Isaac Lab pins RSL-RL 5.0.1, whose W&B writer passes a removed Settings argument.
+# Apply the upstream fix while retaining the RSL-RL version required by Isaac Lab.
+RUN RSL_WANDB_UTILS="${ISAAC_SIM_PATH}/kit/python/lib/python3.12/site-packages/rsl_rl/utils/wandb_utils.py" && \
+    grep -Fq 'settings=wandb.Settings(start_method="thread"),' "${RSL_WANDB_UTILS}" && \
+    sed -i 's/settings=wandb.Settings(start_method="thread"),/settings=wandb.Settings(),/' "${RSL_WANDB_UTILS}" && \
+    grep -Fq 'settings=wandb.Settings(),' "${RSL_WANDB_UTILS}"
+
 # RUN rm -rf ${ISAAC_SIM_PATH}/exts/omni.isaac.core_archive/pip_prebundle/osqp* && \\
 #     ${ISAAC_SIM_PATH}/python.sh -m pip uninstall -y osqp && \
 #     ${ISAAC_SIM_PATH}/python.sh -m pip install --no-cache-dir --no-binary :all: osqp
