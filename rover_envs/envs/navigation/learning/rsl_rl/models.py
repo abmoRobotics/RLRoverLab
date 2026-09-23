@@ -13,7 +13,7 @@ from rsl_rl.models import MLPModel
 from rsl_rl.modules import MLP
 from rsl_rl.modules.distribution import GaussianDistribution
 
-from rover_envs.envs.navigation.learning.skrl.models import ConvHeightmapEncoder
+from rover_envs.envs.navigation.learning.encoders import ConvHeightmapEncoder
 
 
 class ClippedGaussianDistribution(GaussianDistribution):
@@ -90,7 +90,7 @@ class _ExportRoverConvModel(nn.Module):
         super().__init__()
         self.obs_normalizer = copy.deepcopy(model.obs_normalizer)
         self.encoder = copy.deepcopy(model.encoder)
-        # The shared skrl encoder stores these dimensions as scalar tensors. TorchScript
+        # The shared encoder stores these dimensions as scalar tensors. TorchScript
         # requires Python ints for module constants such as Linear.in_features.
         self.encoder.heightmap_size = int(self.encoder.heightmap_size)
         self.encoder.conv_out_features = int(self.encoder.conv_out_features)
