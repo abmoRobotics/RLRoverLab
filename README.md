@@ -30,6 +30,17 @@ python examples/02_training/train_rsl_rl.py --task AAURoverEnvSimple-v0 --num_en
 
 Use `--max_iterations` to set the training length or `--checkpoint` to resume an RSL-RL run. Training exports `policy.onnx` alongside checkpoints under `logs/rsl_rl/rover_heightmap/`. To export an existing checkpoint without training, pass `--checkpoint PATH --export-only`. Additional agent configurations can be registered with a Gym key and selected with `--agent KEY`. The RSL-RL baseline uses an MLP on the flat height-map observation; the existing skrl trainer keeps its CNN and supports the camera tasks.
 
+### Distill into an RGB student
+
+`AAURoverEnvSimpleDistillation-v0` distills a height-map teacher trained on `AAURoverEnvSimple-v0` into a recurrent student that only sees the ZED2i WVGA camera (672×376 RGB) and the three goal observations. The camera frames go through a frozen DINOv3 ViT-S/16, so place its Hugging Face weights in `~/models/dinov3-vits16` (Docker mounts `~/models` at `/root/models`). Pass the teacher checkpoint with `--checkpoint`:
+
+```bash
+python examples/02_training/train_rsl_rl.py --task AAURoverEnvSimpleDistillation-v0 --num_envs 32 --terrain mars --viz none \
+    --checkpoint logs/rsl_rl/rover_heightmap/<run>/model_<iteration>.pt
+```
+
+Passing a distillation checkpoint instead resumes the student. The exported `policy.onnx` runs one policy step: it takes the raw RGB frame (`uint8`, 1×376×672×3), the goal observations, and the GRU hidden state, and returns the actions and the next hidden state.
+
 ### Quick Links
 
 - [Installation Guide](https://abmorobotics.github.io/RLRoverLab/installation/installation.html)

@@ -6,6 +6,7 @@ from rover_envs.assets.robots.aau_rover import AAU_ROVER_CFG
 from rover_envs.assets.robots.aau_rover_simple import AAU_ROVER_SIMPLE_CFG
 from rover_envs.envs.navigation.rover_env_cfg import RoverEnvCfg
 from rover_envs.envs.navigation.rover_env_camera_cfg import (
+    RoverDistillationEnvCfg,
     RoverRGBDRawEnvCfg,
     RoverRGBDRawHD1080EnvCfg,
     RoverRGBDRawHD720EnvCfg,
@@ -17,6 +18,25 @@ from rover_envs.envs.navigation.rover_env_cfg import RoverEnvDictCfg
 @configclass
 class AAURoverEnvCfgSimple(RoverEnvCfg):
     """Configuration for the AAU rover environment (simple version)."""
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.scene.robot = AAU_ROVER_SIMPLE_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.actions.actions = mdp.AckermannActionCfg(
+            asset_name="robot",
+            wheelbase_length=0.849,
+            middle_wheel_distance=0.894,
+            rear_and_front_wheel_distance=0.77,
+            wheel_radius=0.1,
+            min_steering_radius=0.8,
+            steering_joint_names=[".*Steer_Revolute"],
+            drive_joint_names=[".*Drive_Continuous"],
+            offset=-0.0135
+        )
+
+@configclass
+class AAURoverSimpleDistillationEnvCfg(RoverDistillationEnvCfg):
+    """RGB student environment for distilling an AAURoverEnvSimple-v0 height-map teacher."""
 
     def __post_init__(self):
         super().__post_init__()

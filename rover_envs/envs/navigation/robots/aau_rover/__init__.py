@@ -41,6 +41,18 @@ gym.register(
 )
 
 gym.register(
+    id="AAURoverEnvSimpleDistillation-v0",
+    entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": env_cfg.AAURoverSimpleDistillationEnvCfg,
+        "rsl_rl_cfg_entry_point": (
+            "rover_envs.envs.navigation.learning.rsl_rl.distillation_cfg:RoverDistillationRunnerCfg"
+        ),
+    }
+)
+
+gym.register(
     id="AAURoverEnvDict-v0",
     entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
     disable_env_checker=True,

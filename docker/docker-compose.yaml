@@ -40,6 +40,11 @@ x-default-isaac-lab-volumes:
     - type: bind
       source: ../
       target: /workspace/rlroverlab/
+    # Pretrained weights, e.g. DINOv3 for the distillation student (~/models inside the container).
+    - type: bind
+      source: ${HOME}/models
+      target: /root/models
+      read_only: true
 
 
 x-default-isaac-lab-deploy:

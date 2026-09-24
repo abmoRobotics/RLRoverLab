@@ -1,4 +1,4 @@
-"""Train a rover height-map policy with RSL-RL and export it to ONNX."""
+"""Train a rover policy with RSL-RL (PPO or teacher-student distillation) and export it to ONNX."""
 
 import argparse
 import os
@@ -15,27 +15,32 @@ os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
 
 from isaaclab.app import AppLauncher
 
-parser = argparse.ArgumentParser(description="Train a rover with RSL-RL PPO.")
+parser = argparse.ArgumentParser(description="Train a rover with RSL-RL PPO or distillation.")
 parser.add_argument("--task", default="AAURoverEnvSimple-v0")
 parser.add_argument("--agent", default="rsl_rl_cfg_entry_point", help="Registered RSL-RL agent configuration key.")
 parser.add_argument("--terrain", default=None, help="Registered terrain name, e.g. mars or debug.")
 parser.add_argument("--num_envs", type=int, default=None)
 parser.add_argument("--max_iterations", type=int, default=None)
 parser.add_argument("--seed", type=int, default=None)
-parser.add_argument("--checkpoint", default=None, help="Resume from an RSL-RL checkpoint.")
+parser.add_argument(
+    "--checkpoint", default=None, help="Resume from an RSL-RL checkpoint, or load the PPO teacher for distillation."
+)
 parser.add_argument("--export-only", action="store_true", help="Export --checkpoint to ONNX without training.")
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 if args.export_only and not args.checkpoint:
     parser.error("--export-only requires --checkpoint")
 
+from rover_envs.utils.launcher import configure_camera_launcher_args  # noqa: E402
+
+configure_camera_launcher_args(args)
 app_launcher = AppLauncher(args)
 simulation_app = app_launcher.app
 
 import gymnasium as gym  # noqa: E402
 from isaaclab_rl.rsl_rl import RslRlVecEnvWrapper, handle_deprecated_rsl_rl_cfg  # noqa: E402
 from isaaclab_tasks.utils import load_cfg_from_registry, parse_env_cfg  # noqa: E402
-from rsl_rl.runners import OnPolicyRunner  # noqa: E402
+from rsl_rl.runners import DistillationRunner, OnPolicyRunner  # noqa: E402
 
 import rover_envs.envs.navigation.robots  # noqa: E402, F401
 from rover_envs.utils.rsl_rl_wandb import patch_rsl_rl_logger_for_training_progress  # noqa: E402
@@ -65,7 +70,8 @@ def train() -> int:
         step_dt = gym_env.unwrapped.step_dt
         env = RslRlVecEnvWrapper(gym_env, clip_actions=agent_cfg.clip_actions)
         patch_rsl_rl_logger_for_training_progress(step_dt=step_dt)
-        runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+        runner_class = DistillationRunner if agent_cfg.class_name == "DistillationRunner" else OnPolicyRunner
+        runner = runner_class(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
         if args.checkpoint:
             runner.load(args.checkpoint, map_location=agent_cfg.device)
         if not args.export_only:

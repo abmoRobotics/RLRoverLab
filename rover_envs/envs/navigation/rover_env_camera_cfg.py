@@ -1,6 +1,6 @@
 from isaaclab.sensors.camera.tiled_camera_cfg import TiledCameraCfg
 import isaaclab.sim as sim_utils
-from rover_envs.envs.navigation.rover_env_cfg import RoverEnvCfg, RoverSceneCfg
+from rover_envs.envs.navigation.rover_env_cfg import ObservationCfg, RoverEnvCfg, RoverSceneCfg
 # import
 from isaaclab.utils import configclass
 from isaaclab.managers import ObservationTermCfg as ObsTerm
@@ -274,3 +274,49 @@ class RoverRGBDRawTempEnvCfg(RoverEnvCfg):
     observations: RoverRGBDRawObservationsCfg = RoverRGBDRawObservationsCfg()
     scene: RoverZed2iWVGAEnvCfgTEMP = RoverZed2iWVGAEnvCfgTEMP(num_envs=8, env_spacing=4.0, replicate_physics=False)
     commands: CommandsNoVizCfg = CommandsNoVizCfg()
+
+@configclass
+class RoverDistillationObservationsCfg(ObservationCfg):
+    """Teacher height-map observations (`policy`) plus the student's goal and camera observations."""
+
+    @configclass
+    class ProprioCfg(ObsGroup):
+        distance = ObsTerm(
+            func=mdp.distance_to_target_euclidean,
+            params={"command_name": "target_pose"},
+            scale=0.11
+        )
+        heading = ObsTerm(
+            func=mdp.angle_to_target_observation,
+            params={"command_name": "target_pose"},
+            scale=1 / math.pi
+        )
+        angle_diff = ObsTerm(
+            func=mdp.angle_diff,
+            params={"command_name": "target_pose"},
+            scale=1 / math.pi
+        )
+
+    @configclass
+    class RGBCfg(ObsGroup):
+        rgb = ObsTerm(
+            func=mdp.image,
+            params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb", "normalize": False},
+        )
+
+    proprio: ProprioCfg = ProprioCfg()
+    rgb: RGBCfg = RGBCfg()
+
+@configclass
+class RoverDistillationEnvCfg(RoverEnvCfg):
+    """Height-map teacher and ZED2i WVGA RGB student observations for teacher-student distillation."""
+
+    observations: RoverDistillationObservationsCfg = RoverDistillationObservationsCfg()
+    scene: RoverZed2iWVGAFullEnvCfg = RoverZed2iWVGAFullEnvCfg(num_envs=32, env_spacing=4.0, replicate_physics=False)
+    commands: CommandsNoVizCfg = CommandsNoVizCfg()
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.scene.tiled_camera.data_types = ["rgb"]
+        # Render once per policy step instead of every physics step.
+        self.sim.render_interval = self.decimation
