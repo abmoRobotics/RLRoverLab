@@ -39,7 +39,7 @@ class RoverDistillationRunnerCfg(RslRlDistillationRunnerCfg):
         rnn_hidden_dim=256,
         rnn_num_layers=2,
     )
-    # The PPO height-map actor; its weights are loaded from the checkpoint passed to the trainer.
+    # The PPO height-map actor; its weights come from the task's registered teacher or --checkpoint.
     teacher = RoverPPORunnerCfg().actor
     algorithm = RslRlDistillationAlgorithmCfg(
         num_learning_epochs=2,

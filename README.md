@@ -32,14 +32,21 @@ Use `--max_iterations` to set the training length or `--checkpoint` to resume an
 
 ### Distill into an RGB student
 
-`AAURoverEnvSimpleDistillation-v0` distills a height-map teacher trained on `AAURoverEnvSimple-v0` into a recurrent student that only sees the ZED2i WVGA camera (672×376 RGB) and the three goal observations. The camera frames go through a frozen DINOv3 ViT-S/16, so place its Hugging Face weights in `~/models/dinov3-vits16` (Docker mounts `~/models` at `/root/models`). Pass the teacher checkpoint with `--checkpoint`:
+`AAURoverEnvSimpleDistillation-v0` distills a height-map teacher trained on `AAURoverEnvSimple-v0` into a recurrent student that only sees the ZED2i WVGA camera (672×376 RGB) and the three goal observations. The camera frames go through a frozen DINOv3 ViT-S/16, so place its Hugging Face weights in `~/models/dinov3-vits16` (Docker mounts `~/models` at `/root/models`). The teacher defaults to the included RSL-RL height-map policy (`best_agent_rsl_rl_heightmap.pt`):
 
 ```bash
-python examples/02_training/train_rsl_rl.py --task AAURoverEnvSimpleDistillation-v0 --num_envs 32 --terrain mars --viz none \
-    --checkpoint logs/rsl_rl/rover_heightmap/<run>/model_<iteration>.pt
+python examples/02_training/train_rsl_rl.py --task AAURoverEnvSimpleDistillation-v0 --num_envs 32 --terrain mars --viz none
 ```
 
-Passing a distillation checkpoint instead resumes the student. The exported `policy.onnx` runs one policy step: it takes the raw RGB frame (`uint8`, 1×376×672×3), the goal observations, and the GRU hidden state, and returns the actions and the next hidden state.
+Pass a PPO checkpoint with `--checkpoint` to use a different teacher, or a distillation checkpoint to resume the student. The exported `policy.onnx` runs one policy step: it takes the raw RGB frame (`uint8`, 1×376×672×3), the goal observations, and the GRU hidden state, and returns the actions and the next hidden state.
+
+### Evaluate with RSL-RL
+
+`AAURoverEnv-v0` and `AAURoverEnvSimple-v0` include a trained RSL-RL height-map policy, which is evaluated by default:
+
+```bash
+python examples/03_inference/eval_rsl_rl.py --task AAURoverEnvSimple-v0 --num_envs 32 --terrain mars
+```
 
 ### Quick Links
 

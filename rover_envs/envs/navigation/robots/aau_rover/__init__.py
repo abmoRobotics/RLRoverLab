@@ -11,6 +11,7 @@ gym.register(
     kwargs={
         "env_cfg_entry_point": env_cfg.AAURoverEnvCfg,
         "rsl_rl_cfg_entry_point": "rover_envs.envs.navigation.learning.rsl_rl.ppo_cfg:RoverPPORunnerCfg",
+        "rsl_rl_best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_rsl_rl_heightmap.pt",
         "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_heightmap.pt",
         "skrl_cfgs": {
             "PPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_ppo.yaml",
@@ -29,6 +30,7 @@ gym.register(
     kwargs={
         "env_cfg_entry_point": env_cfg.AAURoverEnvCfgSimple,
         "rsl_rl_cfg_entry_point": "rover_envs.envs.navigation.learning.rsl_rl.ppo_cfg:RoverPPORunnerCfg",
+        "rsl_rl_best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_rsl_rl_heightmap.pt",
         "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_heightmap.pt",
         "skrl_cfgs": {
             "PPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_ppo.yaml",
@@ -49,6 +51,7 @@ gym.register(
         "rsl_rl_cfg_entry_point": (
             "rover_envs.envs.navigation.learning.rsl_rl.distillation_cfg:RoverDistillationRunnerCfg"
         ),
+        "rsl_rl_teacher_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_rsl_rl_heightmap.pt",
     }
 )
 
