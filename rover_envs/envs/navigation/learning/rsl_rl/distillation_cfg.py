@@ -23,7 +23,7 @@ class RoverDinoStudentCfg(RslRlRNNModelCfg):
 
 @configclass
 class RoverDistillationRunnerCfg(RslRlDistillationRunnerCfg):
-    num_steps_per_env = 90
+    num_steps_per_env = 60
     max_iterations = 2000
     save_interval = 50
     experiment_name = "rover_distillation"
@@ -42,7 +42,7 @@ class RoverDistillationRunnerCfg(RslRlDistillationRunnerCfg):
     # The PPO height-map actor; its weights are loaded from the checkpoint passed to the trainer.
     teacher = RoverPPORunnerCfg().actor
     algorithm = RslRlDistillationAlgorithmCfg(
-        num_learning_epochs=5,
+        num_learning_epochs=2,
         learning_rate=3.0e-4,
         gradient_length=12,
         max_grad_norm=1.0,
