@@ -1,0 +1,23 @@
+FROM rover-lab-base:latest
+
+USER root
+
+# MPM and proxy coupling first appear in the Isaac Lab 3.0 EA tree.
+RUN git clone --filter=blob:none https://github.com/isaac-sim/IsaacLab.git /workspace/isaaclab-particles && \
+    cd /workspace/isaaclab-particles && \
+    git checkout --detach ae37b028ea415c91ea2bc32609efcd759ed2b974
+
+RUN /isaac-sim/python.sh -m pip install --no-cache-dir \
+        'newton[sim]==1.5.2' 'warp-lang==1.16.0' 'mujoco-warp==3.11.0' 'rich==15.0.0' \
+        'imgui-bundle>=1.92.5' && \
+    /isaac-sim/python.sh -m pip install --no-cache-dir --no-deps 'newton-usd-schemas==0.4.1' && \
+    /isaac-sim/python.sh -m pip install --no-cache-dir --no-deps -e \
+        /workspace/isaaclab-particles/source/isaaclab \
+        /workspace/isaaclab-particles/source/isaaclab_newton \
+        /workspace/isaaclab-particles/source/isaaclab_physx \
+        /workspace/isaaclab-particles/source/isaaclab_contrib \
+        /workspace/isaaclab-particles/source/isaaclab_visualizers \
+        /workspace/isaaclab-particles/source/isaaclab_assets \
+        /workspace/isaaclab-particles/source/isaaclab_ov
+
+WORKDIR /workspace/rlroverlab
