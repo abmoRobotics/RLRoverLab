@@ -159,12 +159,19 @@ class RoverTerrainImporter(TerrainImporter):
     def __init__(self, cfg: RoverTerrainImporterCfg):
         super().__init__(cfg)
         self._cfg = cfg
-        self._terrainManager = TerrainManager(
-            num_envs=self._cfg.num_envs,
-            device=self.device,
-            spawn_obstacle_mesh_prim_path=self._cfg.spawn_obstacle_mesh_prim_path,
-        )
+        self._terrain_manager: TerrainManager | None = None
         self.target_distance = 9.0
+
+    @property
+    def _terrainManager(self) -> TerrainManager:
+        # Built on first use: newer Isaac Lab scenes create the terrain before the obstacle prims below it.
+        if self._terrain_manager is None:
+            self._terrain_manager = TerrainManager(
+                num_envs=self._cfg.num_envs,
+                device=self.device,
+                spawn_obstacle_mesh_prim_path=self._cfg.spawn_obstacle_mesh_prim_path,
+            )
+        return self._terrain_manager
 
     def sample_new_targets(self, env_ids):
         # We need to keep track of the original env_ids, because we need to resample some of them

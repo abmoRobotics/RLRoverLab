@@ -41,6 +41,20 @@ gym.register(
 )
 
 gym.register(
+    id="AAURoverEnvParticles-v0",
+    entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
+    disable_env_checker=True,
+    kwargs={
+        # A string entry point defers the Newton MPM imports until this task is used.
+        "env_cfg_entry_point": "rover_envs.envs.navigation.robots.aau_rover.particle_env_cfg:AAURoverParticleEnvCfg",
+        "best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_heightmap.pt",
+        "skrl_cfgs": {
+            "PPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_ppo.yaml",
+        },
+    }
+)
+
+gym.register(
     id="AAURoverEnvDict-v0",
     entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
     disable_env_checker=True,

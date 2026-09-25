@@ -10,7 +10,7 @@ from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sim import SimulationCfg
 from isaaclab.utils import configclass
 
-from rover_envs.assets.robots.aau_rover_simple import AAU_ROVER_SIMPLE_CFG
+from rover_envs.assets.robots.aau_rover_simple import AAU_ROVER_SIMPLE_CFG, aau_rover_simple_newton_cfg
 
 
 DT = 1.0 / 120.0
@@ -91,22 +91,18 @@ def make_sim_cfg(backend: str, device: str, voxel_size: float, num_envs: int) ->
 def make_scene_cfg(
     backend: str, num_envs: int, positions: list[tuple[float, float, float]], mass: float, radius: float
 ) -> InteractiveSceneCfg:
-    rover_cfg = AAU_ROVER_SIMPLE_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-    rover_cfg.init_state.pos = (-0.1, 0.0, 0.45)
-
     if backend == "newton":
         from isaaclab_newton.assets import MPMObjectCfg
         from isaaclab_newton.sim.schemas import NewtonCollisionPropertiesCfg
         from isaaclab_newton.sim.spawners.mpm import MPMParticleMaterialCfg, MPMPointsCfg
         from isaaclab.sim.schemas import UsdPhysicsRigidBodyCfg
 
-        rover_cfg.spawn.collision_props = NewtonCollisionPropertiesCfg(contact_margin=0.01)
-        rover_cfg.spawn.rigid_props = None
-        rover_cfg.spawn.articulation_props = None
-        rover_cfg.actuators["passive_joints"].effort_limit_sim = 1.0e-6
+        rover_cfg = aau_rover_simple_newton_cfg("{ENV_REGEX_NS}/Robot")
         floor_collision = NewtonCollisionPropertiesCfg(contact_margin=0.004)
     else:
+        rover_cfg = AAU_ROVER_SIMPLE_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         floor_collision = sim_utils.CollisionPropertiesCfg()
+    rover_cfg.init_state.pos = (-0.1, 0.0, 0.45)
 
     @configclass
     class ParticleSceneCfg(InteractiveSceneCfg):

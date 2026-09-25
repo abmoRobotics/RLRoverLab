@@ -19,10 +19,11 @@ class RoverEnv(ManagerBasedRLEnv):
 
         super().__init__(cfg, **kwargs)
         # Populate PhysX report pairs so they are explicit in stage/UI and available for contact filtering.
-        prepare_rover_contact_sensors(
-            cfg.scene.contact_sensor.filter_prim_paths_expr,
-            cfg.scene.contact_sensor.prim_path,
-        )
+        if cfg.scene.contact_sensor is not None:
+            prepare_rover_contact_sensors(
+                cfg.scene.contact_sensor.filter_prim_paths_expr,
+                cfg.scene.contact_sensor.prim_path,
+            )
 
 
         # Reset all environments

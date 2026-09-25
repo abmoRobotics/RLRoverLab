@@ -64,3 +64,21 @@ AAU_ROVER_SIMPLE_CFG = ArticulationCfg(
         ),
     },
 )
+
+
+def aau_rover_simple_newton_cfg(prim_path: str) -> ArticulationCfg:
+    """Return :data:`AAU_ROVER_SIMPLE_CFG` adapted for Newton's USD importer and MJWarp.
+
+    Args:
+        prim_path: Prim path of the spawned rover.
+    """
+    from isaaclab_newton.sim.schemas import NewtonCollisionPropertiesCfg
+
+    cfg = AAU_ROVER_SIMPLE_CFG.replace(prim_path=prim_path)
+    cfg.spawn.collision_props = NewtonCollisionPropertiesCfg(contact_margin=0.01)
+    # Newton reads the rigid-body and articulation properties authored in the USD.
+    cfg.spawn.rigid_props = None
+    cfg.spawn.articulation_props = None
+    # MJWarp rejects a zero actuator force range on the passive bogie joints.
+    cfg.actuators["passive_joints"].effort_limit_sim = 1.0e-6
+    return cfg

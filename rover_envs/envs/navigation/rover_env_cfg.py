@@ -143,7 +143,8 @@ class RoverSceneCfg(InteractiveSceneCfg):
             )
         self.obstacles = create_obstacles_cfg(terrain_config)
         self.lethal_collision = create_lethal_collision_cfg(terrain_config)
-        self.contact_sensor.filter_prim_paths_expr = [terrain_config.obstacle_mesh_prim_path]
+        if self.contact_sensor is not None:
+            self.contact_sensor.filter_prim_paths_expr = [terrain_config.obstacle_mesh_prim_path]
         if self.height_scanner is not None:
             self.height_scanner.mesh_prim_paths = list(terrain_config.height_scanner_mesh_prim_paths)
         self.terrain_lighting = create_lighting_cfg(terrain_config)
