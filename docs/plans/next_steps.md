@@ -22,6 +22,19 @@ The next work should first remove the idealizations that could change the Phase-
 turn provenance into a trust signal (step 2) before the persistent BEV becomes an RL observation (step 3). Real-sensor
 work (step 4) can run in parallel whenever hardware time is available.
 
+**Constraint (added 27 September):** the odometry's error level is unknown to the rover and varies between runs and
+along a route, as on the real rover, where odometry works better on some ground than on other. Nothing on the robot
+side may use the true drift level or covariance, and drift evaluations draw the level per run. Steps 1 and 2 are
+refined accordingly in the [Phase-3 plan](phase3_reliability_unknown_odometry.md).
+
+**Status (27 September, evening):** Step 1 and Steps 2.1–2.2 are done; see the
+[Phase-3 results](../results/phase3_reliability.md).
+
+- **Step 1.** The memory stores the raw lifted elevation and averages class probabilities.
+- **Steps 2.1–2.2.** The rover measures its own drift level from re-observed terrain. With it, a terrain-aware U_pose
+  gives an expected-error map that is calibrated across drift levels on held-out runs.
+- **Open.** Perception uncertainty for unfamiliar terrain (Step 2.3). The class entropy already covers rocks.
+
 ## Step 1 — Close Phase 2 (small, a few days)
 
 Keep the architecture and the deterministic memory; only settle the open choices.
@@ -37,8 +50,9 @@ Keep the architecture and the deterministic memory; only settle the open choices
    views matter.
    - *Success:* remembered rock IoU while circling ≥ 0.80 (from 0.74), without losing goal-driving IoU (0.82).
    - This is still a simple deterministic rule, as the Phase-2 plan allows.
-3. **Robustness of the numbers.** Repeat the baseline and 1× drift evaluations with a second seed and on a second
-   terrain (`debug` or a generated terrain). Report run-to-run spread, so later comparisons have error bars.
+3. **Robustness of the numbers.** Repeat the baseline and the drift evaluations with a second seed and on a second
+   terrain (`debug` or a generated terrain). Report run-to-run spread, so later comparisons have error bars. The drift
+   runs draw their level per run instead of using one fixed severity.
 4. **Optional: cleaner evidence.** 3% of never-visible cells receive memory values, mostly depth points on rock faces.
    Try requiring a minimum number of points per cell, or rejecting cells whose points span a large height range. Keep
    it only if it lowers the unknown-cell error without losing coverage.
@@ -49,13 +63,16 @@ The persistent BEV already records the time and distance since each cell was obs
 calibrated estimate of how wrong each cell is likely to be, because a reliability-aware policy needs it.
 
 1. **Empirical error model (cheap, uses existing data).** From the evaluation runs, fit the expected elevation error
-   and rock-confusion probability of remembered cells as functions of distance since observation, age, observation
-   range and drift level. Output a per-cell reliability map, e.g. expected error in cm.
+   and rock-confusion probability of remembered cells as functions of distance since observation, age and observation
+   range. The drift level is not an input: the rover does not know it. Output a per-cell reliability map, e.g. expected
+   error in cm.
    - *Check:* risk–coverage curves. Discarding the least reliable cells first should lower the error of the kept cells
-     monotonically.
-2. **Pose uncertainty instead of a distance proxy.** Propagate the odometry covariance to a per-cell spatial
-   uncertainty (U_pose), as in the earlier BEV experiments' Day 5–7 work. Compare it with the distance proxy. Keep
-   U_pose only if it predicts error better on the drift runs.
+     monotonically. Calibration is checked per drift level, on held-out runs.
+2. **Pose uncertainty instead of a distance proxy.** Propagate a nominal odometry noise model to a per-cell spatial
+   uncertainty (U_pose), as in the earlier BEV experiments' Day 5–7 work. Only its shape is known, e.g. the lever arm
+   of heading errors; its scale must be estimated online from re-observed terrain. Compare it with the distance proxy.
+   Keep U_pose only if it predicts error better on the drift runs. Details in the
+   [Phase-3 plan](phase3_reliability_unknown_odometry.md).
 3. **Perception uncertainty (needs a decision).** Either add the plan's optional log σ elevation head to the Phase-1
    network, which means retraining Phase 1, or start with free signals: class entropy, and the disagreement between the
    network and the raw lifted elevation on observed cells.
@@ -72,7 +89,7 @@ Same interface, now used by a driving policy.
    the goal. This reuses the RGB-student distillation pipeline, with the BEV encoder replacing the DINOv3 pooling
    encoder. It is the fastest end-to-end test of the whole stack.
    - Compare with the existing RGB student and the teacher on success rate, collisions and path length, with exact
-     poses and at 1× and 4× drift.
+     poses and with drift drawn per episode, reported by drift level. The policy never sees the level.
 3. **Then PPO fine-tuning** of the student on the persistent BEV, if distillation leaves a gap to the teacher.
 4. **Ablations that answer the research question.** Instantaneous BEV only, persistent BEV without provenance, and
    persistent BEV with provenance and reliability. This shows whether knowing where the terrain information came from
@@ -107,7 +124,9 @@ is the cheap fallback, since Phase 1 showed geometry carries the elevation.
 
 ## Decisions for you
 
-1. Store raw lifted elevation or network elevation? This depends on Step 1.1.
-2. For perception uncertainty: free signals first, or add the log σ head now (retrains Phase 1)?
+1. ~~Store raw lifted elevation or network elevation?~~ Decided by Step 1.1: the raw lifted elevation.
+2. For perception uncertainty: free signals first, or add the log σ head now (retrains Phase 1)? The class entropy
+   already detects wrong rock classes (AUROC 0.98). Elevation failures on unfamiliar, steep terrain (`debug`) are not
+   covered yet.
 3. For Phase 4: distillation first (recommended) or straight to PPO?
 4. Hardware: when can ZED X sequences be recorded for Step 4?

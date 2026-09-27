@@ -4,6 +4,7 @@ Status on 27 September 2026. Detailed write-ups:
 
 - [Phase 1 input ablations](phase1_input_ablations.md)
 - [Phase 2 temporal memory](phase2_temporal_memory.md)
+- [Phase 3 reliability under unknown odometry quality](phase3_reliability.md)
 
 W&B project: https://wandb.ai/aalborg-university/RLRoverLab
 
@@ -98,11 +99,51 @@ Elevation MAE of remembered cells by distance travelled since they were observed
 - **Limited scope:** one map (`mars`), one seed, and one Phase-1 checkpoint.
 - **Noise level:** differences of a few tenths of a centimetre between runs are within run-to-run noise.
 
-## Open decisions
+## Phase 3 — reliability when the odometry quality is unknown
 
-The [next-steps plan](../plans/next_steps.md) orders these and the work after them.
+Details: [Phase 3 results](phase3_reliability.md), plan: [Phase 3 plan](../plans/phase3_reliability_unknown_odometry.md).
+These runs are not on W&B; everything is in `logs/bev_memory/` and `logs/bev_reliability/`.
 
-- **Stored elevation:** raw depth elevation or the network's?
-- **Class fusion:** fuse class evidence over several observations, to recover rock IoU while turning?
-- **Trust limit:** set a limit on the distance travelled since a cell was observed, from the drift level expected on the
-  real rover?
+**Settled memory configuration.**
+
+- Depth is ZED-like noisy depth.
+- The memory stores the raw lifted elevation: 1.42 cm on remembered cells, against 1.91 cm for the network's.
+- Classes come from the noisy-depth model, with the class probabilities averaged over all observations of a cell.
+  Remembered rock IoU is 0.87 while goal-driving and 0.83 while circling, up from 0.81 and 0.72.
+- With exact poses over three seeds, remembered cells have 1.32 ± 0.09 cm error and a rock IoU of 0.869 ± 0.011.
+
+**Drift of unknown size.** Each run draws its own drift level (0.25× to 4×), which also varies with location, and the
+memory is never told it. The rover measures the level itself: it compares its current view of terrain with its first
+view of the same terrain (`DriftMonitor`). Reliability models map a signal to the expected error of each remembered cell,
+fitted on seed 42 and scored on 1.8 million remembered cells of seeds 43 and 44:
+
+| Reliability model | AUROC, errors > 5 cm | Observed / predicted error by severity octave, remembered ≥ 1 m |
+|---|---|---|
+| distance since observation (Phase 2) | 0.66 | 0.42 · 0.62 · 0.87 · 1.70 |
+| pose effect, fixed drift level | 0.75 | 0.40 · 0.60 · 0.83 · 1.56 |
+| pose effect, the rover's measured level | **0.81** | **0.76 · 0.93 · 0.89 · 1.03** |
+| pose effect, the true level (oracle) | 0.83 | 0.95 · 1.06 · 0.95 · 1.07 |
+
+The pose effect is the nominal pose uncertainty of a cell, including the lever arm of heading errors, times the local
+slope. It ranks errors better than the distance. With the level the rover measures itself, it is calibrated in every
+drift octave, which meets the plan's criterion.
+
+Two negative results:
+
+- **Keyframe registration.** Registering frames against a keyframe cannot see horizontal drift at 1× with ZED-like
+  depth: its floor is 3 cm and 0.7° per 0.5 m.
+- **The `debug` terrain.** It is out of distribution for the Phase-1 model, and none of the reliability models transfer
+  to it.
+
+The class entropy flags wrong rock classes with an AUROC of 0.98.
+
+![Calibration by severity octave](figures/phase3_calibration_by_severity.png)
+
+## Decisions taken
+
+The [next-steps plan](../plans/next_steps.md) orders the work after them.
+
+- **Stored elevation:** the raw depth elevation, also under noisy depth.
+- **Class fusion:** the running mean of the class probabilities.
+- **Trust limit:** no fixed limit on the distance since observation. The expected error at the measured drift level
+  replaces it, because the right limit depends on the drift level, which the rover does not know in advance.

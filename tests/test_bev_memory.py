@@ -130,6 +130,98 @@ def test_closest_write_rule_keeps_the_nearest_observation():
         assert out["elevation"][0, 19, 10].item() == expected, rule
 
 
+def observe_one_cell(bev: BevMemory, probabilities: list[tuple[float, float]], at=None) -> dict[str, torch.Tensor]:
+    """Observe ego cell (12, 7) once per class distribution in ``probabilities``, then read it back."""
+    at = pose(0.3, -0.2) if at is None else at
+    evidence = torch.zeros(1, CELLS, CELLS, dtype=torch.bool)
+    evidence[0, 12, 7] = True
+    for p in probabilities:
+        step(bev, at, evidence=evidence, semantics=torch.tensor(p).view(1, 2, 1, 1).expand(1, 2, CELLS, CELLS))
+    return step(bev, at)
+
+
+def test_class_fusion_combines_repeated_observations():
+    observations = [(0.9, 0.1), (0.2, 0.8), (0.4, 0.6)]
+    # The mean of the probabilities, the normalized product (0.072 : 0.048), and the latest observation.
+    for fusion, expected in (("mean", (0.5, 0.5)), ("log_odds", (0.6, 0.4)), ("latest", (0.4, 0.6))):
+        out = observe_one_cell(memory(class_fusion=fusion), observations)
+        torch.testing.assert_close(out["semantics"][0, :, 12, 7], torch.tensor(expected), msg=fusion)
+
+
+def test_a_fusion_window_lets_the_mean_follow_changes():
+    observations = [(1.0, 0.0)] * 5 + [(0.0, 1.0)] * 2
+    for window, expected in ((0, (5 / 7, 2 / 7)), (2, (0.25, 0.75))):
+        out = observe_one_cell(memory(class_fusion="mean", fusion_window=window), observations)
+        torch.testing.assert_close(out["semantics"][0, :, 12, 7], torch.tensor(expected), msg=f"window {window}")
+
+
+def test_log_odds_fusion_is_clamped_so_it_can_change_its_mind():
+    bev = memory(class_fusion="log_odds", min_probability=0.02)
+    out = observe_one_cell(bev, [(0.99, 0.01)] * 20)
+    torch.testing.assert_close(out["semantics"][0, :, 12, 7], torch.tensor([0.98, 0.02]), rtol=0, atol=1e-3)
+    # Two confident contrary observations suffice: 0.98 * 0.1 : 0.02 * 0.9, then 0.847 * 0.1 : 0.153 * 0.9.
+    out = observe_one_cell(bev, [(0.1, 0.9)] * 2)
+    assert out["semantics"][0, 1, 12, 7] > 0.5
+
+
+def test_class_fusion_restarts_when_another_world_cell_takes_the_slot():
+    bev = memory(class_fusion="mean")
+    observe_one_cell(bev, [(1.0, 0.0)], at=pose(0.3, -0.2))
+    # 4 m further on, the same ego cell is another world cell in the same slot of the 40-slot window.
+    out = observe_one_cell(bev, [(0.0, 1.0)], at=pose(0.3 + 4.0, -0.2))
+    torch.testing.assert_close(out["semantics"][0, :, 12, 7], torch.tensor([0.0, 1.0]))
+
+
+def test_class_fusion_uses_observations_the_closest_rule_skips_for_elevation():
+    # As in the closest-rule test: the cell at (0.95, 0.05) m is seen from 0.95 m, 0.45 m and 0.95 m away.
+    bev = memory(write_rule="closest", class_fusion="mean")
+    for x, value, rock in ((0.0, 1.0, 0.0), (0.5, 2.0, 0.0), (0.0, 3.0, 1.0)):
+        evidence = torch.zeros(1, CELLS, CELLS, dtype=torch.bool)
+        evidence[0, int((0.95 - x + 1.0) / RESOLUTION), 10] = True
+        semantics = torch.tensor([1.0 - rock, rock]).view(1, 2, 1, 1).expand(1, 2, CELLS, CELLS)
+        step(bev, pose(x, 0.0), torch.full((1, CELLS, CELLS), value), evidence, semantics)
+    out = step(bev, pose(0.0, 0.0))
+    assert out["elevation"][0, 19, 10].item() == 2.0
+    torch.testing.assert_close(out["semantics"][0, :, 19, 10], torch.tensor([2 / 3, 1 / 3]))
+
+
+def test_the_observation_range_is_reported():
+    bev = memory()
+    out = step(bev, pose(0.3, -0.2), evidence=everywhere())
+    ego_range = torch.hypot(*torch.meshgrid(CENTRES, CENTRES, indexing="ij"))
+    torch.testing.assert_close(out["range"][0], ego_range)
+    out = step(bev, pose(0.3 + 0.5, -0.2))
+    # The cell now at ego (0.45, 0.05) m was observed at (0.95, 0.05) m.
+    torch.testing.assert_close(out["range"][0, 14, 10], torch.tensor(math.hypot(0.95, 0.05)))
+    assert out["range"][0][out["status"][0] == UNKNOWN].isnan().all()
+
+
+def test_the_first_observation_is_kept_while_the_latest_is_updated():
+    # The world cell at (0.95, 0.05) m is seen with elevation 1 from x = 0, then with 2 from x = 0.5, 0.2 m higher.
+    bev = memory()
+    for x, z, value in ((0.0, 0.0, 1.0), (0.5, 0.2, 2.0)):
+        evidence = torch.zeros(1, CELLS, CELLS, dtype=torch.bool)
+        evidence[0, int((0.95 - x + 1.0) / RESOLUTION), 10] = True
+        step(bev, pose(x, 0.0, z), torch.full((1, CELLS, CELLS), value), evidence)
+    out = step(bev, pose(0.5, 0.0, 0.2))
+    # The cell is now at ego (0.45, 0.05) m; its first observation was 1 m in the world, 0.8 m below this frame.
+    assert out["elevation"][0, 14, 10].item() == 2.0
+    torch.testing.assert_close(out["first_elevation"][0, 14, 10], torch.tensor(0.8))
+    torch.testing.assert_close(out["first_distance"][0, 14, 10], torch.tensor(0.5))
+    torch.testing.assert_close(out["first_age"][0, 14, 10], torch.tensor(2 * DT))
+    torch.testing.assert_close(out["first_range"][0, 14, 10], torch.tensor(math.hypot(0.95, 0.05)))
+
+
+def test_first_observations_restart_with_the_slot_and_are_unknown_for_new_cells():
+    bev = memory()
+    out = step(bev, pose(0.3, -0.2), torch.ones(1, CELLS, CELLS), everywhere())
+    assert out["first_elevation"].isnan().all() and out["first_distance"].isnan().all()
+    # 4 m on, every ego cell is another world cell in the same slot of the 40-slot window.
+    step(bev, pose(0.3 + 4.0, -0.2), torch.full((1, CELLS, CELLS), 2.0), everywhere())
+    out = step(bev, pose(0.3 + 4.0, -0.2))
+    torch.testing.assert_close(out["first_elevation"][0], torch.full((CELLS, CELLS), 2.0))
+
+
 def test_remembered_terrain_stays_aligned_while_driving():
     """Drive a curve over smooth terrain, seeing only a wedge ahead, and compare the memory with the terrain."""
 

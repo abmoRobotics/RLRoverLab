@@ -62,13 +62,15 @@ The ablations only change the model input; the BEV targets and metrics are compu
 
 ### Temporal BEV memory
 
-`BevMemory` (`rover_envs/envs/navigation/learning/bev/memory.py`) turns the instantaneous BEVs of the frozen model into a persistent ego BEV. For each environment it keeps the latest observation of every 5 cm world cell in a 12 × 12 m world-aligned window around the rover. It stores only cells that received depth points in the current frame, and returns elevation, class probabilities, the provenance of each cell (current, remembered or unknown), and the time and distance travelled since it was observed. The BEV tasks expose the pose it needs as the `pose` observation group. Evaluate it while the height-map policy drives:
+`BevMemory` (`rover_envs/envs/navigation/learning/bev/memory.py`) turns the instantaneous BEVs of the frozen model into a persistent ego BEV. For each environment it keeps the latest and the first observation of every 5 cm world cell in a 12 × 12 m world-aligned window around the rover. It stores only cells that received depth points in the current frame, and returns elevation, class probabilities, the provenance of each cell (current, remembered or unknown), the time and distance travelled since it was observed, and the range it was observed from. The BEV tasks expose the pose it needs as the `pose` observation group. Evaluate it while the height-map policy drives, here in the settled configuration: ZED-like noisy depth, the raw depth elevation stored, and the class probabilities of all observations of a cell averaged:
 
 ```bash
-python examples/03_inference/eval_bev_memory.py --checkpoint logs/bev/rover_bev/<run>/model_<iteration>.pt --num_envs 64 --terrain mars
+python examples/03_inference/eval_bev_memory.py --task AAURoverEnvSimpleBEVNoisyDepth-v0 \
+    --checkpoint logs/bev/rover_bev_noisy_depth/<run>/model_<iteration>.pt --elevation_source lift --class_fusion mean \
+    --num_envs 64 --terrain mars
 ```
 
-`--driving circle` drives 1.5 m circles that revisit terrain, `--odometry_noise` feeds the memory drifting poses (severity multiplier), `--write_rule closest` keeps the observation made closest to the rover, and `--elevation_source lift` stores the raw depth elevation instead of the network's. Metrics, an error-vs-distance plot, and real-time MP4 videos with snapshots of the environments in `--video_envs` are written to `logs/bev_memory/`; add `--wandb` to also log them, with per-step curves, to the `rlroverlab` W&B project.
+`--driving circle` drives 1.5 m circles that revisit terrain, `--write_rule closest` keeps the elevation observed closest to the rover, and `--class_fusion` chooses the latest class, the mean or log-odds. `--odometry_noise` feeds the memory drifting poses: a severity multiplier, or a range such as `0.25:4` from which every episode draws its own, and `--drift_field_std` makes the drift depend on where the rover drives. The memory is never told the drift level: `DriftMonitor` (`drift.py`) measures it from terrain the rover observes again, and `--keyframe_distance` adds a keyframe registration that measures pose corrections (`registration.py`). Metrics (also by drift severity), an error-vs-distance plot, and real-time MP4 videos with snapshots of the environments in `--video_envs` are written to `logs/bev_memory/`; add `--wandb` to also log them, with per-step curves, to the `rlroverlab` W&B project. `--dump_samples` also saves remembered cells with the trajectories, on which `examples/03_inference/analyze_bev_reliability.py` fits and compares reliability models offline. Plans and results are in [docs/plans](docs/plans) and [docs/results](docs/results).
 
 ### Evaluate with RSL-RL
 

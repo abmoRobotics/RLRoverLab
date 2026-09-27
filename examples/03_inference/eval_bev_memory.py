@@ -5,6 +5,11 @@ defined by the ground-truth camera visibility: visible now (current), seen earli
 seen (unknown). The ground truth only defines these groups; the memory itself stores cells with depth evidence only.
 Writes metrics.json, an error-vs-distance plot, and videos and snapshots of chosen environments to
 logs/bev_memory/, and with --wandb also to W&B.
+
+The memory can be fed drifting poses whose size is unknown to it and varies: --odometry_noise low:high draws a severity
+per run, and --drift_field_std varies it with location. Metrics are then also reported by the run's severity.
+--dump_samples saves a random sample of remembered and current cells with the trajectories (samples.npz), to fit and
+compare reliability models offline.
 """
 
 import argparse
@@ -23,7 +28,14 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
 
-from isaaclab.app import AppLauncher
+from isaaclab.app import AppLauncher  # noqa: E402
+
+
+def severity(text: str) -> float | tuple[float, float]:
+    """A drift severity multiplier, or a range 'low:high' from which every run draws its own log-uniformly."""
+    low, _, high = text.partition(":")
+    return (float(low), float(high)) if high else float(low)
+
 
 parser = argparse.ArgumentParser(description="Evaluate the temporal BEV memory with a frozen Phase-1 BEV model.")
 parser.add_argument("--task", default="AAURoverEnvSimpleBEV-v0")
@@ -37,8 +49,20 @@ parser.add_argument(
     help="The goal-seeking height-map policy, or 1.5 m radius circles that keep revisiting terrain.",
 )
 parser.add_argument("--driver", default=None, help="RSL-RL PPO checkpoint that drives; defaults to the task's.")
-parser.add_argument("--odometry_noise", type=float, default=0.0, help="Odometry drift severity; 0 uses exact poses.")
+parser.add_argument(
+    "--odometry_noise", type=severity, default=0.0,
+    help="Odometry drift severity, or a range low:high from which each run draws its own; 0 uses exact poses.",
+)
+parser.add_argument(
+    "--drift_field_std", type=float, default=0.0,
+    help="Log standard deviation of the drift's variation with location on the terrain; 0 for none.",
+)
+parser.add_argument("--drift_field_length", type=float, default=5.0, help="Correlation length of that variation [m].")
 parser.add_argument("--write_rule", choices=("latest", "closest"), default="latest")
+parser.add_argument("--class_fusion", choices=("latest", "mean", "log_odds"), default="latest")
+parser.add_argument(
+    "--fusion_window", type=int, default=0, help="Observations the mean class fusion weights equally; 0 for all."
+)
 parser.add_argument(
     "--elevation_source", choices=("network", "lift"), default="network",
     help="Store the network's elevation or the raw mean elevation of the depth points.",
@@ -47,6 +71,20 @@ parser.add_argument("--name", default="memory", help="Suffix of the output folde
 parser.add_argument("--video_envs", type=int, nargs="+", default=[0], help="Environments to record videos of.")
 parser.add_argument("--video_steps", type=int, default=150, help="Steps to record, from the start.")
 parser.add_argument("--wandb", action="store_true", help="Also log metrics, plots and videos to W&B (rlroverlab).")
+parser.add_argument(
+    "--dump_samples", type=int, default=0,
+    help="Remembered cells per environment and step to save for reliability models (and a quarter as many current).",
+)
+parser.add_argument(
+    "--save_frames", type=int, default=0,
+    help="Save the depth lift and the network's BEV of this many environments at every step (frames.npz), e.g. to "
+    "develop the drift registration offline.",
+)
+parser.add_argument(
+    "--keyframe_distance", type=float, default=0.0,
+    help="Measure the drift by registering the depth lift against a keyframe this far back [m]; 0 disables. The "
+    "registrations are saved with --dump_samples.",
+)
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 
@@ -70,14 +108,19 @@ from PIL import Image  # noqa: E402
 from rsl_rl.utils import resolve_callable  # noqa: E402
 
 import rover_envs.envs.navigation.robots  # noqa: E402, F401
+from rover_envs.envs.navigation.learning.bev.drift import DriftMonitor, local_relief  # noqa: E402
 from rover_envs.envs.navigation.learning.bev.memory import CURRENT, REMEMBERED, UNKNOWN, BevMemory  # noqa: E402
 from rover_envs.envs.navigation.learning.bev.models import RoverBevModel  # noqa: E402
+from rover_envs.envs.navigation.learning.bev.odometry import OdometryDrift  # noqa: E402
+from rover_envs.envs.navigation.learning.bev.registration import KeyframeRegistration  # noqa: E402
 from rover_envs.envs.navigation.learning.rsl_rl.ppo_cfg import RoverPPORunnerCfg  # noqa: E402
 
 GROUPS = {"current": CURRENT, "remembered": REMEMBERED, "unknown": UNKNOWN}
 METHODS = ("instantaneous", "instantaneous_all", "persistent")
 """The Phase-1 BEV on cells with depth evidence, the Phase-1 BEV everywhere, and the memory's persistent BEV."""
 DISTANCE_EDGES = (0.25, 0.5, 1.0, 2.0, 4.0, 8.0)
+# Bins of the runs' drift severity: octaves around the nominal 1x.
+SEVERITY_EDGES = (0.5, 1.0, 2.0)
 
 # Reference data-viz palette (light): chart surface, ink, the first two categorical slots and a no-data gray.
 SURFACE, INK, INK_SECONDARY, BLUE, ORANGE, NO_DATA = "#fcfcfb", "#0b0b0b", "#52514e", "#2a78d6", "#eb6834", "#e4e3df"
@@ -93,55 +136,6 @@ def load_driver(env: RslRlVecEnvWrapper, path: str, device: str) -> torch.nn.Mod
     actor = actor_class(env.get_observations(), {"actor": ["policy"]}, "actor", env.num_actions, **actor_cfg)
     actor.load_state_dict(torch.load(path, map_location=device, weights_only=False)["actor_state_dict"])
     return actor.to(device).eval()
-
-
-class OdometryDrift:
-    """Drifting BEV frame poses from exact ones, with the correlated odometry model of the earlier BEV experiments.
-
-    Biases follow a first-order Gauss-Markov process with a 4 s correlation time: forward scale (1.2%), lateral drift
-    (0.008 m/m), heading drift (0.008 rad/m), gyro bias (0.0015 rad/s) and, added here for the height reference,
-    vertical drift (0.008 m/m). White noise adds 0.004 m/sqrt(m) to the translation and 0.002 rad/sqrt(m) plus
-    0.0007 rad/sqrt(s) to the heading. All standard deviations scale with ``severity``. Estimates restart from the exact
-    pose after a reset. A private generator keeps the environment's random stream, and so the trajectories, unchanged.
-    """
-
-    def __init__(self, num_envs: int, severity: float, dt: float, seed: int, device: str):
-        self.generator = torch.Generator(device).manual_seed(seed)
-        self.bias_std = severity * torch.tensor([0.012, 0.008, 0.008, 0.0015, 0.008], device=device)
-        self.white_std = severity * torch.tensor([0.004, 0.002, 0.0007], device=device)
-        self.correlation, self.dt = math.exp(-dt / 4.0), dt
-        self.bias = self.bias_std * self._normal(num_envs, 5)
-        self.estimate = self.previous = None
-
-    def _normal(self, *shape: int) -> torch.Tensor:
-        return torch.randn(*shape, generator=self.generator, device=self.generator.device)
-
-    def __call__(self, pose: torch.Tensor, reset: torch.Tensor) -> torch.Tensor:
-        if self.estimate is None:
-            self.estimate, self.previous = pose.clone(), pose.clone()
-            return self.estimate.clone()
-        innovation = math.sqrt(1.0 - self.correlation**2) * self.bias_std * self._normal(*self.bias.shape)
-        self.bias = self.correlation * self.bias + innovation
-        forward_scale, lateral, heading, gyro, vertical = self.bias.unbind(1)
-        white = self._normal(len(pose), 4)
-        # Motion since the previous step in the previous true ego frame, corrupted there.
-        delta = pose[:, :2] - self.previous[:, :2]
-        distance = delta.norm(dim=1)
-        cos, sin = self.previous[:, 3].cos(), self.previous[:, 3].sin()
-        forward = (cos * delta[:, 0] + sin * delta[:, 1]) * (1 + forward_scale)
-        left = -sin * delta[:, 0] + cos * delta[:, 1] + lateral * distance
-        forward = forward + self.white_std[0] * distance.sqrt() * white[:, 0]
-        left = left + self.white_std[0] * distance.sqrt() * white[:, 1]
-        turn = torch.remainder(pose[:, 3] - self.previous[:, 3] + math.pi, 2 * math.pi) - math.pi
-        turn = turn + heading * distance + gyro * self.dt + self.white_std[1] * distance.sqrt() * white[:, 2]
-        turn = turn + self.white_std[2] * math.sqrt(self.dt) * white[:, 3]
-        # Integrated in the estimated frame.
-        cos, sin = self.estimate[:, 3].cos(), self.estimate[:, 3].sin()
-        climb = pose[:, 2] - self.previous[:, 2] + vertical * distance
-        step = torch.stack((cos * forward - sin * left, sin * forward + cos * left, climb, turn), dim=1)
-        self.estimate = torch.where(reset.unsqueeze(1), pose, self.estimate + step)
-        self.previous = pose.clone()
-        return self.estimate.clone()
 
 
 def add(sums: dict, key: str, value: torch.Tensor) -> None:
@@ -199,6 +193,25 @@ def summarize(sums: dict, frames: int) -> dict:
             "yaw_mean_deg": math.degrees(ratio(s["pose/yaw"], s["pose/count"])),
             "height_mean_cm": 100 * ratio(s["pose/height"], s["pose/count"]),
         }
+        # Remembered cells and pose errors by the drift severity of the run they belong to.
+        summary["by_severity"] = []
+        severity_edges, distances = (0.0, *SEVERITY_EDGES, math.inf), len(DISTANCE_EDGES) + 1
+        for i, (low, high) in enumerate(zip(severity_edges[:-1], severity_edges[1:])):
+            rows = slice(i * distances, (i + 1) * distances)
+            cells, error = s["severity/cells"][rows], s["severity/persistent"][rows]
+            tp, fp, fn = (s[f"severity/rock_{kind}"][rows] for kind in ("tp", "fp", "fn"))
+            summary["by_severity"].append({
+                "severity": [low, high],
+                "frames": s["severity/frames"][i],
+                "position_error_mean_cm": 100 * ratio(s["severity/position"][i], s["severity/frames"][i]),
+                "yaw_error_mean_deg": math.degrees(ratio(s["severity/yaw"][i], s["severity/frames"][i])),
+                "measured_drift_level": ratio(s["severity/level"][i], s["severity/measured"][i]),
+                "remembered_cells": sum(cells),
+                "remembered_mae_cm": 100 * ratio(sum(error), sum(cells)),
+                "remembered_rock_iou": ratio(sum(tp), sum(tp) + sum(fp) + sum(fn)),
+                "remembered_mae_cm_by_distance": [100 * ratio(e, c) for e, c in zip(error, cells)],
+                "remembered_rock_iou_by_distance": [ratio(t, t + p + n) for t, p, n in zip(tp, fp, fn)],
+            })
     return summary
 
 
@@ -351,7 +364,24 @@ def evaluate() -> int:
         grid = (bev_cfg.x_range, bev_cfg.y_range, bev_cfg.resolution, dt)
         odometry = None
         if args.odometry_noise:
-            odometry = OdometryDrift(env.num_envs, args.odometry_noise, dt, args.seed, device)
+            odometry = OdometryDrift(
+                env.num_envs, args.odometry_noise, dt, args.seed, device,
+                field_std=args.drift_field_std, field_length=args.drift_field_length,
+            )
+        severity_edges = torch.tensor(SEVERITY_EDGES, device=device)
+        distance_edges = torch.tensor(DISTANCE_EDGES, device=device)
+        # Remembered cells binned by the run's severity and the distance travelled since they were observed.
+        severity_bins = (len(SEVERITY_EDGES) + 1) * (len(DISTANCE_EDGES) + 1)
+        dump = {"samples": [], "trajectory": [], "registrations": []} if args.dump_samples else None
+        frames_to_save = [] if args.save_frames else None
+        sampler = torch.Generator(device).manual_seed(args.seed)
+        registration = None
+        if args.keyframe_distance:
+            registration = KeyframeRegistration(
+                env.num_envs, bev_cfg.x_range, bev_cfg.y_range, bev_cfg.resolution,
+                keyframe_distance=args.keyframe_distance, seed=args.seed, device=device,
+            )
+            key_step = torch.zeros(env.num_envs, dtype=torch.long, device=device)
         if args.wandb:
             import wandb
 
@@ -361,7 +391,12 @@ def evaluate() -> int:
             )
         sums, frames, video = {}, 0, {e: [] for e in args.video_envs}
         with torch.inference_mode():
-            memory = BevMemory(env.num_envs, len(bev_cfg.classes), *grid, write_rule=args.write_rule, device=device)
+            memory = BevMemory(
+                env.num_envs, len(bev_cfg.classes), *grid, write_rule=args.write_rule, class_fusion=args.class_fusion,
+                fusion_window=args.fusion_window, device=device,
+            )
+            # The drift the rover can measure itself, from terrain it observes again.
+            monitor = DriftMonitor(env.num_envs, bev_cfg.resolution, device=device)
             # Evaluation only: where the ground truth says the camera has seen each cell.
             seen = BevMemory(env.num_envs, 1, *grid, device=device)
             obs = env.get_observations()
@@ -371,6 +406,7 @@ def evaluate() -> int:
                 # A reset env's frame was rendered before the reset moved the rover: it is neither stored nor scored.
                 fresh = ~reset
                 memory.reset(reset)
+                monitor.reset(reset)
                 seen.reset(reset)
                 true_pose = obs["pose"]
                 pose = odometry(true_pose, reset) if odometry else true_pose
@@ -379,7 +415,27 @@ def evaluate() -> int:
                 probabilities = logits.softmax(dim=1)
                 evidence = (lifted[:, 2] > 0) & fresh.view(-1, 1, 1)
                 stored = elevation if args.elevation_source == "network" else lifted[:, 0]
+                travelled = memory.travelled.clone()
                 persistent = memory.step(pose, stored, probabilities, evidence)
+                drift_estimate = monitor.step(persistent, memory.travelled - travelled)
+                if frames_to_save is not None:
+                    saved = slice(0, args.save_frames)
+                    frames_to_save.append({
+                        "true_pose": true_pose[saved], "pose": pose[saved], "reset": reset[saved],
+                        "lift_height": lifted[saved, 0], "lift_count": lifted[saved, 2].expm1().round().to(torch.int16),
+                        "elevation": elevation[saved], "target": obs["bev_target"][saved, 0],
+                    })
+                    frames_to_save[-1] = {key: value.cpu() for key, value in frames_to_save[-1].items()}
+                if registration is not None:
+                    measured = registration.step(pose, lifted[:, 0], lifted[:, 2].expm1(), reset)
+                    due = torch.isfinite(measured["interval"])
+                    if dump is not None and due.any():
+                        record = {key: measured[key][due] for key in
+                                  ("registered", "correction", "interval", "cost", "overlap", "curvature")}
+                        record.update(env=due.nonzero().squeeze(1), step=torch.full_like(key_step[due], step),
+                                      key_step=key_step[due])
+                        dump["registrations"].append({key: value.cpu() for key, value in record.items()})
+                    key_step = torch.where(measured["keyframe"], step, key_step)
 
                 target = obs["bev_target"]
                 visible = (target[:, 2] > 0.5) & fresh.view(-1, 1, 1)
@@ -404,9 +460,7 @@ def evaluate() -> int:
 
                 # Remembered cells by the distance travelled since they were observed.
                 remembered = scored & (persistent["status"] == REMEMBERED)
-                bins = torch.bucketize(
-                    persistent["distance"][remembered], torch.tensor(DISTANCE_EDGES, device=device), right=True
-                )
+                bins = torch.bucketize(persistent["distance"][remembered], distance_edges, right=True)
                 predicted_rock = predicted["persistent"][2][remembered] == rock
                 true_rock = target[:, 1][remembered] == rock
                 per_bin = {
@@ -426,7 +480,67 @@ def evaluate() -> int:
                     add(sums, "pose/position", error[:, :2].norm(dim=1).sum())
                     add(sums, "pose/height", error[:, 2].abs().sum())
                     add(sums, "pose/yaw", (torch.remainder(error[:, 3] + math.pi, 2 * math.pi) - math.pi).abs().sum())
+                    run_bin = torch.bucketize(odometry.severity, severity_edges, right=True)
+                    measured = torch.isfinite(drift_estimate["level"])
+                    pose_errors = {
+                        "frames": fresh,
+                        "position": (pose - true_pose)[:, :2].norm(dim=1),
+                        "yaw": (torch.remainder(pose[:, 3] - true_pose[:, 3] + math.pi, 2 * math.pi) - math.pi).abs(),
+                        "measured": fresh & measured,
+                        "level": torch.where(measured, drift_estimate["level"], 0.0),
+                    }
+                    for key, values in pose_errors.items():
+                        counts = torch.bincount(
+                            run_bin[fresh], weights=values[fresh].double(), minlength=len(SEVERITY_EDGES) + 1
+                        )
+                        add(sums, f"severity/{key}", counts)
+                    run_of_cell = run_bin.view(-1, 1, 1).expand_as(remembered)[remembered]
+                    cell_bin = run_of_cell * (len(DISTANCE_EDGES) + 1) + bins
+                    for key in ("cells", "persistent", "rock_tp", "rock_fp", "rock_fn"):
+                        counts = torch.bincount(cell_bin, weights=per_bin[key].double(), minlength=severity_bins)
+                        add(sums, f"severity/{key}", counts)
                 frames += int(fresh.sum())
+
+                if dump is not None:
+                    unset = torch.zeros(env.num_envs, device=device)
+                    trajectory = {
+                        "true_pose": true_pose, "pose": pose, "fresh": fresh,
+                        "level": odometry.level if odometry else unset,
+                        "severity": odometry.severity if odometry else unset,
+                        "drift_floor": drift_estimate["floor"], "drift_excess": drift_estimate["excess"],
+                        "drift_level": drift_estimate["level"], "drift_weight": drift_estimate["weight"],
+                        "revisit_statistics": drift_estimate["statistics"],
+                    }
+                    dump["trajectory"].append({key: value.cpu() for key, value in trajectory.items()})
+                    maps = {
+                        "age": persistent["age"],
+                        "distance": persistent["distance"],
+                        "range": persistent["range"],
+                        "elevation": persistent["elevation"],
+                        "target": target[:, 0],
+                        "guess": elevation,
+                        "rock_probability": persistent["semantics"][:, rock],
+                        "target_class": target[:, 1],
+                        "relief": local_relief(persistent["elevation"]),
+                        "history": history["status"],
+                        "points": lifted[:, 2],
+                        **{key: persistent[key] for key in
+                           ("first_elevation", "first_age", "first_distance", "first_range")},
+                    }
+                    # A random sample of the remembered cells, and a quarter as many current ones, of every env.
+                    for status, count in ((REMEMBERED, args.dump_samples), (CURRENT, max(1, args.dump_samples // 4))):
+                        eligible = (scored & (persistent["status"] == status)).flatten(1)
+                        draw = torch.rand(eligible.shape, generator=sampler, device=device).masked_fill(~eligible, -1.0)
+                        top = draw.topk(count, dim=1)
+                        keep = top.values >= 0
+                        env_index = torch.arange(env.num_envs, device=device).unsqueeze(1).expand_as(keep)[keep]
+                        cell_index = top.indices[keep]
+                        sample = {name: m.flatten(1)[env_index, cell_index] for name, m in maps.items()}
+                        sample.update(
+                            env=env_index, cell=cell_index, step=torch.full_like(env_index, step),
+                            status=torch.full_like(env_index, status),
+                        )
+                        dump["samples"].append({key: value.cpu() for key, value in sample.items()})
 
                 if run is not None:
                     # How the memory builds up: the output share it knows, and its coverage and elevation error on
@@ -464,6 +578,30 @@ def evaluate() -> int:
         summary["config"] = {**vars(args), "memory_size": memory.size, "resolution": bev_cfg.resolution, "dt": dt}
         with open(os.path.join(folder, "metrics.json"), "w") as file:
             json.dump(summary, file, indent=2, default=str)
+        if frames_to_save:
+            # Per step [T, E, ...]: poses, resets, the lift's mean height and point count, the network's elevation and
+            # the ground-truth elevation, all on the ego BEV grid.
+            np.savez_compressed(
+                os.path.join(folder, "frames.npz"),
+                **{key: torch.stack([f[key] for f in frames_to_save]).numpy() for key in frames_to_save[0]},
+                dt=dt, x_range=bev_cfg.x_range, y_range=bev_cfg.y_range, resolution=bev_cfg.resolution,
+            )
+        if dump is not None:
+            # Per step and environment [T, B, ...]: the true and the memory's poses [x, y, z, yaw], whether the frame
+            # was used, and the true drift level and run severity (0 with exact poses). Per sampled cell: its env,
+            # step, flat ego cell index and provenance, with the persistent BEV's values there. Per registration
+            # (prefixed registration_): its env, step and keyframe step with the measured correction and its quality.
+            registrations = {
+                f"registration_{key}": torch.cat([r[key] for r in dump["registrations"]]).numpy()
+                for key in (dump["registrations"][0] if dump["registrations"] else {})
+            }
+            np.savez_compressed(
+                os.path.join(folder, "samples.npz"),
+                **{key: torch.stack([t[key] for t in dump["trajectory"]]).numpy() for key in dump["trajectory"][0]},
+                **{key: torch.cat([s[key] for s in dump["samples"]]).numpy() for key in dump["samples"][0]},
+                **registrations,
+                dt=dt, x_range=bev_cfg.x_range, y_range=bev_cfg.y_range, resolution=bev_cfg.resolution, rock=rock,
+            )
         plot_error_vs_distance(summary, folder)
         videos = {
             e: animate(frames_of_env, bev_cfg, dt, os.path.join(folder, f"memory_env{e}"))
@@ -475,6 +613,9 @@ def evaluate() -> int:
                 for method in METHODS:
                     flat.update({f"{group}/{method}/{k}": v for k, v in results[method].items()})
             flat.update({f"pose_error/{k}": v for k, v in summary.get("pose_error", {}).items()})
+            for row in summary.get("by_severity", []):
+                label = "severity_{:g}-{:g}".format(*row["severity"])
+                flat.update({f"{label}/{k}": v for k, v in row.items() if not isinstance(v, list)})
             run.summary.update(flat)
             columns = ["distance_m", "cells", "persistent_mae_cm", "instantaneous_all_mae_cm", "persistent_rock_iou"]
             table = wandb.Table(columns=columns)
@@ -504,6 +645,11 @@ def evaluate() -> int:
                   f"memory rock IoU {row['persistent_rock_iou']:.3f}")
         if "pose_error" in summary:
             print("  pose error:", summary["pose_error"])
+        for row in summary.get("by_severity", []):
+            print("  severity {:g}-{:g}: ".format(*row["severity"]) + f"{row['frames']:.0f} frames, pose error "
+                  f"{row['position_error_mean_cm']:.1f} cm {row['yaw_error_mean_deg']:.2f} deg | remembered "
+                  f"{row['remembered_mae_cm']:.2f} cm, rock IoU {row['remembered_rock_iou']:.3f} | measured "
+                  f"drift level {row['measured_drift_level']:.2f}")
         print(f"Wrote {folder}")
     except BaseException:
         traceback.print_exc()
