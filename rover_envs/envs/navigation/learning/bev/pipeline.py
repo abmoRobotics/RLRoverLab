@@ -125,7 +125,13 @@ class PersistentBev:
 
     @torch.inference_mode()
     def step(
-        self, rgb: torch.Tensor, depth: torch.Tensor, camera: torch.Tensor, pose: torch.Tensor, reset: torch.Tensor
+        self,
+        rgb: torch.Tensor,
+        depth: torch.Tensor,
+        camera: torch.Tensor,
+        pose: torch.Tensor,
+        reset: torch.Tensor,
+        blind: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """The policy BEV [B, C, X, Y] after the current frame.
 
@@ -135,12 +141,16 @@ class PersistentBev:
                 odometry.
             reset: [B], true where the environment restarted in this step. Its frame was rendered before the reset
                 moved the rover, so it is not used.
+            blind: [B], true where the camera delivers nothing in this step, e.g. to test the memory under camera
+                dropouts. The odometry and the memory carry on without new evidence.
         """
         self.memory.reset(reset)
         self.monitor.reset(reset)
         estimate = self.odometry(pose, reset) if self.odometry is not None else pose
         elevation, logits, lifted = self.model(rgb, depth, camera)
         evidence = (lifted[:, 2] > 0) & ~reset.view(-1, 1, 1)
+        if blind is not None:
+            evidence &= ~blind.view(-1, 1, 1)
         probabilities = logits.softmax(dim=1)
         disagreement = (elevation - lifted[:, 0]).abs().unsqueeze(1)
         travelled = self.memory.travelled.clone()

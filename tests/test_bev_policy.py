@@ -90,6 +90,14 @@ def test_a_reset_empties_the_bev_of_that_environment_only(tmp_path):
     assert (bev[0] == 0).all() and bev[1, 2].sum() > 0
 
 
+def test_a_blind_camera_leaves_only_the_memory(tmp_path):
+    policy_bev = pipeline(tmp_path)
+    policy_bev.step(*frame(), pose(0.0), no_reset())
+    bev = policy_bev.step(*frame(), pose(0.3), no_reset(), blind=torch.tensor([True, False]))
+    # The blind environment sees nothing new but still remembers; the other one observes as usual.
+    assert bev[0, 3].sum() == 0 and bev[0, 2].sum() > 0 and bev[1, 3].sum() > 0
+
+
 def test_the_instantaneous_variant_only_knows_the_current_frame(tmp_path):
     policy_bev = pipeline(tmp_path, variant="instantaneous", reliability=None)
     policy_bev.step(*frame(), pose(0.0), no_reset())

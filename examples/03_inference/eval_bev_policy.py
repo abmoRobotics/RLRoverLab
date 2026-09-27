@@ -41,6 +41,16 @@ parser.add_argument("--num_envs", type=int, default=64)
 parser.add_argument("--steps", type=int, default=1500, help="Policy steps (0.2 s each); only finished episodes count.")
 parser.add_argument("--seed", type=int, default=43)
 parser.add_argument("--name", default=None, help="Suffix of the output folder; defaults to the policy.")
+parser.add_argument(
+    "--blind_steps", type=int, default=0,
+    help="Camera dropouts: the camera delivers nothing for this many steps of every --blind_period, with a random "
+    "phase per environment. BEV students then get no new evidence and RGB students black frames; 0 disables.",
+)
+parser.add_argument("--blind_period", type=int, default=25, help="Steps between the starts of camera dropouts.")
+parser.add_argument(
+    "--snapshot", type=int, default=0,
+    help="Save a BEV student's observation of environment 0 at this step as snapshot.png; 0 disables.",
+)
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 
@@ -51,6 +61,10 @@ app_launcher = AppLauncher(args)
 simulation_app = app_launcher.app
 
 import gymnasium as gym  # noqa: E402
+import matplotlib  # noqa: E402
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 from isaaclab_rl.rsl_rl import RslRlVecEnvWrapper, handle_deprecated_rsl_rl_cfg  # noqa: E402
@@ -60,8 +74,8 @@ from rsl_rl.utils import resolve_callable  # noqa: E402
 import rover_envs.envs.navigation.robots  # noqa: E402, F401
 from rover_envs.envs.navigation.learning.bev.pipeline import PersistentBev  # noqa: E402
 from rover_envs.envs.navigation.learning.rsl_rl.bev_env import PersistentBevVecEnv  # noqa: E402
-from rover_envs.envs.navigation.learning.rsl_rl.distillation_cfg import (RoverBevDistillationRunnerCfg,  # noqa: E402
-                                                                         RoverDistillationRunnerCfg)
+from rover_envs.envs.navigation.learning.rsl_rl.distillation_cfg import RoverBevDistillationRunnerCfg  # noqa: E402
+from rover_envs.envs.navigation.learning.rsl_rl.distillation_cfg import RoverDistillationRunnerCfg
 from rover_envs.envs.navigation.learning.rsl_rl.ppo_cfg import RoverPPORunnerCfg  # noqa: E402
 
 # Termination terms, in the order that decides an episode's outcome when several fire at once.
@@ -92,6 +106,34 @@ def load_policy(env, kind: str, checkpoint: str, device: str) -> torch.nn.Module
     state = torch.load(checkpoint, map_location=device, weights_only=False)
     model.load_state_dict(state.get(f"{key}_state_dict") or state["teacher_state_dict"])
     return model.to(device).eval()
+
+
+def save_snapshot(bev: torch.Tensor, channels: tuple[str, ...], bev_cfg, path: str) -> None:
+    """The channels of one policy BEV [C, X, Y], drawn with forward up and left on the left."""
+    styles = {
+        "elevation": ("elevation [m]", "Blues"), "rock": ("rock probability", "Purples"),
+        "known": ("known", "Greys"), "current": ("current", "Greys"), "observed": ("observed", "Greys"),
+        "expected_error": ("expected elevation error [dm]", "Oranges"),
+    }
+    (x_min, x_max), (y_min, y_max) = bev_cfg.x_range, bev_cfg.y_range
+    bev = bev.cpu()
+    # Unknown cells are zero for the policy; here they are drawn as no data, next to the mask that marks them.
+    known = bev[channels.index("known" if "known" in channels else "observed")] > 0.5
+    figure, axes = plt.subplots(1, len(channels), figsize=(3.2 * len(channels), 3.6), facecolor="#fcfcfb")
+    for ax, name, image in zip(axes, channels, bev):
+        title, cmap = styles[name]
+        if name not in ("known", "current", "observed"):
+            image = image.where(known, torch.nan)
+        ax.set_facecolor("#e4e3df")
+        handle = ax.imshow(image.flip(0, 1).numpy(), extent=(y_max, y_min, x_min, x_max), cmap=cmap,
+                           interpolation="nearest")
+        ax.plot(0.0, 0.0, marker="^", color="#0b0b0b", markersize=6)
+        ax.set_title(title, color="#0b0b0b", fontsize=10)
+        ax.set(xticks=[], yticks=[])
+        figure.colorbar(handle, ax=ax, shrink=0.7)
+    figure.tight_layout()
+    figure.savefig(path, dpi=110, facecolor="#fcfcfb")
+    plt.close(figure)
 
 
 def summarize(episodes: dict[str, np.ndarray], by_severity: bool) -> dict:
@@ -150,15 +192,22 @@ def evaluate() -> int:
         path = torch.zeros(env.num_envs, device=device)
         obs = env.get_observations()
         start = obs["pose"][:, :2].clone()
+        generator = torch.Generator(device).manual_seed(args.seed)
+        phase = torch.randint(0, args.blind_period, (env.num_envs,), generator=generator, device=device)
         restarted = torch.zeros(env.num_envs, dtype=torch.bool, device=device)
         with torch.inference_mode():
-            for _ in range(args.steps):
+            for step in range(args.steps):
                 if pipeline is not None and pipeline.odometry is not None:
                     episode_severity = pipeline.odometry.severity.clone()
                 else:
                     episode_severity = torch.zeros(env.num_envs, device=device)
                 position = obs["pose"][:, :2].clone()
+                blind = ((step + phase) % args.blind_period) < args.blind_steps
+                if pipeline is not None:
+                    env.blind = blind
                 obs, _, dones, _ = env.step(policy(obs))
+                if args.policy == "rgb" and args.blind_steps:
+                    obs["rgb"] = torch.where(blind.view(-1, 1, 1, 1), 0, obs["rgb"])
                 policy.reset(dones)
                 done = dones.bool()
                 after = obs["pose"][:, :2]
@@ -176,8 +225,10 @@ def evaluate() -> int:
                         episodes[key].append(values[done].cpu())
                     duration[done], path[done] = 0.0, 0.0
                 restarted = done
+                if pipeline is not None and step + 1 == args.snapshot:
+                    save_snapshot(obs["bev"][0], pipeline.channels, env_cfg.bev, os.path.join(folder, "snapshot.png"))
 
-        episodes = {key: torch.cat(values).numpy() for key, values in episodes.items()}
+        episodes = {key: torch.cat(values).numpy() if values else np.zeros(0) for key, values in episodes.items()}
         summary = summarize(episodes, by_severity=args.policy == "bev")
         summary["config"] = {**vars(args), "variant": variant, "checkpoint": checkpoint, "dt": dt}
         np.savez(os.path.join(folder, "episodes.npz"), **episodes)

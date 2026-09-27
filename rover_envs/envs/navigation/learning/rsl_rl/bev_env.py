@@ -13,11 +13,13 @@ class PersistentBevVecEnv(VecEnv):
     """Adds the ``bev`` group of ``PersistentBev`` to an RSL-RL environment of a BEV task.
 
     The wrapped environment provides the ``rgb``, ``depth``, ``camera`` and ``pose`` groups the pipeline consumes. The
-    runner only receives the groups in ``keep`` and ``bev``, so its rollout storage holds no camera images.
+    runner only receives the groups in ``keep`` and ``bev``, so its rollout storage holds no camera images. ``blind``
+    [B], if set, marks the environments whose camera delivers nothing in the next step (see ``PersistentBev.step``).
     """
 
     def __init__(self, env: VecEnv, pipeline: PersistentBev, keep: tuple[str, ...] = ("policy", "proprio")):
         self.env, self.pipeline, self.keep = env, pipeline, tuple(keep)
+        self.blind: torch.Tensor | None = None
         self.num_envs, self.num_actions, self.device = env.num_envs, env.num_actions, env.device
         self.max_episode_length = env.max_episode_length
         self._observations = self._observe(env.get_observations(), torch.zeros(self.num_envs, dtype=torch.bool))
@@ -50,6 +52,7 @@ class PersistentBevVecEnv(VecEnv):
         self.env.close()
 
     def _observe(self, obs: TensorDict, reset: torch.Tensor) -> TensorDict:
-        bev = self.pipeline.step(obs["rgb"], obs["depth"], obs["camera"], obs["pose"], reset.to(obs["pose"].device))
+        reset = reset.to(obs["pose"].device)
+        bev = self.pipeline.step(obs["rgb"], obs["depth"], obs["camera"], obs["pose"], reset, self.blind)
         groups = {group: obs[group] for group in self.keep}
         return TensorDict({**groups, "bev": bev}, batch_size=[self.num_envs], device=bev.device)
