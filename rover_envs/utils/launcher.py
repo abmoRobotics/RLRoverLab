@@ -9,6 +9,7 @@ _CAMERA_TASK_PREFIXES = (
     "AAURoverEnvCamera",
     "AAURoverEnvRGBD",
     "AAURoverEnvSimpleDistillation",
+    "AAURoverEnvSimpleBEV",
 )
 
 

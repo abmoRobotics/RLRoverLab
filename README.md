@@ -40,12 +40,43 @@ python examples/02_training/train_rsl_rl.py --task AAURoverEnvSimpleDistillation
 
 Pass a PPO checkpoint with `--checkpoint` to use a different teacher, or a distillation checkpoint to resume the student. The exported `policy.onnx` runs one policy step: it takes the raw RGB frame (`uint8`, 1×376×672×3), the goal observations, and the GRU hidden state, and returns the actions and the next hidden state.
 
+### Train the BEV perception model
+
+`AAURoverEnvSimpleBEV-v0` trains an instantaneous bird's-eye-view (BEV) model on the ZED2i WVGA RGB-D camera while the included height-map policy drives the rover. The BEV is 120×120 cells at 5 cm, covering x ∈ [-2, 4] m (forward) and y ∈ [-3, 3] m (left) in the yaw-aligned rover frame. Frozen DINOv3 ViT-S/16 features are lifted into the BEV with the depth, together with per-cell mean elevation, elevation range and point density, and a small U-Net predicts the elevation and the ground/rock class of each cell. The targets come from one downward ray per cell (the hit mesh gives the class) and the losses only use cells the camera sees. The DINOv3 weights go in `~/models/dinov3-vits16`, as for distillation:
+
+```bash
+python examples/02_training/train_bev.py --task AAURoverEnvSimpleBEV-v0 --num_envs 32 --terrain mars --viz none
+```
+
+Checkpoints and BEV visualizations are written to `logs/bev/rover_bev/`. Use `--checkpoint` to resume and `--driver` to drive with another PPO checkpoint. `BEV/lift_elevation_mae` scores the depth lift alone and should stay below a centimetre. Richer terrain semantics are specified in [docs/specs/terrain_semantics.md](docs/specs/terrain_semantics.md).
+
+Three input ablations are registered next to it. Train them with the same command and a different `--task`; each logs to its own experiment in `logs/bev/` and W&B:
+
+| Task | U-Net input | Question |
+|---|---|---|
+| `AAURoverEnvSimpleBEVGeometryOnly-v0` | Geometry lifted from the perfect depth; DINOv3 is not loaded | How much can perfect depth solve? |
+| `AAURoverEnvSimpleBEVDinoOnly-v0` | DINOv3 features only; the depth still places them in the BEV | How much comes from appearance? |
+| `AAURoverEnvSimpleBEVNoisyDepth-v0` | Geometry and DINOv3 from ZED-like stereo depth: disparity noise (about 2.5 cm at 2 m, 10 cm at 4 m) and 5% holes | Closest to the real problem |
+
+The ablations only change the model input; the BEV targets and metrics are computed exactly as for `AAURoverEnvSimpleBEV-v0`.
+
+### Temporal BEV memory
+
+`BevMemory` (`rover_envs/envs/navigation/learning/bev/memory.py`) turns the instantaneous BEVs of the frozen model into a persistent ego BEV. For each environment it keeps the latest observation of every 5 cm world cell in a 12 × 12 m world-aligned window around the rover. It stores only cells that received depth points in the current frame, and returns elevation, class probabilities, the provenance of each cell (current, remembered or unknown), and the time and distance travelled since it was observed. The BEV tasks expose the pose it needs as the `pose` observation group. Evaluate it while the height-map policy drives:
+
+```bash
+python examples/03_inference/eval_bev_memory.py --checkpoint logs/bev/rover_bev/<run>/model_<iteration>.pt --num_envs 64 --terrain mars
+```
+
+`--driving circle` drives 1.5 m circles that revisit terrain, `--odometry_noise` feeds the memory drifting poses (severity multiplier), `--write_rule closest` keeps the observation made closest to the rover, and `--elevation_source lift` stores the raw depth elevation instead of the network's. Metrics, an error-vs-distance plot, and real-time MP4 videos with snapshots of the environments in `--video_envs` are written to `logs/bev_memory/`; add `--wandb` to also log them, with per-step curves, to the `rlroverlab` W&B project.
+
 ### Evaluate with RSL-RL
 
-`AAURoverEnv-v0` and `AAURoverEnvSimple-v0` include a trained RSL-RL height-map policy, which is evaluated by default:
+`AAURoverEnv-v0` and `AAURoverEnvSimple-v0` include a trained RSL-RL height-map policy, and `AAURoverEnvSimpleDistillation-v0` includes the distilled RGB student (`best_agent_rsl_rl_rgb.pt`). The included policy is evaluated by default; pass `--checkpoint` to evaluate another one:
 
 ```bash
 python examples/03_inference/eval_rsl_rl.py --task AAURoverEnvSimple-v0 --num_envs 32 --terrain mars
+python examples/03_inference/eval_rsl_rl.py --task AAURoverEnvSimpleDistillation-v0 --num_envs 32 --terrain mars
 ```
 
 ### Quick Links

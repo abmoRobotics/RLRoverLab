@@ -51,7 +51,53 @@ gym.register(
         "rsl_rl_cfg_entry_point": (
             "rover_envs.envs.navigation.learning.rsl_rl.distillation_cfg:RoverDistillationRunnerCfg"
         ),
+        "rsl_rl_best_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_rsl_rl_rgb.pt",
         "rsl_rl_teacher_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_rsl_rl_heightmap.pt",
+    }
+)
+
+gym.register(
+    id="AAURoverEnvSimpleBEV-v0",
+    entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": env_cfg.AAURoverSimpleBevEnvCfg,
+        "bev_cfg_entry_point": "rover_envs.envs.navigation.learning.bev.bev_cfg:RoverBevTrainerCfg",
+        "rsl_rl_driver_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_rsl_rl_heightmap.pt",
+    }
+)
+
+# BEV input ablations of AAURoverEnvSimpleBEV-v0.
+gym.register(
+    id="AAURoverEnvSimpleBEVGeometryOnly-v0",
+    entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": env_cfg.AAURoverSimpleBevEnvCfg,
+        "bev_cfg_entry_point": "rover_envs.envs.navigation.learning.bev.bev_cfg:RoverBevGeometryOnlyTrainerCfg",
+        "rsl_rl_driver_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_rsl_rl_heightmap.pt",
+    }
+)
+
+gym.register(
+    id="AAURoverEnvSimpleBEVDinoOnly-v0",
+    entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": env_cfg.AAURoverSimpleBevEnvCfg,
+        "bev_cfg_entry_point": "rover_envs.envs.navigation.learning.bev.bev_cfg:RoverBevDinoOnlyTrainerCfg",
+        "rsl_rl_driver_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_rsl_rl_heightmap.pt",
+    }
+)
+
+gym.register(
+    id="AAURoverEnvSimpleBEVNoisyDepth-v0",
+    entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": env_cfg.AAURoverSimpleBevNoisyDepthEnvCfg,
+        "bev_cfg_entry_point": "rover_envs.envs.navigation.learning.bev.bev_cfg:RoverBevNoisyDepthTrainerCfg",
+        "rsl_rl_driver_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_rsl_rl_heightmap.pt",
     }
 )
 

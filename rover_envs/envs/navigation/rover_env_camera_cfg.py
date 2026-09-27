@@ -1,5 +1,7 @@
+from isaaclab.sensors import MultiMeshRayCasterCfg, patterns
 from isaaclab.sensors.camera.tiled_camera_cfg import TiledCameraCfg
 import isaaclab.sim as sim_utils
+from rover_envs.assets.terrains import get_terrain
 from rover_envs.envs.navigation.rover_env_cfg import ObservationCfg, RoverEnvCfg, RoverSceneCfg
 # import
 from isaaclab.utils import configclass
@@ -320,3 +322,125 @@ class RoverDistillationEnvCfg(RoverEnvCfg):
         self.scene.tiled_camera.data_types = ["rgb"]
         # Render once per policy step instead of every physics step.
         self.sim.render_interval = self.decimation
+
+@configclass
+class BevCfg:
+    """Ego BEV of the BEV perception task.
+
+    The BEV frame is the yaw-aligned rover Body frame: origin at the Body origin, +x forward, +y left, +z up, metres.
+    Maps have the layout [x, y]: cell (i, j) covers x in
+    [x_range[0] + i * resolution, x_range[0] + (i + 1) * resolution) and likewise along y.
+    """
+
+    x_range: tuple[float, float] = (-2.0, 4.0)
+    y_range: tuple[float, float] = (-3.0, 3.0)
+    resolution: float = 0.05
+    classes: tuple[str, ...] = ("ground", "rock")
+    """Semantic classes, in the order of the BEV scanner's ray-cast targets (see RoverBevSceneCfg.set_terrain)."""
+
+@configclass
+class RoverBevSceneCfg(RoverZed2iWVGAFullEnvCfg):
+    """ZED2i WVGA RGB-D camera plus one downward ray per BEV cell that labels its elevation and semantic class."""
+
+    # The grid pattern and offset are set from BevCfg by RoverBevEnvCfg, the targets per terrain by set_terrain.
+    bev_scanner = MultiMeshRayCasterCfg(
+        prim_path="{ENV_REGEX_NS}/Robot/Body",
+        ray_alignment="yaw",
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=(1.0, 1.0), ordering="yx"),
+        mesh_prim_paths=[],
+        update_mesh_ids=True,
+        max_distance=100.0,
+    )
+
+    def set_terrain(self, terrain_name: str) -> None:
+        super().set_terrain(terrain_name)
+        # The hit target index is the semantic class: ground is the terrain mesh, rock the merged obstacle mesh.
+        # TODO: take the class targets from the terrain registry (docs/specs/terrain_semantics.md).
+        self.bev_scanner.mesh_prim_paths = ["/World/terrain/terrain", get_terrain(terrain_name).obstacle_mesh_prim_path]
+
+@configclass
+class RoverBevObservationsCfg(ObservationCfg):
+    """Height-map observations for the driving policy (`policy`) plus the BEV model inputs and targets."""
+
+    @configclass
+    class RGBCfg(ObsGroup):
+        rgb = ObsTerm(
+            func=mdp.image,
+            params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb", "normalize": False},
+        )
+
+    @configclass
+    class DepthCfg(ObsGroup):
+        depth = ObsTerm(
+            func=mdp.image,
+            params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "depth", "normalize": False},
+        )
+
+    @configclass
+    class CameraCfg(ObsGroup):
+        """Intrinsics [9] followed by the camera pose in the BEV frame [12]."""
+
+        intrinsics = ObsTerm(func=mdp.camera_intrinsics, params={"sensor_cfg": SceneEntityCfg("tiled_camera")})
+        pose = ObsTerm(
+            func=mdp.camera_pose_bev,
+            params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "frame_cfg": SceneEntityCfg("bev_scanner")},
+        )
+
+    @configclass
+    class BevTargetCfg(ObsGroup):
+        target = ObsTerm(
+            func=mdp.bev_ground_truth,
+            params={"sensor_cfg": SceneEntityCfg("bev_scanner"), "camera_cfg": SceneEntityCfg("tiled_camera")},
+        )
+
+    @configclass
+    class PoseCfg(ObsGroup):
+        """World pose of the ego BEV frame [x, y, z, yaw]: the odometry for the temporal BEV memory."""
+
+        pose = ObsTerm(func=mdp.bev_frame_pose, params={"sensor_cfg": SceneEntityCfg("bev_scanner")})
+
+    rgb: RGBCfg = RGBCfg()
+    depth: DepthCfg = DepthCfg()
+    camera: CameraCfg = CameraCfg()
+    bev_target: BevTargetCfg = BevTargetCfg()
+    pose: PoseCfg = PoseCfg()
+
+@configclass
+class StereoDepthCfg(ObsGroup):
+    """ZED-like stereo depth for the BEV model input; the BEV targets keep using the exact rendered depth.
+
+    With the 12 cm ZED baseline, fx = 265 px (WVGA) and 0.2 px disparity noise, the depth error is about 0.6 cm at
+    1 m, 2.5 cm at 2 m and 10 cm at 4 m, correlated over 9 x 9 pixels, with 5% of the image in holes.
+    """
+
+    depth = ObsTerm(
+        func=mdp.stereo_depth,
+        params={
+            "sensor_cfg": SceneEntityCfg("tiled_camera"),
+            "baseline": 0.12,
+            "disparity_std": 0.2,
+            "correlation_px": 9,
+            "dropout": 0.05,
+        },
+    )
+
+@configclass
+class RoverBevEnvCfg(RoverEnvCfg):
+    """ZED2i WVGA RGB-D frames with BEV elevation and semantic targets, driven by the height-map policy."""
+
+    bev: BevCfg = BevCfg()
+    observations: RoverBevObservationsCfg = RoverBevObservationsCfg()
+    scene: RoverBevSceneCfg = RoverBevSceneCfg(num_envs=32, env_spacing=4.0, replicate_physics=False)
+    commands: CommandsNoVizCfg = CommandsNoVizCfg()
+
+    def __post_init__(self):
+        super().__post_init__()
+        # Render once per policy step instead of every physics step.
+        self.sim.render_interval = self.decimation
+        # One ray per cell centre from 10 m above the Body; the grid pattern spans -size/2 to size/2 inclusive.
+        (x_min, x_max), (y_min, y_max), resolution = self.bev.x_range, self.bev.y_range, self.bev.resolution
+        self.scene.bev_scanner.offset.pos = ((x_min + x_max) / 2, (y_min + y_max) / 2, 10.0)
+        self.scene.bev_scanner.pattern_cfg = patterns.GridPatternCfg(
+            resolution=resolution, size=(x_max - x_min - resolution, y_max - y_min - resolution), ordering="yx"
+        )
+        self.scene.bev_scanner.update_period = self.sim.dt * self.decimation

@@ -1,4 +1,4 @@
-"""RGB encoder built on a frozen DINOv3 backbone."""
+"""RGB encoders built on a frozen DINOv3 backbone."""
 
 import os
 
@@ -76,3 +76,39 @@ class DinoV3Encoder(nn.Module):
         for block in self.blocks:
             queries = block(queries, tokens)
         return self.head(torch.cat((queries.mean(dim=1), queries.amax(dim=1), cls), dim=-1))
+
+
+class DinoV3FeatureMap(nn.Module):
+    """Frozen DINOv3 patch features [B, 384, H/16, W/16] of RGB frames [B, h, w, 3] with values in 0-255.
+
+    The frames are resized to ``image_size`` = (H, W), so the feature map covers the whole frame.
+    """
+
+    def __init__(self, model_path: str, image_size: tuple[int, int] = (368, 672)):
+        super().__init__()
+        self.backbone = DINOv3ViTModel.from_pretrained(os.path.expanduser(model_path)).requires_grad_(False)
+        config = self.backbone.config
+        if image_size[0] % config.patch_size or image_size[1] % config.patch_size:
+            raise ValueError(f"image_size {image_size} must be a multiple of the patch size {config.patch_size}")
+        self.image_size = tuple(image_size)
+        self.grid_size = (image_size[0] // config.patch_size, image_size[1] // config.patch_size)
+        self.num_prefix_tokens = 1 + config.num_register_tokens
+        self.out_dim = config.hidden_size
+        self.register_buffer("mean", torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
+        self.register_buffer("std", torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
+
+    def train(self, mode: bool = True):
+        # DINOv3 randomly rescales its RoPE coordinates in train mode, so the frozen backbone always stays in eval.
+        super().train(mode)
+        self.backbone.eval()
+        return self
+
+    def forward(self, rgb: torch.Tensor) -> torch.Tensor:
+        x = rgb.permute(0, 3, 1, 2).float() / 255.0
+        x = F.interpolate(x, size=self.image_size, mode="bilinear", antialias=True)
+        x = (x - self.mean) / self.std
+        with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16, enabled=x.is_cuda):
+            tokens = self.backbone(pixel_values=x).last_hidden_state
+        # [CLS, registers, patches] -> row-major patch grid
+        patches = tokens[:, self.num_prefix_tokens :].float()
+        return patches.transpose(1, 2).reshape(x.shape[0], self.out_dim, *self.grid_size)
