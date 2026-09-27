@@ -7,8 +7,16 @@ and is scored on held-out runs over the whole range of drift levels (Phase 3.2 a
 - "U_pose": the nominal pose uncertainty of the cell, with the lever arm of heading errors along the actual path;
 - "pose effect, fixed level": what that uncertainty does to the elevation given the local slope, at an assumed level;
 - "pose effect, measured level": the same at the drift level the rover measures itself (DriftMonitor);
+- "disagreement": how much the network's elevation and the raw depth lift disagreed on the stored observation, a
+  perception signal (Phase 3.6);
+- "measured level + disagreement": the pose effect at the measured level plus the disagreement, as variances;
+- "... approximate lever arm": the same with the lever arm approximated from the cell's current range, as the drift
+  monitor does, which needs no path history;
 - "pose effect, oracle level": the same at the true drift level, which the rover never has;
 - "oracle displacement": the actual pose error of the cell, the best any pose model could do.
+
+The disagreement is also checked as a perception signal on the cells the rover currently sees. ``--export`` saves the
+monotone map of "measured level + disagreement, approximate lever arm" for use online (reliability_map.npz).
 
     python examples/03_inference/analyze_bev_reliability.py \
         --train logs/bev_memory/<run> ... --test logs/bev_memory/<run> ...
@@ -46,8 +54,13 @@ SURFACE, INK, INK_SECONDARY, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e6e5e1"
 # Categorical slots in their fixed order, and an ordinal blue ramp for the severity octaves, light to dark.
 SERIES = ("#2a78d6", "#eb6834", "#1baf7a", "#eda100")
 SEVERITY_COLORS = ("#86b6ef", "#3987e5", "#1c5cab", "#0d366b")
-# Models in the charts: the Phase-2 proxy, the best fixed model, the rover's adaptive one and its oracle bound.
-PLOTTED = ("distance", "pose effect, fixed level", "pose effect, measured level", "pose effect, oracle level")
+# Models in the charts: the best fixed model, the rover's adaptive ones and the oracle bound.
+PLOTTED = (
+    "pose effect, fixed level",
+    "pose effect, measured level",
+    "measured level + disagreement",
+    "pose effect, oracle level",
+)
 
 
 def rotate(xy: np.ndarray, angle: np.ndarray) -> np.ndarray:
@@ -118,6 +131,19 @@ def load_run(folder: str) -> dict[str, np.ndarray]:
         "error": np.abs(data["elevation"][keep] - data["target"][keep]).astype(np.float64),
         "confused": (probability > 0.5) != true_rock,
         "entropy": -(p * np.log(p) + (1 - p) * np.log(1 - p)),
+        "disagreement": data["disagreement"][keep].astype(np.float64) if "disagreement" in data.files else np.nan * env,
+        "current_range": np.linalg.norm(ego, axis=1),
+    }
+
+
+def load_current(folder: str) -> dict[str, np.ndarray]:
+    """The sampled cells the rover currently observes: their error, disagreement and range."""
+    data = np.load(os.path.join(folder, "samples.npz"))
+    keep = (data["status"] == 1) & np.isfinite(data["target"]) & np.isfinite(data["elevation"])
+    return {
+        "error": np.abs(data["elevation"][keep] - data["target"][keep]).astype(np.float64),
+        "disagreement": data["disagreement"][keep].astype(np.float64),
+        "range": data["range"][keep].astype(np.float64),
     }
 
 
@@ -138,26 +164,64 @@ def pose_effect(data: dict) -> np.ndarray:
     return data["slope"] ** 2 * horizontal / 2 + vertical
 
 
+def approximate_pose_effect(data: dict) -> np.ndarray:
+    """The pose effect with the lever arm approximated from the cell's current range, as ``drift.nominal_effect``."""
+    return nominal_effect_numpy(data["slope"], data["distance"], data["current_range"])
+
+
+def nominal_effect_numpy(slope: np.ndarray, distance: np.ndarray, range_: np.ndarray) -> np.ndarray:
+    """``drift.nominal_effect`` in numpy."""
+    translation, heading, height = NOMINAL_RATES
+    lever = range_**2 + range_ * distance + distance**2 / 3
+    return slope**2 * (translation * distance + heading * distance * lever) / 2 + height * distance
+
+
+def fit_weighted_sum(train: dict, first: np.ndarray, second: np.ndarray) -> tuple[float, callable]:
+    """The weight w of ``first + w * second`` whose monotone map predicts the training errors best (squared error)."""
+    best = (math.inf, None, None)
+    for weight in np.logspace(-2, 2, 17):
+        monotone = fit_monotone(first + weight * second, train["error"])
+        loss = float(np.mean((monotone(first + weight * second) - train["error"]) ** 2))
+        if loss < best[0]:
+            best = (loss, float(weight), monotone)
+    return best[1], best[2]
+
+
 def true_pose_effect(data: dict) -> np.ndarray:
     """The same with the cell's actual displacement and height offset."""
     return data["slope"] ** 2 * data["displacement"] ** 2 / 2 + data["height_offset"] ** 2
 
 
-def fit_monotone(score: np.ndarray, error: np.ndarray, bins: int = 200):
-    """A non-decreasing map from a score to the expected error: isotonic regression over quantile bins of the score."""
-    edges = np.unique(np.quantile(score, np.linspace(0.0, 1.0, bins + 1)))
-    index = np.clip(np.searchsorted(edges, score, side="right") - 1, 0, len(edges) - 2)
-    counts = np.bincount(index, minlength=len(edges) - 1).astype(np.float64)
-    means = np.bincount(index, weights=error, minlength=len(edges) - 1) / np.maximum(counts, 1.0)
-    used = counts > 0
-    fitted = np.empty_like(means)
-    fitted[used] = optimize.isotonic_regression(means[used], weights=counts[used]).x
-    fitted[~used] = np.interp(np.flatnonzero(~used), np.flatnonzero(used), fitted[used])
-    return lambda s: fitted[np.clip(np.searchsorted(edges, s, side="right") - 1, 0, len(edges) - 2)]
+class MonotoneMap:
+    """A non-decreasing map from a score to the expected error: isotonic regression over quantile bins of the score.
+
+    ``edges`` [n + 1] bound the bins and ``values`` [n] hold the expected error in each; scores below the first edge or
+    above the last take the first or last value.
+    """
+
+    def __init__(self, score: np.ndarray, error: np.ndarray, bins: int = 200):
+        self.edges = np.unique(np.quantile(score, np.linspace(0.0, 1.0, bins + 1)))
+        index = self._bin(score)
+        counts = np.bincount(index, minlength=len(self.edges) - 1).astype(np.float64)
+        means = np.bincount(index, weights=error, minlength=len(self.edges) - 1) / np.maximum(counts, 1.0)
+        used = counts > 0
+        self.values = np.empty_like(means)
+        self.values[used] = optimize.isotonic_regression(means[used], weights=counts[used]).x
+        self.values[~used] = np.interp(np.flatnonzero(~used), np.flatnonzero(used), self.values[used])
+
+    def _bin(self, score: np.ndarray) -> np.ndarray:
+        return np.clip(np.searchsorted(self.edges, score, side="right") - 1, 0, len(self.edges) - 2)
+
+    def __call__(self, score: np.ndarray) -> np.ndarray:
+        return self.values[self._bin(score)]
 
 
-def build_models(train: dict) -> dict[str, callable]:
-    """Models that map the cells of a run to their expected elevation error (m), fitted on ``train``."""
+fit_monotone = MonotoneMap
+
+
+def build_models(train: dict) -> tuple[dict[str, callable], dict[str, dict]]:
+    """Models that map the cells of a run to their expected elevation error (m), fitted on ``train``, and the fitted
+    weights and maps of the models that combine the pose effect with the disagreement."""
     scores = {
         "distance": lambda data: data["distance"],
         "U_pose": lambda data: pose_variance(data)[0],
@@ -169,13 +233,27 @@ def build_models(train: dict) -> dict[str, callable]:
         scores[name] = lambda data, key=key, prior=prior: np.where(np.isfinite(data[key]), data[key], prior) ** 2 * (
             pose_effect(data)
         )
+    scores["disagreement"] = lambda data: data["disagreement"]
     scores["pose effect, oracle level"] = lambda data: data["oracle_level"] ** 2 * pose_effect(data)
     scores["oracle displacement"] = true_pose_effect
     models = {}
     for name, score in scores.items():
         monotone = fit_monotone(score(train), train["error"])
         models[name] = lambda data, monotone=monotone, score=score: monotone(score(data))
-    return models
+    # The pose effect at the measured level plus the disagreement, both elevation variances.
+    prior = float(np.nanmedian(train["measured_path"]))
+    level = lambda data: np.where(np.isfinite(data["measured_path"]), data["measured_path"], prior) ** 2  # noqa: E731
+    exports = {}
+    for name, effect in (("measured level + disagreement", pose_effect),
+                         ("... approximate lever arm", approximate_pose_effect)):
+        weight, monotone = fit_weighted_sum(train, level(train) * effect(train), train["disagreement"] ** 2)
+
+        def model(data, w=weight, m=monotone, e=effect):
+            return m(level(data) * e(data) + w * data["disagreement"] ** 2)
+
+        models[name] = model
+        exports[name] = {"weight": weight, "monotone": monotone, "prior": prior}
+    return models, exports
 
 
 def risk_coverage(predicted: np.ndarray, error: np.ndarray) -> np.ndarray:
@@ -393,12 +471,13 @@ def main() -> None:
     parser.add_argument("--train", nargs="+", required=True, help="eval_bev_memory.py run folders to fit on.")
     parser.add_argument("--test", nargs="+", required=True, help="Held-out run folders to score on.")
     parser.add_argument("--name", default="reliability")
+    parser.add_argument("--export", action="store_true", help="Save the online reliability map (reliability_map.npz).")
     args = parser.parse_args()
 
     train = concatenate([load_run(folder) for folder in args.train])
     tests = {folder: load_run(folder) for folder in args.test}
     test = concatenate(list(tests.values()))
-    models = build_models(train)
+    models, exports = build_models(train)
     predictions = {name: model(test) for name, model in models.items()}
     results = {name: evaluate(test, predicted) for name, predicted in predictions.items()}
     per_run = {
@@ -407,6 +486,19 @@ def main() -> None:
     }
     rock = {signal: auroc(test[signal], test["confused"]) for signal in ("entropy", "distance", "slope", "lever")}
     monitor = monitor_validation(args.test)
+    # The disagreement as a perception signal on the cells the rover currently observes, against the range.
+    current_train = concatenate([load_current(folder) for folder in args.train])
+    current = concatenate([load_current(folder) for folder in args.test])
+    perception = {"cells": len(current["error"]), "mae_cm": 100 * float(current["error"].mean())}
+    for signal in ("disagreement", "range"):
+        predicted = fit_monotone(current_train[signal], current_train["error"])(current[signal])
+        subsample = np.random.default_rng(0).choice(len(predicted), size=min(len(predicted), 200_000), replace=False)
+        perception[signal] = {
+            "spearman": float(stats.spearmanr(current[signal][subsample], current["error"][subsample]).statistic),
+            "auroc_large_error": auroc(current[signal], current["error"] > LARGE_ERROR),
+            "aurc_cm": 100 * float(risk_coverage(predicted, current["error"]).mean()),
+            "calibration": ratio(current["error"].sum(), predicted.sum()),
+        }
     folder = os.path.join("logs", "bev_reliability", f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{args.name}")
     os.makedirs(folder)
     summary = {
@@ -418,6 +510,8 @@ def main() -> None:
         "rock_confusion_auroc": rock,
         "drift_monitor": {key: value for key, value in monitor.items() if key != "arrays"},
         "registration": registration_validation(args.test),
+        "current_cells": perception,
+        "combined_weights": {name: export["weight"] for name, export in exports.items()},
     }
     with open(os.path.join(folder, "reliability.json"), "w") as file:
         json.dump(summary, file, indent=2)
@@ -425,6 +519,15 @@ def main() -> None:
     plot_calibration(results, os.path.join(folder, "calibration_by_severity.png"))
     plot_risk_coverage(test, predictions, os.path.join(folder, "risk_coverage.png"))
     plot_monitor(monitor, os.path.join(folder, "drift_monitor.png"))
+    if args.export:
+        # The online reliability map: expected error = values[bin(level^2 * effect + weight * disagreement^2)], with the
+        # effect from drift.nominal_effect and the level from DriftMonitor (the prior where it has none yet).
+        export = exports["... approximate lever arm"]
+        np.savez(
+            os.path.join(folder, "reliability_map.npz"), edges=export["monotone"].edges,
+            values=export["monotone"].values, weight=export["weight"], prior=export["prior"],
+            nominal_rates=np.array(NOMINAL_RATES), train=np.array(args.train),
+        )
 
     print(f"{len(train['error'])} training and {len(test['error'])} test cells.")
     print(f"Calibration (observed / predicted) by run severity is on cells remembered over >= {MEMORY_LENGTH:g} m.")
@@ -441,6 +544,10 @@ def main() -> None:
     print(f"drift monitor: Spearman with the true level {monitor['spearman']:.3f}, log-log slope "
           f"{monitor['log_slope']:.2f}, zero share {monitor['zero_share']:.2f}; quartiles by severity {quartiles}")
     print("registration:", json.dumps(summary["registration"]))
+    print(f"current cells ({perception['cells']}, {perception['mae_cm']:.2f} cm):", json.dumps(
+        {signal: {k: round(v, 3) for k, v in perception[signal].items()} for signal in ("disagreement", "range")}
+    ))
+    print("combined weights:", summary["combined_weights"])
     print(f"Wrote {folder}")
 
 

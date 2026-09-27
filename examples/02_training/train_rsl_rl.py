@@ -43,6 +43,8 @@ from isaaclab_tasks.utils import load_cfg_from_registry, parse_env_cfg  # noqa: 
 from rsl_rl.runners import DistillationRunner, OnPolicyRunner  # noqa: E402
 
 import rover_envs.envs.navigation.robots  # noqa: E402, F401
+from rover_envs.envs.navigation.learning.bev.pipeline import PersistentBev  # noqa: E402
+from rover_envs.envs.navigation.learning.rsl_rl.bev_env import PersistentBevVecEnv  # noqa: E402
 from rover_envs.utils.rsl_rl_wandb import patch_rsl_rl_logger_for_training_progress  # noqa: E402
 
 
@@ -69,6 +71,12 @@ def train() -> int:
         gym_env = gym.make(args.task, cfg=env_cfg)
         step_dt = gym_env.unwrapped.step_dt
         env = RslRlVecEnvWrapper(gym_env, clip_actions=agent_cfg.clip_actions)
+        if getattr(env_cfg, "policy_bev", None) is not None:
+            # The student sees the persistent BEV that the rover builds from its camera and drifting odometry.
+            pipeline = PersistentBev.from_cfg(
+                env_cfg.policy_bev, env_cfg.bev, env.num_envs, step_dt, agent_cfg.seed, agent_cfg.device
+            )
+            env = PersistentBevVecEnv(env, pipeline)
         patch_rsl_rl_logger_for_training_progress(step_dt=step_dt)
         runner_class = DistillationRunner if agent_cfg.class_name == "DistillationRunner" else OnPolicyRunner
         runner = runner_class(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)

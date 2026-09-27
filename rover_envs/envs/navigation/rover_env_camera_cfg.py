@@ -11,6 +11,7 @@ from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.envs.mdp.observations import image_features
 import math
+from dataclasses import MISSING
 
 # ZED2i Camera Aperture Specifications:
 # Resolution   Size         Pixel Size  H_Aperture  V_Aperture
@@ -404,6 +405,30 @@ class RoverBevObservationsCfg(ObservationCfg):
     camera: CameraCfg = CameraCfg()
     bev_target: BevTargetCfg = BevTargetCfg()
     pose: PoseCfg = PoseCfg()
+
+@configclass
+class RoverBevDistillationObservationsCfg(RoverBevObservationsCfg):
+    """The BEV task's observations plus the student's goal observations (`proprio`), for distillation."""
+
+    proprio: RoverDistillationObservationsCfg.ProprioCfg = RoverDistillationObservationsCfg.ProprioCfg()
+
+@configclass
+class PolicyBevCfg:
+    """The student's persistent BEV (`PersistentBev`), which it builds from the `rgb`, `depth`, `camera` and `pose`
+    groups: the frozen Phase-1 model, the Phase-3 reliability map, the channel variant and the odometry drift."""
+
+    model_path: str = MISSING
+    """Phase-1 BEV model checkpoint, full or without the DINOv3 backbone."""
+    reliability_path: str = MISSING
+    """Reliability map exported by analyze_bev_reliability.py; used by the "full" variant."""
+    variant: str = "full"
+    """"instantaneous", "persistent" or "full" (see PersistentBev)."""
+    severity: tuple[float, float] = (0.25, 4.0)
+    """Odometry drift severity range, drawn per episode; (0, 0) for exact poses."""
+    field_std: float = 0.5
+    """Log standard deviation of the drift's variation with location."""
+    field_length: float = 5.0
+    """Correlation length of that variation [m]."""
 
 @configclass
 class StereoDepthCfg(ObsGroup):

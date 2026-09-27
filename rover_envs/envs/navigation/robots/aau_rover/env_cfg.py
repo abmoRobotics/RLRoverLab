@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import os
+
 from isaaclab.utils import configclass
 import rover_envs.mdp as mdp
 from rover_envs.assets.robots.aau_rover import AAU_ROVER_CFG
 from rover_envs.assets.robots.aau_rover_simple import AAU_ROVER_SIMPLE_CFG
 from rover_envs.envs.navigation.rover_env_cfg import RoverEnvCfg
 from rover_envs.envs.navigation.rover_env_camera_cfg import (
+    PolicyBevCfg,
+    RoverBevDistillationObservationsCfg,
     RoverBevEnvCfg,
     RoverDistillationEnvCfg,
     RoverRGBDRawEnvCfg,
@@ -81,6 +85,38 @@ class AAURoverSimpleBevNoisyDepthEnvCfg(AAURoverSimpleBevEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.observations.depth = StereoDepthCfg()
+
+POLICIES = os.path.join(os.path.dirname(__file__), "policies")
+
+@configclass
+class AAURoverSimpleBevDistillationEnvCfg(AAURoverSimpleBevNoisyDepthEnvCfg):
+    """Height-map teacher and a student that sees the persistent BEV it builds from noisy depth (Phase 4)."""
+
+    policy_bev: PolicyBevCfg = PolicyBevCfg(
+        model_path=os.path.join(POLICIES, "bev_perception_noisy_depth.pt"),
+        reliability_path=os.path.join(POLICIES, "bev_reliability_map.npz"),
+    )
+
+    def __post_init__(self):
+        # The BEV task's observations plus the student's goal; the parent then switches the depth to noisy depth.
+        self.observations = RoverBevDistillationObservationsCfg()
+        super().__post_init__()
+
+@configclass
+class AAURoverSimpleBevDistillationPersistentEnvCfg(AAURoverSimpleBevDistillationEnvCfg):
+    """Ablation: the persistent BEV without provenance and reliability."""
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.policy_bev.variant = "persistent"
+
+@configclass
+class AAURoverSimpleBevDistillationInstantaneousEnvCfg(AAURoverSimpleBevDistillationEnvCfg):
+    """Ablation: the current frame's BEV only, without memory."""
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.policy_bev.variant = "instantaneous"
 
 @configclass
 class AAURoverEnvCfg(RoverEnvCfg):

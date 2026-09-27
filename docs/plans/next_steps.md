@@ -125,8 +125,9 @@ is the cheap fallback, since Phase 1 showed geometry carries the elevation.
 ## Decisions for you
 
 1. ~~Store raw lifted elevation or network elevation?~~ Decided by Step 1.1: the raw lifted elevation.
-2. For perception uncertainty: free signals first, or add the log σ head now (retrains Phase 1)? The class entropy
-   already detects wrong rock classes (AUROC 0.98). Elevation failures on unfamiliar, steep terrain (`debug`) are not
-   covered yet.
-3. For Phase 4: distillation first (recommended) or straight to PPO?
+2. ~~For perception uncertainty: free signals first, or add the log σ head now?~~ Decided: free signals first. The
+   network–lift disagreement ranks elevation failures, also on `debug`, and the class entropy ranks class errors
+   (Phase-3 results, 3.6).
+3. ~~For Phase 4: distillation first or straight to PPO?~~ Decided: distillation first; see the
+   [Phase-4 plan](phase4_bev_distillation.md).
 4. Hardware: when can ZED X sequences be recorded for Step 4?

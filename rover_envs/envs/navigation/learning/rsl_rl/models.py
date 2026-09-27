@@ -1,4 +1,4 @@
-"""RSL-RL rover models: the height-map policy/value network and the recurrent RGB student."""
+"""RSL-RL rover models: the height-map policy/value network and the recurrent RGB and BEV students."""
 
 from __future__ import annotations
 
@@ -214,6 +214,118 @@ class _ExportRoverDinoStudentModel(nn.Module):
     @property
     def input_names(self) -> list[str]:
         return ["rgb", "obs", "h_in"]
+
+    @property
+    def output_names(self) -> list[str]:
+        return ["actions", "h_out"]
+
+
+class BevEncoder(nn.Module):
+    """A small CNN from the policy BEV [B, C, X, Y] to a feature vector; every convolution halves the resolution."""
+
+    def __init__(
+        self, in_channels: int, shape: tuple[int, int], channels: tuple[int, ...] = (32, 64, 64, 64), out_dim: int = 256
+    ):
+        super().__init__()
+        layers, size = [], list(shape)
+        for level, out_channels in enumerate(channels):
+            kernel = 5 if level == 0 else 3
+            layers += [nn.Conv2d(in_channels, out_channels, kernel, stride=2, padding=kernel // 2), nn.ELU()]
+            size = [(side - 1) // 2 + 1 for side in size]
+            in_channels = out_channels
+        self.conv = nn.Sequential(*layers)
+        self.head = nn.Sequential(nn.Flatten(), nn.Linear(in_channels * size[0] * size[1], out_dim), nn.ELU())
+        self.out_dim = out_dim
+
+    def forward(self, bev: torch.Tensor) -> torch.Tensor:
+        return self.head(self.conv(bev.float()))
+
+
+class RoverBevStudentModel(MLPModel):
+    """Recurrent BEV student: CNN over the persistent BEV and 1D observations -> GRU -> MLP head."""
+
+    is_recurrent = True
+
+    def __init__(
+        self,
+        obs,
+        obs_groups,
+        obs_set,
+        output_dim,
+        hidden_dims,
+        activation,
+        obs_normalization=False,
+        distribution_cfg=None,
+        rnn_type="gru",
+        rnn_hidden_dim=256,
+        rnn_num_layers=2,
+        encoder_channels=(32, 64, 64, 64),
+        encoder_dim=256,
+    ):
+        self.rnn_hidden_dim = rnn_hidden_dim
+        super().__init__(
+            obs, obs_groups, obs_set, output_dim, hidden_dims, activation,
+            obs_normalization, distribution_cfg,
+        )
+        self.encoder = BevEncoder(self.bev_shape[0], self.bev_shape[1:], tuple(encoder_channels), encoder_dim)
+        self.rnn = RNN(self.encoder.out_dim + self.obs_dim, rnn_hidden_dim, rnn_num_layers, rnn_type)
+        # Bound the action mean to (-1, 1) like the teacher's tanh output.
+        self.mlp.append(nn.Tanh())
+
+    def get_latent(self, obs, masks=None, hidden_state=None):
+        latent = torch.cat((self.encoder(obs[self.bev_group]), super().get_latent(obs)), dim=-1)
+        return self.rnn(latent, masks, hidden_state).squeeze(0)
+
+    def reset(self, dones=None, hidden_state=None):
+        self.rnn.reset(dones, hidden_state)
+
+    def get_hidden_state(self):
+        return self.rnn.hidden_state
+
+    def detach_hidden_state(self, dones=None):
+        self.rnn.detach_hidden_state(dones)
+
+    def as_onnx(self, verbose: bool = False) -> nn.Module:
+        return _ExportRoverBevStudentModel(self)
+
+    def _get_obs_dim(self, obs, obs_groups, obs_set):
+        # The single 4D group is the BEV [B, C, X, Y]; the 1D groups are concatenated as usual.
+        [self.bev_group] = [group for group in obs_groups[obs_set] if obs[group].dim() == 4]
+        self.bev_shape = tuple(obs[self.bev_group].shape[1:])
+        groups = [group for group in obs_groups[obs_set] if group != self.bev_group]
+        return groups, sum(obs[group].shape[-1] for group in groups)
+
+    def _get_latent_dim(self):
+        return self.rnn_hidden_dim
+
+
+class _ExportRoverBevStudentModel(nn.Module):
+    """Export one deterministic student step: (bev, obs, h_in) -> (actions, h_out)."""
+
+    def __init__(self, model: RoverBevStudentModel):
+        super().__init__()
+        self.encoder = copy.deepcopy(model.encoder)
+        self.obs_normalizer = copy.deepcopy(model.obs_normalizer)
+        self.rnn = copy.deepcopy(model.rnn.rnn)
+        self.mlp = copy.deepcopy(model.mlp)
+        self.bev_shape = model.bev_shape
+        self.obs_dim = model.obs_dim
+
+    def forward(self, bev: torch.Tensor, obs: torch.Tensor, h_in: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        latent = torch.cat((self.encoder(bev), self.obs_normalizer(obs)), dim=-1)
+        out, h_out = self.rnn(latent.unsqueeze(0), h_in)
+        return self.mlp(out.squeeze(0)), h_out
+
+    def get_dummy_inputs(self) -> tuple[torch.Tensor, ...]:
+        return (
+            torch.zeros(1, *self.bev_shape),
+            torch.zeros(1, self.obs_dim),
+            torch.zeros(self.rnn.num_layers, 1, self.rnn.hidden_size),
+        )
+
+    @property
+    def input_names(self) -> list[str]:
+        return ["bev", "obs", "h_in"]
 
     @property
     def output_names(self) -> list[str]:

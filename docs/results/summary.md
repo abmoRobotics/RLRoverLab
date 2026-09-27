@@ -121,12 +121,18 @@ fitted on seed 42 and scored on 1.8 million remembered cells of seeds 43 and 44:
 |---|---|---|
 | distance since observation (Phase 2) | 0.66 | 0.42 · 0.62 · 0.87 · 1.70 |
 | pose effect, fixed drift level | 0.75 | 0.40 · 0.60 · 0.83 · 1.56 |
-| pose effect, the rover's measured level | **0.81** | **0.76 · 0.93 · 0.89 · 1.03** |
+| pose effect, the rover's measured level | 0.81 | 0.76 · 0.93 · 0.89 · 1.03 |
+| … plus the network–lift disagreement (3.6) | **0.84** | **0.76 · 0.91 · 0.93 · 1.08** |
 | pose effect, the true level (oracle) | 0.83 | 0.95 · 1.06 · 0.95 · 1.07 |
 
 The pose effect is the nominal pose uncertainty of a cell, including the lever arm of heading errors, times the local
 slope. It ranks errors better than the distance. With the level the rover measures itself, it is calibrated in every
 drift octave, which meets the plan's criterion.
+
+The disagreement between the network's elevation and the raw depth lift is a free perception signal. It lifts the
+ranking beyond the true-level model, and on the unfamiliar `debug` terrain it almost halves the risk–coverage area
+(10.7 → 5.9 cm). This full map, in a form that needs no path history, is the reliability channel of the Phase-4
+policy.
 
 Two negative results:
 

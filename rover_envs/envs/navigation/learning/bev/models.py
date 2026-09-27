@@ -158,3 +158,24 @@ class RoverBevModel(nn.Module):
         lifted = lift_to_bev(depth, camera, features, self.x_range, self.y_range, self.resolution)
         x = self.unet(lifted if self.use_geometry else lifted[:, 3:])
         return self.elevation_head(x).squeeze(1), self.semantic_head(x), lifted
+
+
+def load_bev_model(path: str, device: str | torch.device = "cpu") -> RoverBevModel:
+    """A frozen ``RoverBevModel`` from a ``train_bev.py`` checkpoint.
+
+    The checkpoint may leave out the frozen DINOv3 backbone, as ``save_slim_bev_model`` does; its weights then come from
+    ``dinov3_path``, like at training time.
+    """
+    checkpoint = torch.load(path, map_location=device, weights_only=False)
+    model = RoverBevModel(**checkpoint["model_kwargs"]).to(device).eval()
+    missing, unexpected = model.load_state_dict(checkpoint["model_state_dict"], strict=False)
+    if unexpected or any(not key.startswith("dino.") for key in missing):
+        raise ValueError(f"{path} does not match the model: missing {missing}, unexpected {unexpected}.")
+    return model.requires_grad_(False)
+
+
+def save_slim_bev_model(checkpoint_path: str, path: str) -> None:
+    """Save a ``train_bev.py`` checkpoint without the frozen DINOv3 backbone and the optimizer, for deployment."""
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    state = {key: value for key, value in checkpoint["model_state_dict"].items() if not key.startswith("dino.")}
+    torch.save({"model_state_dict": state, "model_kwargs": checkpoint["model_kwargs"], "source": checkpoint_path}, path)

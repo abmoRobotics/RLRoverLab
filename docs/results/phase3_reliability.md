@@ -25,10 +25,14 @@ Frozen Phase-1 models: `logs/bev/rover_bev/2026-09-26_18-40-41/model_249.pt` (cl
   over predicted error is 0.76–1.03, against 0.40–1.56 for the fixed calibration. It also ranks errors better: the AUROC
   for errors above 5 cm is 0.81, against 0.75. This meets the plan's success criterion. Knowing the true level would give
   0.95–1.07 and an AUROC of 0.83.
+- **The network–lift disagreement adds the missing perception signal (3.6).** Added to the pose effect, it raises that
+  AUROC to 0.84 on held-out `mars` runs, beyond the true-level model, and keeps the calibration. On the unfamiliar
+  `debug` terrain it almost halves the error of the kept cells in the risk–coverage curve (AURC 10.7 → 5.9 cm).
 - **Registering frames against a keyframe cannot see the drift at 1×** with ZED-like depth on this terrain. Its floor
   of 3 cm and 0.7° per 0.5 m is above the drift it should measure; only its height correction is useful.
 - **The `debug` terrain is out of distribution.** The Phase-1 classes fail there (rock IoU 0.28), and its steep slopes
-  defeat a 2.5D map even with exact poses. It cannot provide error bars, and the reliability models do not transfer to it.
+  defeat a 2.5D map even with exact poses. It cannot provide error bars, and pose-based reliability does not transfer
+  to it.
 
 ## 3.0 Closing Phase 2
 
@@ -242,10 +246,60 @@ example right after a reset, the training runs' median stands in. Held-out runs,
 classes with an AUROC of 0.98 on `mars` (0.86 on `debug`). The local slope reaches 0.87, and the distance since
 observation 0.56. Class reliability therefore needs no new head.
 
-**Transfer to `debug`.** Models fitted on `mars` do not transfer. On `debug` the remembered error is 8–14 cm whatever
-the drift, dominated by the perception failures above, so all models under-predict it by a factor of 1.8 to 5. The monitor reads
-0.5–0.75 even in low-drift runs there. It correctly detects that the map is inconsistent, but it attributes the
-inconsistency to drift.
+**Transfer to `debug`.** Pose-based models fitted on `mars` do not transfer. On `debug` the remembered error is 8–14 cm
+whatever the drift, dominated by the perception failures above, so all of them under-predict it by a factor of 1.8 to 5.
+The monitor reads 0.5–0.75 even in low-drift runs there. It correctly detects that the map is inconsistent, but it
+attributes the inconsistency to drift. Section 3.6 adds the perception signal that was missing.
+
+## 3.6 Perception uncertainty: the network–lift disagreement
+
+For every cell with depth, the memory stores the raw lifted elevation while the Phase-1 network predicts its own. Their
+absolute difference costs nothing and flags cells whose geometry is hard:
+
+- sparse or noisy depth;
+- mixed surfaces at rock edges;
+- the rover's own body.
+
+The memory keeps the disagreement with each stored elevation, as a quality channel that follows the elevation's write
+rule. The reliability map adds it to the pose effect as a variance: the expected error is a monotone map of
+level² × pose effect + w × disagreement². The weight w is fitted on the training runs; in the online form it came out
+as 1.0, the natural scale. The dataset was re-run with the disagreement recorded (`p3_data3_*`, same seeds and
+protocol).
+
+Remembered cells, held-out `mars` runs (seeds 43 and 44), as in 3.2:
+
+| Model | Spearman | AURC | AUROC, errors > 5 cm | Observed / predicted by severity, remembered ≥ 1 m |
+|---|---|---|---|---|
+| pose effect, measured level | 0.425 | 1.26 cm | 0.808 | 0.76 · 0.88 · 0.86 · 1.02 |
+| disagreement alone | 0.105 | 1.73 cm | 0.590 | 0.55 · 0.78 · 1.06 · 2.24 |
+| **measured level + disagreement** | 0.408 | **1.13 cm** | **0.840** | 0.76 · 0.91 · 0.93 · 1.08 |
+| … online form | 0.399 | 1.14 cm | 0.838 | 0.73 · 0.87 · 0.91 · 1.09 |
+| pose effect, true level (oracle) | 0.482 | 1.16 cm | 0.830 | 0.97 · 1.01 · 0.92 · 1.07 |
+
+The online form uses the level at read time and approximates the lever arm from the cell's current range, as the drift
+monitor does. It needs no path history per cell, and it is what the Phase-4 policy observes
+(`robots/aau_rover/policies/bev_reliability_map.npz`).
+
+The same models fitted on `mars` and tested on `debug`:
+
+| Model | Spearman | AURC | AUROC, errors > 5 cm | Observed / predicted by severity, remembered ≥ 1 m |
+|---|---|---|---|---|
+| pose effect, measured level | 0.315 | 10.71 cm | 0.677 | 1.85 · 2.13 · 2.02 · 2.15 |
+| **measured level + disagreement, online form** | **0.491** | **5.89 cm** | **0.809** | **1.58 · 1.77 · 1.75 · 1.95** |
+| pose effect, true level (oracle) | 0.376 | 9.97 cm | 0.693 | 4.85 · 4.46 · 2.47 · 2.10 |
+
+On the cells the rover currently sees, the disagreement detects errors above 5 cm with an AUROC of 0.69 on `mars` and
+0.83 on `debug`. The observation range reaches 0.63 on `mars` and 0.40 on `debug`, worse than chance there.
+
+- **On `mars`, the disagreement catches the large errors.** The AURC falls from 1.26 to 1.13 cm and the AUROC rises
+  from 0.81 to 0.84, better than the pose model with the true drift level. The calibration across drift octaves stays
+  within the band. The Spearman correlation drops slightly, because the disagreement reorders some of the many small
+  errors.
+- **On `debug`, where perception fails, the disagreement is what was missing.** It almost halves the risk–coverage area
+  (10.7 to 5.9 cm) and lifts the AUROC from 0.68 to 0.81. The calibration improves from about 2× to about 1.7×
+  under-prediction, but cannot reach 1: a map fitted on `mars` cannot predict errors larger than those it saw there.
+- **Decision (plan 3.6): the free signal is enough for now.** The log σ head would retrain Phase 1 and is not needed
+  to rank errors. Calibrating unfamiliar terrain needs training data from more terrains, for Phase 1 and for the map.
 
 ## Decisions and next steps
 
@@ -253,16 +307,12 @@ inconsistency to drift.
    cannot correct the pose either. The revisit monitor measures the level but not the direction of the error. Pose
    correction would need a stronger geometric signal, e.g. a map fused from several frames. It is not recommended now.
 2. **Reliability channels for Phase 4:**
-   - the expected elevation error from the pose effect at the measured level;
-   - the class entropy;
+   - the expected elevation error from the pose effect at the measured level plus the network–lift disagreement, in
+     its online form (3.6), which needs no per-cell path history;
+   - the class entropy, carried by the rock probability itself;
    - the provenance.
-
-   The memory must then compute U_pose online. The running path moments since each cell's observation cost three
-   numbers per cell.
-3. **Perception reliability.** The `debug` result shows that pose-based reliability cannot catch perception failures on
-   unfamiliar terrain. Before Phase 4 runs on more than `mars`, the plan's step 3.6 needs an elevation-uncertainty
-   signal: the disagreement between the network and the raw lift, or the log σ head. Phase 1 also needs training on more
-   terrains.
+3. **Perception reliability.** The disagreement (3.6) ranks perception failures on unfamiliar terrain. Calibrating the
+   expected error there, and better perception itself, need Phase-1 training on more terrains.
 4. **Small fixes:**
    - mask the rover's footprint from the depth evidence;
    - use a second, `mars`-like test terrain for error bars;
@@ -291,3 +341,7 @@ python examples/03_inference/analyze_bev_reliability.py \
 `--save_frames 8` records the depth lift of eight environments, on which the registration and the monitor were
 developed offline with synthetic drift. The analysis writes `reliability.json` and the four figures to
 `logs/bev_reliability/`.
+
+For 3.6 the same dataset was re-run without `--keyframe_distance` as `p3_data3_*`, now with the disagreement stored per
+cell. The analysis on it with `--export` also writes `reliability_map.npz`, the online reliability map that the
+Phase-4 policy uses (copied to `rover_envs/envs/navigation/robots/aau_rover/policies/bev_reliability_map.npz`).

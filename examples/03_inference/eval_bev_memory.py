@@ -391,9 +391,10 @@ def evaluate() -> int:
             )
         sums, frames, video = {}, 0, {e: [] for e in args.video_envs}
         with torch.inference_mode():
+            # The memory keeps, with each elevation, how much the network and the raw depth lift disagreed on it.
             memory = BevMemory(
                 env.num_envs, len(bev_cfg.classes), *grid, write_rule=args.write_rule, class_fusion=args.class_fusion,
-                fusion_window=args.fusion_window, device=device,
+                fusion_window=args.fusion_window, quality_channels=1, device=device,
             )
             # The drift the rover can measure itself, from terrain it observes again.
             monitor = DriftMonitor(env.num_envs, bev_cfg.resolution, device=device)
@@ -416,7 +417,8 @@ def evaluate() -> int:
                 evidence = (lifted[:, 2] > 0) & fresh.view(-1, 1, 1)
                 stored = elevation if args.elevation_source == "network" else lifted[:, 0]
                 travelled = memory.travelled.clone()
-                persistent = memory.step(pose, stored, probabilities, evidence)
+                disagreement = (elevation - lifted[:, 0]).abs().unsqueeze(1)
+                persistent = memory.step(pose, stored, probabilities, evidence, disagreement)
                 drift_estimate = monitor.step(persistent, memory.travelled - travelled)
                 if frames_to_save is not None:
                     saved = slice(0, args.save_frames)
@@ -524,6 +526,7 @@ def evaluate() -> int:
                         "relief": local_relief(persistent["elevation"]),
                         "history": history["status"],
                         "points": lifted[:, 2],
+                        "disagreement": persistent["quality"][:, 0],
                         **{key: persistent[key] for key in
                            ("first_elevation", "first_age", "first_distance", "first_range")},
                     }

@@ -101,6 +101,21 @@ gym.register(
     }
 )
 
+# Phase 4: distil the height-map teacher into students that see the persistent BEV, and its ablations.
+for suffix, variant in (("", ""), ("Persistent", "Persistent"), ("Instantaneous", "Instantaneous")):
+    gym.register(
+        id=f"AAURoverEnvSimpleBEVDistillation{suffix}-v0",
+        entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',
+        disable_env_checker=True,
+        kwargs={
+            "env_cfg_entry_point": getattr(env_cfg, f"AAURoverSimpleBevDistillation{variant}EnvCfg"),
+            "rsl_rl_cfg_entry_point": (
+                f"rover_envs.envs.navigation.learning.rsl_rl.distillation_cfg:RoverBev{variant}DistillationRunnerCfg"
+            ),
+            "rsl_rl_teacher_model_path": f"{os.path.dirname(__file__)}/policies/best_agent_rsl_rl_heightmap.pt",
+        }
+    )
+
 gym.register(
     id="AAURoverEnvDict-v0",
     entry_point='rover_envs.envs.navigation.entrypoints:RoverEnv',

@@ -43,6 +43,10 @@ class BevMemory:
     exponential average, so it can follow changes. ``"log_odds"`` is a Bayesian update with independent observations,
     which multiplies the probabilities; no class drops below about ``min_probability``, so a few contrary observations
     can still change the class.
+
+    ``quality_channels`` > 0 keeps that many per-cell measures of how good an elevation observation is, e.g. the
+    disagreement between the network's elevation and the raw depth lift. They are stored with the elevation and follow
+    its write rule.
     """
 
     def __init__(
@@ -58,6 +62,7 @@ class BevMemory:
         class_fusion: str = "latest",
         fusion_window: int = 0,
         min_probability: float = 0.02,
+        quality_channels: int = 0,
         device: str | torch.device = "cpu",
     ):
         corner = max(math.hypot(x, y) for x in x_range for y in y_range)
@@ -79,6 +84,7 @@ class BevMemory:
         slots = size * size
         self.height = torch.zeros(num_envs, slots, device=device)
         self.semantics = torch.zeros(num_envs, num_classes, slots, device=device)
+        self.quality = torch.zeros(num_envs, quality_channels, slots, device=device)
         self.count = torch.zeros(num_envs, slots, device=device)
         self.cell = torch.full((num_envs, 2, slots), _EMPTY, dtype=torch.int64, device=device)
         self.time = torch.zeros(num_envs, slots, device=device)
@@ -100,7 +106,12 @@ class BevMemory:
         self.last_xy[envs] = torch.nan
 
     def step(
-        self, pose: torch.Tensor, elevation: torch.Tensor, semantics: torch.Tensor, evidence: torch.Tensor
+        self,
+        pose: torch.Tensor,
+        elevation: torch.Tensor,
+        semantics: torch.Tensor,
+        evidence: torch.Tensor,
+        quality: torch.Tensor | None = None,
     ) -> dict[str, torch.Tensor]:
         """Advance one time step: read the persistent BEV at ``pose``, then store the current evidence cells.
 
@@ -109,6 +120,7 @@ class BevMemory:
             elevation: Current elevation [B, X, Y] in metres from the BEV frame origin.
             semantics: Current per-class values [B, K, X, Y], e.g. class probabilities.
             evidence: [B, X, Y], true where a current observation supports the cell. Only these cells are stored.
+            quality: [B, Q, X, Y] measures of the current elevation's quality, with ``quality_channels`` = Q.
 
         Returns:
             ``elevation`` [B, X, Y] and ``semantics`` [B, K, X, Y], NaN where unknown; ``status`` [B, X, Y] with
@@ -117,14 +129,16 @@ class BevMemory:
             the distance in metres from the rover at which that observation was made, NaN where unknown.
             The cell's first observation, for cells observed before this step and NaN elsewhere: ``first_elevation``
             [B, X, Y] in the current frame, and the ``first_age``, ``first_distance`` and ``first_range`` since and at
-            which it was made.
+            which it was made. With quality channels, ``quality`` [B, Q, X, Y] of the elevation, NaN where unknown.
         """
+        if (quality is None) != (self.quality.shape[1] == 0):
+            raise ValueError(f"Expected {self.quality.shape[1]} quality channels, got {quality}.")
         self.clock += self.dt
         self.travelled += torch.nan_to_num((pose[:, :2] - self.last_xy).norm(dim=1))
         self.last_xy = pose[:, :2].clone()
 
         # Read before writing, so that remembered cells only come from earlier steps.
-        known, height, stored_semantics, time, odometer, stored_range, *first = self._read(pose)
+        known, height, stored_semantics, stored_quality, time, odometer, stored_range, *first = self._read(pose)
         remembered = known & ~evidence
         status = torch.where(evidence, CURRENT, torch.where(remembered, REMEMBERED, UNKNOWN))
         persistent = {
@@ -144,7 +158,11 @@ class BevMemory:
         persistent["first_age"] = torch.where(known, self.clock.view(-1, 1, 1) - first_time, torch.nan)
         persistent["first_distance"] = torch.where(known, self.travelled.view(-1, 1, 1) - first_odometer, torch.nan)
         persistent["first_range"] = torch.where(known, first_range, torch.nan)
-        self._write(pose, elevation, semantics, evidence)
+        if quality is not None:
+            persistent["quality"] = torch.where(
+                evidence.unsqueeze(1), quality, torch.where(remembered.unsqueeze(1), stored_quality, torch.nan)
+            )
+        self._write(pose, elevation, semantics, evidence, quality)
         return persistent
 
     def _read(self, pose: torch.Tensor) -> tuple[torch.Tensor, ...]:
@@ -157,16 +175,24 @@ class BevMemory:
         known = (self.cell[:, 0].gather(1, slot) == cell_x) & (self.cell[:, 1].gather(1, slot) == cell_y)
         height = self.height.gather(1, slot) - z.unsqueeze(1)
         semantics = self.semantics.gather(2, slot.unsqueeze(1).expand(-1, self.semantics.shape[1], -1))
+        quality = self.quality.gather(2, slot.unsqueeze(1).expand(-1, self.quality.shape[1], -1))
         first_height = self.first_height.gather(1, slot) - z.unsqueeze(1)
         stored = (self.time, self.odometer, self.range)
         first = (self.first_time, self.first_odometer, self.first_range)
         maps = (
-            known, height, semantics, *(values.gather(1, slot) for values in stored),
+            known, height, semantics, quality, *(values.gather(1, slot) for values in stored),
             first_height, *(values.gather(1, slot) for values in first),
         )
         return tuple(m.view(*m.shape[:-1], *self.shape) for m in maps)
 
-    def _write(self, pose: torch.Tensor, elevation: torch.Tensor, semantics: torch.Tensor, evidence: torch.Tensor):
+    def _write(
+        self,
+        pose: torch.Tensor,
+        elevation: torch.Tensor,
+        semantics: torch.Tensor,
+        evidence: torch.Tensor,
+        quality: torch.Tensor | None = None,
+    ) -> None:
         """Store the nearest ego cell of every world cell in the window around the rover that has evidence."""
         batch = pose.shape[0]
         x, y, z, yaw = pose.unbind(1)
@@ -217,6 +243,10 @@ class BevMemory:
         self.first_odometer = torch.where(first, self.travelled.unsqueeze(1), self.first_odometer)
         self.first_range = torch.where(first, distance, self.first_range)
         self.height = torch.where(write, height, self.height)
+        if quality is not None:
+            channels = quality.shape[1]
+            values = quality.view(batch, channels, -1).gather(2, index.unsqueeze(1).expand(-1, channels, -1))
+            self.quality = torch.where(write.unsqueeze(1), values, self.quality)
         self.cell = torch.where(write.unsqueeze(1), torch.stack((cell_x, cell_y), dim=1), self.cell)
         self.time = torch.where(write, self.clock.unsqueeze(1), self.time)
         self.odometer = torch.where(write, self.travelled.unsqueeze(1), self.odometer)

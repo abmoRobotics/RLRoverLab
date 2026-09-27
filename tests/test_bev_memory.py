@@ -2,6 +2,7 @@
 
 import math
 
+import pytest
 import torch
 
 from rover_envs.envs.navigation.learning.bev.memory import CURRENT, REMEMBERED, UNKNOWN, BevMemory
@@ -220,6 +221,30 @@ def test_first_observations_restart_with_the_slot_and_are_unknown_for_new_cells(
     step(bev, pose(0.3 + 4.0, -0.2), torch.full((1, CELLS, CELLS), 2.0), everywhere())
     out = step(bev, pose(0.3 + 4.0, -0.2))
     torch.testing.assert_close(out["first_elevation"][0], torch.full((CELLS, CELLS), 2.0))
+
+
+def test_quality_follows_the_elevation_write_rule():
+    # The world cell at (0.95, 0.05) m is seen from 0.95 m, 0.45 m and 0.95 m away, with quality 1, 2 and 3.
+    for rule, expected in (("latest", 3.0), ("closest", 2.0)):
+        bev = memory(write_rule=rule, quality_channels=1)
+        for x, value in ((0.0, 1.0), (0.5, 2.0), (0.0, 3.0)):
+            evidence = torch.zeros(1, CELLS, CELLS, dtype=torch.bool)
+            evidence[0, int((0.95 - x + 1.0) / RESOLUTION), 10] = True
+            out = bev.step(pose(x, 0.0), torch.zeros(1, CELLS, CELLS), torch.zeros(1, 2, CELLS, CELLS), evidence,
+                           torch.full((1, 1, CELLS, CELLS), value))
+            # Current cells report the current quality, unknown cells none.
+            reported = out["quality"][0, 0]
+            assert reported[evidence[0]].item() == value and reported[~evidence[0]].isnan().all()
+        out = bev.step(pose(0.0, 0.0), torch.zeros(1, CELLS, CELLS), torch.zeros(1, 2, CELLS, CELLS),
+                       torch.zeros(1, CELLS, CELLS, dtype=torch.bool), torch.zeros(1, 1, CELLS, CELLS))
+        assert out["quality"][0, 0, 19, 10].item() == expected, rule
+
+
+def test_quality_must_match_the_configured_channels():
+    for bev, quality in ((memory(), torch.zeros(1, 1, CELLS, CELLS)), (memory(quality_channels=1), None)):
+        with pytest.raises(ValueError):
+            bev.step(pose(), torch.zeros(1, CELLS, CELLS), torch.zeros(1, 2, CELLS, CELLS),
+                     torch.zeros(1, CELLS, CELLS, dtype=torch.bool), quality)
 
 
 def test_remembered_terrain_stays_aligned_while_driving():
