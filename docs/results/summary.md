@@ -5,6 +5,7 @@ Status on 27 September 2026. Detailed write-ups:
 - [Phase 1 input ablations](phase1_input_ablations.md)
 - [Phase 2 temporal memory](phase2_temporal_memory.md)
 - [Phase 3 reliability under unknown odometry quality](phase3_reliability.md)
+- [Phase 4 driving on the persistent BEV: distillation](phase4_distillation.md)
 
 W&B project: https://wandb.ai/aalborg-university/RLRoverLab
 
@@ -144,6 +145,29 @@ Two negative results:
 The class entropy flags wrong rock classes with an AUROC of 0.98.
 
 ![Calibration by severity octave](figures/phase3_calibration_by_severity.png)
+
+## Phase 4 — driving on the persistent BEV
+
+Details: [Phase 4 results](phase4_distillation.md), plan: [Phase 4 plan](../plans/phase4_bev_distillation.md).
+
+Students were distilled from the height-map PPO teacher. They see only the goal and the persistent BEV they build from
+the camera, under odometry drift drawn per episode that they never see. Held-out seed 43, success / collision rates:
+
+| Policy | Camera working | Blind 2 s of every 5 s | Blind 4 s of every 5 s |
+|---|---|---|---|
+| height-map teacher (exact terrain) | 0.979 / 0.018 | not affected | not affected |
+| RGB student (image only) | 0.974 / 0.025 | 0.904 / 0.096 | 0.756 / 0.244 |
+| BEV, instantaneous (no memory) | 0.979 / 0.017 | 0.880 / 0.118 | 0.723 / 0.277 |
+| BEV, persistent (memory) | 0.982 / 0.014 | 0.966 / 0.030 | 0.948 / 0.045 |
+| BEV, full (+ provenance and reliability) | 0.973 / 0.025 | 0.975 / 0.023 | 0.942 / 0.055 |
+
+- **With a working camera, every student matches the teacher,** because the current view suffices on this task.
+- **Memory keeps the rover driving through camera dropouts.**
+- **Provenance and reliability make no measurable difference.** This holds up to 4× drift, and also in a 16× probe.
+  A student distilled from a teacher that sees exact terrain has no reason to act on its own uncertainty.
+- **Next: PPO fine-tuning** under wider drift and dropouts, and a task where memory errors matter.
+
+![Success rate as the camera drops out](figures/phase4_success_by_dropout.png)
 
 ## Decisions taken
 

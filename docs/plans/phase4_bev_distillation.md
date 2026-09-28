@@ -4,6 +4,14 @@ Written 27 September 2026. Implements Step 3 of the [next steps](next_steps.md) 
 the network–lift disagreement as the first perception-uncertainty signal
 ([Phase-3 results](../results/phase3_reliability.md)).
 
+**Status (28 September):** steps 1–4 are done; see the [Phase-4 results](../results/phase4_distillation.md).
+
+- **First criterion: met.** The full student reaches 98% of the teacher's success up to 2× drift.
+- **Second criterion: not met.** No variant degrades consistently with drift up to 4×.
+- **Camera dropouts** were added to the evaluation, since the current view alone suffices on this task. Under them,
+  memory proves to be worth 9–22 points of success.
+- **Step 5, PPO fine-tuning,** is the next step, under wider drift and dropouts.
+
 ## Goal
 
 A driving policy that sees only what the rover can build itself: the persistent BEV from its camera and odometry, with

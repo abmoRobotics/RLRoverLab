@@ -35,6 +35,15 @@ refined accordingly in the [Phase-3 plan](phase3_reliability_unknown_odometry.md
   gives an expected-error map that is calibrated across drift levels on held-out runs.
 - **Open.** Perception uncertainty for unfamiliar terrain (Step 2.3). The class entropy already covers rocks.
 
+**Status (28 September):** Step 2.3 and Step 3.2 are done; see the [Phase-3 results](../results/phase3_reliability.md)
+(3.6) and the [Phase-4 results](../results/phase4_distillation.md).
+
+- **Step 2.3.** The network–lift disagreement is the free perception signal.
+- **Step 3.2.** The distilled BEV student drives as well as the teacher and, thanks to its memory, keeps doing so
+  through camera dropouts.
+- **Step 3.4.** Provenance and reliability do not change the distilled student's driving. The next step is PPO
+  fine-tuning (Step 3.3) under wider drift and dropouts, on a task where memory errors matter.
+
 ## Step 1 — Close Phase 2 (small, a few days)
 
 Keep the architecture and the deterministic memory; only settle the open choices.

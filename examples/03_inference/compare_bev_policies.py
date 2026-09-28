@@ -4,9 +4,10 @@
         --runs teacher=logs/bev_policy/<run> rgb=logs/bev_policy/<run> full=logs/bev_policy/<run> ... \
         --training full=logs/rsl_rl/rover_bev_distillation/<run> ...
 
-Prints the outcome tables (with Wilson 95% intervals on the success rate) and writes two figures to
-logs/bev_policy_comparison/: success by drift octave, and training curves. Needs numpy, matplotlib and tensorboard,
-e.g. /isaac-sim/python.sh in the container.
+Prints the outcome tables (with Wilson 95% intervals on the success rate) and writes figures to
+logs/bev_policy_comparison/: success by drift octave, and training curves. Labels of the form ``policy@condition``,
+e.g. ``full@blind 40%``, also give success by condition, one line per policy, with a ``teacher`` run as the reference.
+Needs numpy, matplotlib and tensorboard, e.g. /isaac-sim/python.sh in the container.
 """
 
 from __future__ import annotations
@@ -27,8 +28,13 @@ import numpy as np  # noqa: E402
 SEVERITY_EDGES = (0.5, 1.0, 2.0)
 OUTCOMES = ("is_success", "collision", "far_from_target", "time_limit")
 SURFACE, INK, INK_SECONDARY, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e6e5e1"
-# Categorical slots in their fixed order.
+# Categorical slots in their fixed order; the Phase-4 policies keep one colour in every figure.
 SERIES = ("#2a78d6", "#eb6834", "#1baf7a", "#eda100")
+POLICY_COLORS = {"rgb": SERIES[0], "instantaneous": SERIES[1], "persistent": SERIES[2], "full": SERIES[3]}
+
+
+def color(label: str, index: int) -> str:
+    return POLICY_COLORS.get(label.split("@")[0], SERIES[index % len(SERIES)])
 
 
 def wilson(successes: int, count: int, z: float = 1.96) -> tuple[float, float]:
@@ -132,7 +138,7 @@ def main() -> None:
             x = np.arange(len(rows)) + (k - (len(bev) - 1) / 2) * 0.08
             y = np.array([row["success"] for _, row in rows])
             error = np.array([[row["success"] - row["low"], row["high"] - row["success"]] for _, row in rows]).T
-            ax.errorbar(x, y, yerr=error, color=SERIES[k % len(SERIES)], linewidth=2, marker="o", markersize=8,
+            ax.errorbar(x, y, yerr=error, color=color(label, k), linewidth=2, marker="o", markersize=8,
                         capsize=3, label=label)
         for label, style_name in (("teacher", "--"), ("rgb", ":")):
             if label in summary:
@@ -146,18 +152,45 @@ def main() -> None:
         figure.savefig(os.path.join(folder, "success_by_severity.png"), dpi=130, facecolor=SURFACE)
         plt.close(figure)
 
+    conditions = [label.split("@") for label in summary if "@" in label]
+    if conditions:
+        order = list(dict.fromkeys(condition for _, condition in conditions))
+        policies = [policy for policy in dict.fromkeys(policy for policy, _ in conditions) if policy != "teacher"]
+        figure, ax = plt.subplots(figsize=(7.5, 4.2), facecolor=SURFACE)
+        for k, policy in enumerate(policies):
+            x, y, low, high = [], [], [], []
+            for i, condition in enumerate(order):
+                row = summary.get(f"{policy}@{condition}", {}).get("pooled")
+                if row:
+                    x.append(i + (k - (len(policies) - 1) / 2) * 0.06)
+                    y.append(row["success"])
+                    low.append(row["success"] - row["low"])
+                    high.append(row["high"] - row["success"])
+            ax.errorbar(x, y, yerr=[low, high], color=color(policy, k), linewidth=2, marker="o", markersize=8,
+                        capsize=3, label=policy)
+        teacher = [row for label, row in summary.items() if label.startswith("teacher@")]
+        if teacher:
+            ax.axhline(teacher[0]["pooled"]["success"], color=INK_SECONDARY, linewidth=1, linestyle="--",
+                       label="teacher (exact terrain, no camera)")
+        ax.set_xticks(range(len(order)), order)
+        style(ax, "Success rate as the camera drops out, with drift drawn per episode", "camera", "success rate")
+        ax.legend(frameon=False, labelcolor=INK_SECONDARY, loc="lower left", fontsize=9)
+        figure.tight_layout()
+        figure.savefig(os.path.join(folder, "success_by_condition.png"), dpi=130, facecolor=SURFACE)
+        plt.close(figure)
+
     if args.training:
         figure, axes = plt.subplots(1, 2, figsize=(11, 4.0), facecolor=SURFACE)
         for k, item in enumerate(args.training):
             label, run = item.split("=", 1)
             curves = training_curves(run)
-            color = SERIES[k % len(SERIES)]
+            line = color(label, k)
             if "Loss/behavior" in curves:
-                axes[0].plot(*curves["Loss/behavior"].T, color=color, linewidth=2, label=label)
+                axes[0].plot(*curves["Loss/behavior"].T, color=line, linewidth=2, label=label)
             if "Episode_Termination/is_success" in curves:
                 steps, values = curves["Episode_Termination/is_success"].T
                 smooth = np.convolve(values, np.ones(10) / 10, mode="valid")
-                axes[1].plot(steps[9:], smooth, color=color, linewidth=2, label=label)
+                axes[1].plot(steps[9:], smooth, color=line, linewidth=2, label=label)
         axes[0].set_yscale("log")
         style(axes[0], "Behaviour-cloning loss", "iteration", "loss")
         style(axes[1], "Successful share of finished episodes (10-iteration mean)", "iteration", "success")

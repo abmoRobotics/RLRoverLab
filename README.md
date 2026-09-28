@@ -72,6 +72,17 @@ python examples/03_inference/eval_bev_memory.py --task AAURoverEnvSimpleBEVNoisy
 
 `--driving circle` drives 1.5 m circles that revisit terrain, `--write_rule closest` keeps the elevation observed closest to the rover, and `--class_fusion` chooses the latest class, the mean or log-odds. `--odometry_noise` feeds the memory drifting poses: a severity multiplier, or a range such as `0.25:4` from which every episode draws its own, and `--drift_field_std` makes the drift depend on where the rover drives. The memory is never told the drift level: `DriftMonitor` (`drift.py`) measures it from terrain the rover observes again, and `--keyframe_distance` adds a keyframe registration that measures pose corrections (`registration.py`). Metrics (also by drift severity), an error-vs-distance plot, and real-time MP4 videos with snapshots of the environments in `--video_envs` are written to `logs/bev_memory/`; add `--wandb` to also log them, with per-step curves, to the `rlroverlab` W&B project. `--dump_samples` also saves remembered cells with the trajectories, on which `examples/03_inference/analyze_bev_reliability.py` fits and compares reliability models offline. Plans and results are in [docs/plans](docs/plans) and [docs/results](docs/results).
 
+### Drive on the persistent BEV
+
+`AAURoverEnvSimpleBEVDistillation-v0` distils the height-map teacher into a student that sees only the goal and the persistent BEV it builds itself: the frozen noisy-depth BEV model (`policies/bev_perception_noisy_depth.pt`), the memory, odometry drift drawn per episode, and the reliability map (`policies/bev_reliability_map.npz`). The ablations `AAURoverEnvSimpleBEVDistillationPersistent-v0` (memory without provenance and reliability) and `AAURoverEnvSimpleBEVDistillationInstantaneous-v0` (the current frame only) train the same way:
+
+```bash
+python examples/02_training/train_rsl_rl.py --task AAURoverEnvSimpleBEVDistillation-v0 --num_envs 64 --terrain mars
+python examples/03_inference/eval_bev_policy.py --policy bev --checkpoint logs/rsl_rl/rover_bev_distillation/<run>/model_399.pt
+```
+
+`eval_bev_policy.py` also evaluates the teacher (`--policy teacher`) and the RGB student (`--policy rgb`) on the same task, and records each episode's outcome by drift level. `--blind_steps` adds camera dropouts, and `compare_bev_policies.py` tabulates and plots several runs. Results are in [docs/results/phase4_distillation.md](docs/results/phase4_distillation.md).
+
 ### Evaluate with RSL-RL
 
 `AAURoverEnv-v0` and `AAURoverEnvSimple-v0` include a trained RSL-RL height-map policy, and `AAURoverEnvSimpleDistillation-v0` includes the distilled RGB student (`best_agent_rsl_rl_rgb.pt`). The included policy is evaluated by default; pass `--checkpoint` to evaluate another one:
