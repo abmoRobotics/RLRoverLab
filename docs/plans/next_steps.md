@@ -43,6 +43,10 @@ refined accordingly in the [Phase-3 plan](phase3_reliability_unknown_odometry.md
   through camera dropouts.
 - **Step 3.4.** Provenance and reliability do not change the distilled student's driving. The next step is PPO
   fine-tuning (Step 3.3) under wider drift and dropouts, on a task where memory errors matter.
+- **Drift check (28 September).** On `mars`, drift costs the memory students at most about 1 point of success in
+  the training range and 3 points at 4–16×. Step 3.3 therefore moves to the lunar LTE terrains, once the BEV labels
+  and Phase 1 exist there. The `mars` teacher already drives there
+  ([Phase-4 results](../results/phase4_distillation.md)).
 
 ## Step 1 — Close Phase 2 (small, a few days)
 

@@ -115,20 +115,91 @@ Both lose about three points against the 0.25–4× range, and the full student 
    teacher would do, never how to hedge against its own map. On this terrain, even 16× drift moves remembered rocks by
    less than their size over a dropout, so a hedging policy would also gain little.
 
+## How much can drift cost? (28 September)
+
+Before PPO fine-tuning, this check measures the most that knowing each cell's reliability could win back on this task:
+the success that drift itself costs.
+
+- **Setup.** The memory students drive with the camera blind 4 s of every 5 s, where they depend most on remembered
+  terrain. Each student drives with exact poses, with 0.25–4× drift and with 4–16× drift.
+- **Code.** The runs use the current code, whose contact sensor also counts chassis contacts (`d740c54`). The
+  teacher reproduces its earlier result exactly, and the drift runs theirs within a point, so chassis contacts
+  change little on `mars`.
+
+Success rate with its Wilson 95% interval (912–958 episodes per run):
+
+| Student | Exact poses | Drift 0.25–4× | Drift 4–16× |
+|---|---|---|---|
+| persistent | 0.951 (0.935–0.963) | 0.948 (0.932–0.960) | 0.928 (0.909–0.943) |
+| full | 0.956 (0.941–0.968) | 0.942 (0.925–0.955) | 0.917 (0.898–0.933) |
+| both, pooled | 0.954 | 0.945 | 0.922 |
+
+- **Drift in the training range (0.25–4×)** costs 0.9 ± 1.4 points of success, pooled over both students. That is not
+  measurable.
+- **Drift of 4–16×** costs 3.1 ± 1.5 points.
+- **The dropouts themselves cost more than the drift.** Even with exact poses, the students succeed about 2.5 points
+  less often than the teacher (0.979). The reason is that terrain never seen is missing from the map, not wrong.
+
+So on `mars`, a policy that uses the reliability channel can win back about 1 point of success at most within the
+drift range it trains on, and about 3 points at 4–16×. PPO fine-tuning cannot show a reliability effect on this task,
+so it waits for a task with room for one. The rocks here are about 1 m wide, and drift moves remembered rocks by
+centimetres.
+
+## A first look at the lunar LTE terrains (28 September)
+
+The `lunar_lte100` and `lunar_lte500` packages are candidates for a task where map errors matter. Their lethal rocks,
+whose contact ends an episode, were measured from the collision meshes:
+
+| | `mars` | `lunar_lte100` and `lunar_lte500` |
+|---|---|---|
+| Lethal rocks per 100 m² | 5.0 | 13.4 |
+| Median width (90th percentile) | 1.0 m (1.7 m) | 0.26 m (0.49 m) |
+| Terrain | 200 × 200 m | 100 × 100 m and 500 × 500 m |
+
+- **Rock size and density.** The LTE rocks are 2.7 times as dense as on `mars` and about as wide as the map errors
+  that drift causes. Both packages have the same rock statistics; `lunar_lte500` only adds area.
+- **Drivable rocks.** `lunar_lte100` also renders 24,016 drivable rocks and 65,717 pebbles, and the BEV must tell its
+  1,336 lethal rocks from them.
+- **Labels.** The BEV target ray-casts only the invisible lethal-collision mesh. The drivable rocks are therefore
+  missing from the elevation target and labelled as ground ([terrain semantics spec](../specs/terrain_semantics.md)).
+
+The policies trained on `mars`, run on `lunar_lte100` (seed 43, 1000 steps, working camera, the student with
+0.25–4× drift):
+
+| Policy | Episodes | Success | Collision |
+|---|---|---|---|
+| height-map teacher | 566 | 0.966 (0.948–0.978) | 0.032 |
+| BEV student, full | 633 | 0.754 (0.719–0.786) | 0.246 |
+
+- **The teacher carries over.** It sees the lethal rocks in its exact height scan and avoids them almost as well as
+  on `mars`, so it can teach on LTE as it is.
+- **The student does not.**
+  - It collides almost eight times as often as the teacher, alike at every drift level (0.76–0.77 success per
+    octave).
+  - A snapshot of its BEV shows that its perception, trained on `mars` only, hardly marks the lunar rocks as rock.
+  - Until Phase 1 is retrained on LTE, the failures there come from perception, not from drift.
+
 ## Next steps
 
-- **PPO fine-tuning** of the full and persistent students, starting from these checkpoints (next steps, Step 3.3).
-  - Drift should range up to 16×, and camera dropouts should occur in training, so that remembered terrain is often
-    and substantially wrong.
-  - The reward already penalizes collisions. A policy that can see the expected error may learn to slow down or keep
-    clear where the map is unreliable, which distillation cannot teach.
-- **A task where memory errors matter,** before more ablations:
-  - denser or smaller obstacles, or narrow passages;
-  - goals behind the rover, which force turns through remembered terrain;
-  - longer dropouts;
-  - the `debug` terrain, once Phase 1 generalizes to it.
-- **Camera dropouts in training,** also for the distillation baseline. All students here were trained with a working
-  camera, and dropouts appeared only at evaluation.
+- **Move the reliability question to the lunar LTE terrains.** Their lethal rocks are about as wide as a map error
+  (see above), so drift can decide collisions there. In order:
+  1. **BEV labels on LTE.** Ray-cast the visible rocks ([terrain semantics spec](../specs/terrain_semantics.md)), and
+     decide how the rock channel separates lethal from drivable rocks.
+  2. **Phase-1 perception** trained on LTE and `mars`.
+  3. **The teacher.** The `mars` teacher already succeeds in 0.966 of its episodes on `lunar_lte100`; fine-tuning it
+     there is optional.
+  4. **The three students distilled there,** with camera dropouts in training. All students here were trained with a
+     working camera, and dropouts appeared only at evaluation. Then the drift check above, on LTE.
+  5. **PPO fine-tuning** of the full and persistent students, only if that check leaves room for a reliability
+     effect.
+     - Drift should range up to 16×, and camera dropouts should occur in training.
+     - The critic can see the exact height scan.
+     - A policy that sees the expected error may learn to slow down or keep clear where the map is unreliable, which
+       distillation cannot teach.
+- **Longer goals alone would not help.**
+  - Remembered terrain is displaced only by the drift since it was last seen. While the rover drives forward, the
+    cells that decide a collision were seen 1–2 m earlier, whatever the goal distance.
+  - If dropouts on LTE do not suffice, routes that come back through terrain seen long ago would add old cells.
 
 ## Reproduce
 
@@ -146,4 +217,6 @@ python examples/03_inference/compare_bev_policies.py --runs "teacher@working=<ru
 
 The checkpoints used here are `logs/rsl_rl/rover_bev_distillation/2026-09-27_19-45-33/model_399.pt`, with the two
 ablations in `rover_bev_distillation_persistent/` and `rover_bev_distillation_instantaneous/`. The evaluation runs are
-the `p4_*` folders in `logs/bev_policy/`. The RGB student is the task's included `best_agent_rsl_rl_rgb.pt`.
+the `p4_*` folders in `logs/bev_policy/`. Those of the drift check are the `hr_*` folders (exact poses:
+`--severity 0`), and those on LTE the `lte100_*` folders (`--terrain lunar_lte100 --steps 1000`). The RGB student is
+the task's included `best_agent_rsl_rl_rgb.pt`.

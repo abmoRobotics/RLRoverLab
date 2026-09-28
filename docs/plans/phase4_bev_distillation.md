@@ -10,7 +10,9 @@ the network–lift disagreement as the first perception-uncertainty signal
 - **Second criterion: not met.** No variant degrades consistently with drift up to 4×.
 - **Camera dropouts** were added to the evaluation, since the current view alone suffices on this task. Under them,
   memory proves to be worth 9–22 points of success.
-- **Step 5, PPO fine-tuning,** is the next step, under wider drift and dropouts.
+- **Step 5, PPO fine-tuning,** waits. On `mars`, drift costs the memory students at most 1 point of success in
+  the training range and 3 points at 4–16×, even with the camera blind 80% of the time. That leaves no room for a
+  reliability effect. The question moves to the lunar LTE terrains, whose rocks are about as wide as a map error.
 
 ## Goal
 

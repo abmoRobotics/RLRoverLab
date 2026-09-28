@@ -165,7 +165,13 @@ the camera, under odometry drift drawn per episode that they never see. Held-out
 - **Memory keeps the rover driving through camera dropouts.**
 - **Provenance and reliability make no measurable difference.** This holds up to 4× drift, and also in a 16× probe.
   A student distilled from a teacher that sees exact terrain has no reason to act on its own uncertainty.
-- **Next: PPO fine-tuning** under wider drift and dropouts, and a task where memory errors matter.
+- **On `mars` there is almost nothing for reliability to win back.** With the camera blind 4 s of every 5 s, drift of
+  0.25–4× costs the memory students 0.9 ± 1.4 points of success against exact poses, and 4–16× costs 3.1 ± 1.5.
+  The 1 m rocks dwarf the centimetres that drift moves them.
+- **Next: the lunar LTE terrains,** whose lethal rocks are about 26 cm wide.
+  - The `mars` teacher already drives there (0.966 success).
+  - The BEV student collides in a quarter of its episodes, because its perception misses the lunar rocks.
+  - Phase 1 must be retrained there, and the drift check repeated, before PPO fine-tuning.
 
 ![Success rate as the camera drops out](figures/phase4_success_by_dropout.png)
 
