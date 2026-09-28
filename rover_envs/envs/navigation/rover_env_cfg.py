@@ -99,7 +99,7 @@ class RoverSceneCfg(InteractiveSceneCfg):
 
     
     contact_sensor = ContactSensorCfg(
-        prim_path="{ENV_REGEX_NS}/Robot/.*_(Drive|Steer|Boogie|Body|Rocker)",
+        prim_path="{ENV_REGEX_NS}/Robot/(Body|.*_(Drive|Steer|Boogie|Rocker))",
         filter_prim_paths_expr=["/World/terrain/obstacles/obstacles"],
     )
 
