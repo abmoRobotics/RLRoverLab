@@ -13,6 +13,8 @@ from rover_envs.envs.navigation.rover_env_camera_cfg import (
     RoverRGBDRawWVGAEnvCfg,
     RoverRGBResnetEnvCfg,
     RoverCDEnvCfg,
+    RoverCDStereoCameraEnvCfg,
+    RoverCDStereoObservationsCfg,
 )
 from rover_envs.envs.navigation.rover_env_cfg import RoverEnvDictCfg
 @configclass
@@ -231,3 +233,15 @@ class AAURoverCDEnvCfg(RoverCDEnvCfg):
         self.decimation = 6
         self.sim.physics.solver_type = 0  # 0: PGS, 1: TGS
         self.sim.physics.enable_external_forces_every_iteration = 0
+
+
+@configclass
+class AAURoverCDStereoEnvCfg(AAURoverCDEnvCfg):
+    """AAU rover with independent left/right CD frames packed as two image channels."""
+
+    observations: RoverCDStereoObservationsCfg = RoverCDStereoObservationsCfg()
+    scene: RoverCDStereoCameraEnvCfg = RoverCDStereoCameraEnvCfg(
+        num_envs=8, env_spacing=4.0, replicate_physics=False
+    )
+    scene.height_scanner = None
+    event_camera_sensor_names: tuple[str, ...] = ("tiled_camera_left", "tiled_camera_right")

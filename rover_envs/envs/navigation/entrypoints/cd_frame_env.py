@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import inspect
 import sys
 from pathlib import Path
 
+import numpy as np
 import torch
 
 import isaaclab.utils.math as math_utils
@@ -12,25 +14,62 @@ from isaaclab.sensors import Camera, RayCasterCamera, TiledCamera
 from .rover_env import RoverEnv
 
 
+class _CDFrameObservationView:
+    """Expose CD observations as byte images for Isaac Lab's live observation viewer."""
+
+    def __init__(self, manager):
+        self._manager = manager
+
+    def __getattr__(self, name):
+        return getattr(self._manager, name)
+
+    def get_active_iterable_terms(self, env_idx: int):
+        terms = []
+        for name, values in self._manager.get_active_iterable_terms(env_idx=env_idx):
+            if name != "policy-rgb_image":
+                terms.append((name, values))
+                continue
+
+            image = np.asarray(values)
+            if image.ndim != 3 or image.shape[-1] not in (1, 2):
+                terms.append((name, values))
+                continue
+
+            channel_names = ("left", "right") if image.shape[-1] == 2 else (None,)
+            for channel_index, channel_name in enumerate(channel_names):
+                channel = image[..., channel_index : channel_index + 1]
+                grayscale = np.rint(np.clip(channel, 0.0, 1.0) * 255).astype(np.uint8)
+                rgba = np.repeat(grayscale, 4, axis=-1)
+                rgba[..., 3] = 255
+                label = f"{name}-{channel_name}" if channel_name is not None else name
+                terms.append((label, rgba))
+        return terms
+
+
 class CDFrameEnv(RoverEnv):
-    """Rover environment variant that lazily owns a NIGHTRIDER event-camera pipeline."""
+    """Rover environment with independent NIGHTRIDER pipelines for its configured cameras."""
 
     def __init__(self, *args, **kwargs):
-        self._event_camera_interface = None
+        self._event_camera_interfaces = {}
         super().__init__(*args, **kwargs)
 
-    def _update_event_camera_from_physics_step(self):
-        if "tiled_camera" not in self.scene.sensors:
-            return
+    def setup_manager_visualizers(self):
+        super().setup_manager_visualizers()
+        self.manager_visualizers["observation_manager"]._manager = _CDFrameObservationView(self.observation_manager)
 
-        camera_interface = _get_event_camera_interface(
-            env=self,
-            enable_ui=False,
-            device=None,
-            view_mode="tiled",
-            env_index=0,
-        )
-        camera_interface.update(dt_us=int(round(self.physics_dt * 1e6)))
+    def _update_event_camera_from_physics_step(self):
+        for sensor_name in self.cfg.event_camera_sensor_names:
+            if sensor_name not in self.scene.sensors:
+                continue
+            camera_interface = _get_event_camera_interface(
+                env=self,
+                enable_ui=False,
+                device=None,
+                view_mode="tiled",
+                env_index=0,
+                sensor_name=sensor_name,
+            )
+            camera_interface.update(dt_us=int(round(self.physics_dt * 1e6)))
 
     def step(self, action: torch.Tensor):
         """Step physics and update NIGHTRIDER at physics rate before computing observations."""
@@ -78,35 +117,44 @@ class CDFrameEnv(RoverEnv):
         return self.obs_buf, self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras
 
     def close(self):
-        if self._event_camera_interface is not None:
-            self._event_camera_interface.close()
-            self._event_camera_interface = None
+        for camera_interface in self._event_camera_interfaces.values():
+            camera_interface.close()
+        self._event_camera_interfaces.clear()
         super().close()
 
 
 def _nightrider_event_dir() -> Path:
-    return Path(__file__).resolve().parents[4] / "examples" / "NIGHTRIDER" / "EventCamera"
+    project_dir = Path(__file__).resolve().parents[4]
+    event_source_dir = project_dir / "examples" / "NIGHTRIDER" / "EventCamera"
+    if event_source_dir.is_dir():
+        return event_source_dir
+    return project_dir / "07_gpu_event_RGB"
 
 
 def _remove_foreign_event_modules(event_source_dir: Path):
-    for module_name in ("EventCameraInterfaceGPU", "IECBSLiveGPU"):
+    for module_name in tuple(sys.modules):
+        if module_name not in ("EventCameraInterfaceGPU", "IECBSLiveGPU", "src2") and not module_name.startswith(
+            "src2."
+        ):
+            continue
         module = sys.modules.get(module_name)
         module_file = getattr(module, "__file__", None) if module is not None else None
         if module_file is None:
             continue
         module_path = Path(module_file).resolve()
-        if event_source_dir != module_path.parent:
+        if not module_path.is_relative_to(event_source_dir):
             del sys.modules[module_name]
 
 
-def _event_camera_interface_class():
-    event_source_dir = _nightrider_event_dir()
+def _event_camera_interface_class(event_source_dir: Path | None = None):
+    event_source_dir = (event_source_dir or _nightrider_event_dir()).resolve()
     if not event_source_dir.is_dir():
         raise ModuleNotFoundError(f"NIGHTRIDER EventCamera directory not found: {event_source_dir}")
 
     _remove_foreign_event_modules(event_source_dir)
-    if str(event_source_dir) not in sys.path:
-        sys.path.insert(0, str(event_source_dir))
+    if str(event_source_dir) in sys.path:
+        sys.path.remove(str(event_source_dir))
+    sys.path.insert(0, str(event_source_dir))
 
     from EventCameraInterfaceGPU import EventCameraInterfaceGPU
 
@@ -119,19 +167,28 @@ def _get_event_camera_interface(
     device: str | None,
     view_mode: str,
     env_index: int,
+    sensor_name: str = "tiled_camera",
 ):
-    if getattr(env, "_event_camera_interface", None) is None:
+    if sensor_name not in env._event_camera_interfaces:
         EventCameraInterfaceGPU = _event_camera_interface_class()
+        interface_params = inspect.signature(EventCameraInterfaceGPU).parameters
+        if sensor_name != "tiled_camera" and "sensor_name" not in interface_params:
+            EventCameraInterfaceGPU = _event_camera_interface_class(
+                Path(__file__).resolve().parents[4] / "07_gpu_event_RGB"
+            )
+            interface_params = inspect.signature(EventCameraInterfaceGPU).parameters
         event_device = device or getattr(env, "device", "cuda")
-        env._event_camera_interface = EventCameraInterfaceGPU(
+        sensor_params = {"sensor_name": sensor_name} if "sensor_name" in interface_params else {}
+        env._event_camera_interfaces[sensor_name] = EventCameraInterfaceGPU(
             scene=env.scene,
             sim=env.sim,
             enable_ui=enable_ui,
             device=event_device,
             view_mode=view_mode,
             env_index=env_index,
+            **sensor_params,
         )
-    return env._event_camera_interface
+    return env._event_camera_interfaces[sensor_name]
 
 
 def cd_image(
@@ -162,9 +219,13 @@ def cd_image(
             device=event_device,
             view_mode=event_view_mode,
             env_index=event_env_index,
+            sensor_name=sensor_cfg.name,
         )
-        event_images = camera_interface.get_events()
+        get_events = getattr(camera_interface, "get_cached_events", camera_interface.get_events)
+        event_images = get_events()
         if event_images is not None:
+            if event_images.shape[-1] == 3:
+                event_images = 0.5 + 0.5 * (event_images[..., 1:2] - event_images[..., 0:1])
             return event_images.clone()
 
         rgb_images = sensor.data.output[data_type]
@@ -187,3 +248,14 @@ def cd_image(
             images = (images + 1.0) * 0.5
 
     return images.clone()
+
+
+def stereo_cd_image(
+    env: CDFrameEnv,
+    left_sensor_cfg: SceneEntityCfg = SceneEntityCfg("tiled_camera_left"),
+    right_sensor_cfg: SceneEntityCfg = SceneEntityCfg("tiled_camera_right"),
+) -> torch.Tensor:
+    """Return CD frames in NHWC format with left and right as the two channels."""
+    left_image = cd_image(env, sensor_cfg=left_sensor_cfg, normalize=False)
+    right_image = cd_image(env, sensor_cfg=right_sensor_cfg, normalize=False)
+    return torch.cat((left_image, right_image), dim=-1)

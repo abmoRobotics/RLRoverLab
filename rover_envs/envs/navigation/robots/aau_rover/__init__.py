@@ -145,3 +145,15 @@ gym.register(
         },
     }
 )
+
+gym.register(
+    id="AAURoverCDStereoEnv-v0",
+    entry_point='rover_envs.envs.navigation.entrypoints.cd_frame_env:CDFrameEnv',
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": env_cfg.AAURoverCDStereoEnvCfg,
+        "skrl_cfgs": {
+            "PPO": f"{os.path.dirname(__file__)}/../../learning/skrl/configs/rover_cd_stereo_ppo.yaml",
+        },
+    },
+)

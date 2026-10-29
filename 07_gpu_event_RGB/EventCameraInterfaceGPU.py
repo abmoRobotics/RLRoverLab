@@ -33,7 +33,8 @@ class EventCameraInterfaceGPU:
                  enable_ui: bool = True, 
                  device="cuda", 
                  view_mode: str = "single", 
-                 env_index: int = 0):
+                 env_index: int = 0,
+                 sensor_name: str = "tiled_camera"):
         """
         Initialize the EventCameraInterface.
         
@@ -42,6 +43,7 @@ class EventCameraInterfaceGPU:
             sim: SimulationContext for getting physics time
             enable_ui: Whether to enable Omni UI visualization
             device: Device to run the simulation on ("cuda" or "cpu")
+            sensor_name: Name of the source camera in the scene sensors.
         """
         self._scene = scene
         self._sim = sim
@@ -61,7 +63,7 @@ class EventCameraInterfaceGPU:
         self._last_event_image = None
 
         # Check if camera is enabled in the scene
-        if not hasattr(scene, 'sensors') or 'tiled_camera' not in scene.sensors:
+        if not hasattr(scene, 'sensors') or sensor_name not in scene.sensors:
             warnings.warn(
                 "Camera is not enabled in the environment! "
                 "Please run with --enable_cameras flag.",
@@ -72,7 +74,7 @@ class EventCameraInterfaceGPU:
             self._camera = None
         else:
             self._camera_available = True
-            self._camera = scene.sensors['tiled_camera']
+            self._camera = scene.sensors[sensor_name]
             print(f"[INFO] EventCameraInterface: Camera detected at {self._camera.cfg.prim_path}")
             print(f"[INFO] Camera resolution: {self._camera.cfg.width}x{self._camera.cfg.height}")
             
@@ -260,7 +262,7 @@ class EventCameraInterfaceGPU:
             self._render_single_tensor(event_image_batch, current_time_us)
             print(f"[DEBUG] Event render time: {time.time() - time_start:.4f}s")
 
-    def _get_event_data(self, return_sparse_events: bool = False):
+    def _get_event_data(self, return_sparse_events: bool = False, dt_us: Optional[int] = None):
         if self._event_camera is None:
             return None, None
         
@@ -273,6 +275,7 @@ class EventCameraInterfaceGPU:
 
         result = self._event_camera.process_batch(
             cam.rgb.to(self._device),
+            dt_us=dt_us,
             return_sparse_events=return_sparse_events,
         ) ##1cam=0.0014s 35cam=0.0423s ## Slightly faster than linear scaling
         if return_sparse_events:
@@ -284,6 +287,15 @@ class EventCameraInterfaceGPU:
         self._render_events_if_enabled(event_image)
         self._last_event_image = event_image
         return event_image, events_list
+
+    def update(self, dt_us: Optional[int] = None):
+        """Advance the event simulator once and cache its dense output."""
+        event_image, _ = self._get_event_data(dt_us=dt_us)
+        return event_image
+
+    def get_cached_events(self):
+        """Return the last dense output without advancing the event simulator."""
+        return self._last_event_image
 
     def get_events(self):
         """Get dense event image observations for all envs.
@@ -322,6 +334,8 @@ class EventCameraInterfaceGPU:
         if self._ui_window is not None:
             self._ui_window.visible = False
             self._ui_window = None
+        self._last_event_image = None
+        self._event_camera = None
         # Do not call close() on IECBSLiveGPU (no such method)
         # if self._event_camera is not None:
         #     self._event_camera.close()
